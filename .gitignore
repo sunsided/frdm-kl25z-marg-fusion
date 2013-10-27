@@ -1,0 +1,6 @@
+*.o
+*.d
+*.map
+*.elf
+
+.cwGeneratedFileSetLog

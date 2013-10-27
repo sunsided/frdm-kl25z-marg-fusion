@@ -1,0 +1,17 @@
+-mcpu=cortex-m0
+-mthumb
+-mfloat-abi=soft
+-g3
+-gdwarf-2
+-gstrict-dwarf
+-I"C:/dev/EigeneSources/arm/freescale/frdm-kl25z-acc-uart/Project_Headers"
+-I"C:/dev/EigeneSources/arm/freescale/frdm-kl25z-acc-uart/Project_Settings/Startup_Code"
+-I"C:/dev/ide/Freescale/CW MCU v10.5/MCU/ARM_GCC_Support/ewl/EWL_C/include"
+-I"C:/dev/ide/Freescale/CW MCU v10.5/MCU/ARM_GCC_Support/ewl/EWL_Runtime/include"
+-O0
+-ffunction-sections
+-fdata-sections
+-Wall
+-c
+-fmessage-length=0
+-specs=ewl_c.specs
