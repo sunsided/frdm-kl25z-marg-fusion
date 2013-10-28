@@ -1,6 +1,7 @@
 "./Project_Settings/Startup_Code/kinetis_sysinit.o"
 "./Project_Settings/Startup_Code/__arm_start.o"
 "./Project_Settings/Startup_Code/__arm_end.o"
+"./Sources/drivers/mcg/mcg.o"
 "./Sources/sa_mtb.o"
 "./Sources/main.o"
 -mcpu=cortex-m0

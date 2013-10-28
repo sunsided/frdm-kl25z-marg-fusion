@@ -4,9 +4,25 @@
  */
 
 #include "derivative.h" /* include peripheral declarations */
-#include "bme.h"
+#include "drivers/mcg/mcg.h"
 
 void stupid_delay();
+
+void setup_clock()
+{
+	// KUDOS: https://www.youtube.com/watch?v=uiSTB4jkxhw
+	
+	// NOTE:
+	// - core and platform clock are required to have 48 MHz or less
+	// - for PBE (PLL engaged external) mode, xtal/divider must be in range 2..4 MHz
+	
+	const int xtal = 8000000;			// FRDM-KL25Z has an on-board 8 MHz xtal
+	const int8_t divider = 4;			// divide by 4 (8 MHz --> 2 MHz)
+	const int8_t multiplier = 24;		// scale up by 24 (2 MHz --> 48 MHz)
+
+	pll_init(xtal, LOW_POWER, CRYSTAL, divider, multiplier, MCGOUT);
+	// TODO: assert frequency is correct
+}
 
 void setup_gpios_for_led()
 {
@@ -33,6 +49,8 @@ void setup_gpios_for_led()
 
 int main(void)
 {
+	setup_clock();
+	
 	setup_gpios_for_led();
 	
 	/*
@@ -94,7 +112,7 @@ void stupid_delay()
 	uint16_t i, j;
 	for (i=0; i<65534U; ++i) 
 	{
-		for (j=0; j<160; ++j)
+		for (j=0; j<50; ++j)
 		{
 			asm("nop");
 		}
