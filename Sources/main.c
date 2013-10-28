@@ -31,7 +31,7 @@ void setup_gpios_for_led()
 	
 	// Set Port B, pin 18 and 19 to GPIO mode
 	PORTB_PCR18 = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK;
-	PORTB_PCR19 = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK;;
+	PORTB_PCR19 = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK;
 	
 	// Set Port d, pin 1 GPIO mode
 	PORTD_PCR1 = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK;;
@@ -53,14 +53,22 @@ int main(void)
 	
 	setup_gpios_for_led();
 	
-	/*
-	SIM_SOPT2 |= SIM_SOPT2_UART0SRC(0b10); 
+	SIM_SOPT2 |= SIM_SOPT2_UART0SRC(0b10);	// set UART0 clock to oscillator
+	SIM_SCGC4 |= SIM_SCGC4_UART0_MASK;		// enable clock to UART0 module
 	
+	SIM_SCGC5 |= SIM_SCGC5_PORTA_MASK; 		// enable clock to port A (PTA1=rx, PTA2=tx)
+	PORTA_PCR1 = PORT_PCR_MUX(2) | PORT_PCR_DSE_MASK;	// alternative 2: RX
+	PORTA_PCR2 = PORT_PCR_MUX(2) | PORT_PCR_DSE_MASK;	// alternative 2: TX
+		
 	// configure the UART0
-	UART0_BDH = 0b00000000;	// polling, polling, 1 stop bit, default baud
-	UART0_BDL = 0b00000100; // default baud
+	UART0_BDH = 0b00000000 | UART_BDH_SBR(0); // polling, polling, 1 stop bit, default baud
+	UART0_BDL = UART_BDL_SBR(0b00000100) ; // default baud
 	
 	UART0_C1 = 0b00000000; // all defaults
+	UART0_C4 |= UART0_C4_OSR(15); // oversampling ratio of 16
+	
+	// with SBR (modulo divisor): CLK / ((OSR+1)*SBR) = 125000
+	
 	UART0_C2 = 0b00001100; // all defaults, but TX and RX enabled
 	
 	// wait for TX register to become empty
@@ -77,7 +85,6 @@ int main(void)
 		int tx_register_full = (UART0_S1 & 0b10000000) == 0;
 		if (!tx_register_full) break;
 	}
-	*/
 	
 	// LEDs are low active
 	GPIOB_PCOR  = 1<<18; // clear output to light red LED
