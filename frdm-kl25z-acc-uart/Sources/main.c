@@ -41,13 +41,8 @@ void setup_gpios_for_led()
 	GPIOD->PSOR  = 1<<1;  // set output to clear blue LED
 }
 
-int main(void)
+void setup_uart0()
 {
-	InitClock();
-	InitSysTick();
-	
-	setup_gpios_for_led();
-	
 	SIM->SOPT2 |= SIM_SOPT2_UART0SRC(0b10);	// set UART0 clock to oscillator
 	SIM->SCGC4 |= SIM_SCGC4_UART0_MASK;		// enable clock to UART0 module
 	
@@ -81,6 +76,16 @@ int main(void)
 		if (!tx_register_full) break;
 	}
 	*/
+}
+
+int main(void)
+{
+	InitClock();
+	InitSysTick();
+	
+	setup_gpios_for_led();
+	
+	setup_uart0();
 	
 	// LEDs are low active
 	GPIOB->PCOR  = 1<<18; // clear output to light red LED
