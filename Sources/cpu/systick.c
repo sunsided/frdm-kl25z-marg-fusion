@@ -9,6 +9,13 @@
 #include "cpu/clock.h"
 #include "cpu/systick.h"
 
+/**
+ * @brief Initializes the SysTick interrupt
+ * @return none.
+ *
+ * \par Will initialise the system tick interrupt using interrupt-on-zero
+ * utilizing the core clock.
+ */
 void InitSysTick()
 {
 	/* see Cortex-M0+ Devices Generic User Guide, Section 4.4 */
@@ -18,6 +25,10 @@ void InitSysTick()
 				| SysTick_CSR_CLKSOURCE_MASK;	/* use processor clock instead of external clock */
 }
 
+/**
+ * @brief The SysTick interrupt handler
+ * @return none.
+ */
 void SysTick_Handler() 
 {
 	__asm("bkpt");
