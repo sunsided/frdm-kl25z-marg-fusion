@@ -5,6 +5,7 @@
 
 #include "ARMCM0plus.h"
 #include "derivative.h" /* include peripheral declarations */
+#include "bme.h"
 
 #include "cpu/clock.h"
 #include "cpu/systick.h"
@@ -22,18 +23,18 @@
 void setup_gpios_for_led()
 {
 	// Set system clock gating to enable gate to port B
-	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTD_MASK;
+	BME_OR_W(&SIM->SCGC5, SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTD_MASK);
 	
 	// Set Port B, pin 18 and 19 to GPIO mode
-	PORTB->PCR[18] = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK;
-	PORTB->PCR[19] = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK;
+	BME_OR_W(&PORTB->PCR[18], PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK);
+	BME_OR_W(&PORTB->PCR[19], PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK);
 	
 	// Set Port d, pin 1 GPIO mode
-	PORTD->PCR[1] = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK;;
+	BME_OR_W(&PORTD->PCR[1], PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK);
 		
 	// Data direction for port B, pin 18 and 19 and port D, pin 1 set to output 
-	GPIOB->PDDR |= GPIO_PDDR_PDD(1<<18) | GPIO_PDDR_PDD(1<<19);
-	GPIOD->PDDR |= GPIO_PDDR_PDD(1<<1);
+	BME_OR_W(&GPIOB->PDDR, GPIO_PDDR_PDD(1<<18) | GPIO_PDDR_PDD(1<<19));
+	BME_OR_W(&GPIOD->PDDR, GPIO_PDDR_PDD(1<<1));
 	
 	// LEDs are low active
 	GPIOB->PCOR  = 1<<18; // clear output to light red LED
@@ -43,12 +44,12 @@ void setup_gpios_for_led()
 
 void setup_uart0()
 {
-	SIM->SOPT2 |= SIM_SOPT2_UART0SRC(0b10);	// set UART0 clock to oscillator
-	SIM->SCGC4 |= SIM_SCGC4_UART0_MASK;		// enable clock to UART0 module
+	BME_OR_W(&SIM->SOPT2, SIM_SOPT2_UART0SRC(0b10));	// set UART0 clock to oscillator
+	BME_OR_W(&SIM->SCGC4, SIM_SCGC4_UART0_MASK);		// enable clock to UART0 module
 	
-	SIM->SCGC5 |= SIM_SCGC5_PORTA_MASK; 		// enable clock to port A (PTA1=rx, PTA2=tx)
-	PORTA->PCR[1] = PORT_PCR_MUX(2) | PORT_PCR_DSE_MASK;	// alternative 2: RX
-	PORTA->PCR[2] = PORT_PCR_MUX(2) | PORT_PCR_DSE_MASK;	// alternative 2: TX
+	BME_OR_W(&SIM->SCGC5, SIM_SCGC5_PORTA_MASK); 		// enable clock to port A (PTA1=rx, PTA2=tx)
+	BME_OR_W(&PORTA->PCR[1], PORT_PCR_MUX(2) | PORT_PCR_DSE_MASK);	// alternative 2: RX
+	BME_OR_W(&PORTA->PCR[2], PORT_PCR_MUX(2) | PORT_PCR_DSE_MASK);	// alternative 2: TX
 		
 	// configure the UART0
 	UART0->BDH = 0b00000000 | UART_BDH_SBR(0); // polling, polling, 1 stop bit, default baud
