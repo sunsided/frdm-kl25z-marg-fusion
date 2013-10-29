@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 #include "mcg/mcg.h"
-#include "clock.h"
+#include "cpu/clock.h"
 
 void InitClock()
 {

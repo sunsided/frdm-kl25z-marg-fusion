@@ -6,7 +6,8 @@
 #include "ARMCM0plus.h"
 #include "derivative.h" /* include peripheral declarations */
 
-#include "clock.h"
+#include "cpu/clock.h"
+#include "cpu/systick.h"
 
 void stupid_delay();
 
@@ -36,6 +37,7 @@ void setup_gpios_for_led()
 int main(void)
 {
 	InitClock();
+	InitSysTick();
 	
 	setup_gpios_for_led();
 	
