@@ -2,7 +2,7 @@
 # Automatically-generated file. Do not edit!
 ################################################################################
 
-#Progress monitor hint: 6
+#Progress monitor hint: 7
 first : all
 -include ../makefile.init
 
@@ -16,6 +16,7 @@ RM := "$(GNU_Make_Install_DirEnv)/rm" -rf
 -include subdir.mk
 -include drivers/mcg/subdir.mk
 -include Sources/subdir.mk
+-include Sources/cpu/subdir.mk
 -include Project_Settings/Startup_Code/subdir.mk
 -include objects.mk
 
@@ -59,7 +60,7 @@ all: warning-messages explicit-dependencies frdm-kl25z-acc-uart.elf secondary-ou
 # Tool invocations
 frdm-kl25z-acc-uart.elf: $(OBJS) $(USER_OBJS) ../Project_Settings/Linker_Files/MKL25Z128_flash.ld
 	@echo 'Building target: $@'
-	@echo 'Executing target #7 $@'
+	@echo 'Executing target #8 $@'
 	@echo 'Invoking: ARM Ltd Windows GCC C Linker'
 	"$(ARMSourceryDirEnv)/arm-none-eabi-gcc"  $(USER_OBJS_QUOTED)  @"frdm-kl25z-acc-uart.args" -o"frdm-kl25z-acc-uart.elf"
 	@echo 'Finished building target: $@'

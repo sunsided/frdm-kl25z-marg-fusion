@@ -61,5 +61,6 @@ OBJS_OS_FORMAT :=
 SUBDIRS := \
 drivers/mcg \
 Sources \
+Sources/cpu \
 Project_Settings/Startup_Code \
 
