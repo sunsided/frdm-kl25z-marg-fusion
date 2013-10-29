@@ -20,9 +20,9 @@ extern const volatile uint32_t SystemMilliseconds;
  */
 void delay_ms(const uint16_t ms) 
 {
-	const uint16_t start_ticks = SystemMilliseconds;
+	const uint32_t start_ticks = SystemMilliseconds;
 	do {
-		__NOP(); // TODO: __WFI();
+		__WFI();
 	} while((SystemMilliseconds - start_ticks) < ms);
 }
 
