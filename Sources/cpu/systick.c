@@ -26,10 +26,15 @@ void InitSysTick()
 }
 
 /**
+ * @brief The system tick counter
+ */
+volatile uint32_t SystemMilliseconds = 0;
+
+/**
  * @brief The SysTick interrupt handler
  * @return none.
  */
 void SysTick_Handler() 
 {
-	__asm("bkpt");
+	++SystemMilliseconds;
 }

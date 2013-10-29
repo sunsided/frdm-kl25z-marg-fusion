@@ -18,6 +18,8 @@
 
 #define CORE_CLOCK			(XTAL_FREQ/XTAL_PEE_DIVIDE*XTAL_PEE_UPSCALE) /* Hz */
 
+
+
 /**
 * @brief Function to initialize the core clock 
 */

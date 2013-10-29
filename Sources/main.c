@@ -8,8 +8,7 @@
 
 #include "cpu/clock.h"
 #include "cpu/systick.h"
-
-void stupid_delay();
+#include "cpu/delay.h"
 
 void setup_gpios_for_led()
 {
@@ -83,35 +82,37 @@ int main(void)
 
 	// Toggle the LEDs
 	for(;;) 
-	{	      	
-	   	GPIOB_PSOR = 1<<18;
-	   	GPIOB_PCOR = 1<<19;
-	   	GPIOD_PSOR = 1<<1;
-	   	stupid_delay();
-	   	
-	   	GPIOB_PSOR = 1<<18;
-		GPIOB_PSOR = 1<<19;
-		GPIOD_PCOR = 1<<1;
-		stupid_delay();
-		
+	{
+		// red
 		GPIOB_PCOR = 1<<18;
 		GPIOB_PSOR = 1<<19;
 		GPIOD_PSOR = 1<<1;
-		stupid_delay();
+		delay_ms(1500);
+		
+		// yellow
+		GPIOB_PCOR = 1<<18;
+		GPIOB_PCOR = 1<<19;
+		GPIOD_PSOR = 1<<1;
+		delay_ms(1500);
+		
+		// green
+		GPIOB_PSOR = 1<<18;
+		GPIOB_PCOR = 1<<19;
+		GPIOD_PSOR = 1<<1;
+		delay_ms(1500);
+		
+		// all
+		GPIOB_PSOR = 1<<18;
+		GPIOB_PSOR = 1<<19;
+		GPIOD_PSOR = 1<<1;
+		delay_ms(10000);
+		
+		// blue
+		GPIOB_PSOR = 1<<18;
+		GPIOB_PSOR = 1<<19;
+		GPIOD_PCOR = 1<<1;
+		delay_ms(2000);
 	}
 	
 	return 0;
-}
-
-
-void stupid_delay()
-{
-	uint16_t i, j;
-	for (i=0; i<65534U; ++i) 
-	{
-		for (j=0; j<50; ++j)
-		{
-			asm("nop");
-		}
-	}
 }
