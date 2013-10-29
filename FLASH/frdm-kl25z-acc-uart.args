@@ -14,6 +14,7 @@
 -Xlinker
 --gc-sections
 -L"C:/dev/ide/Freescale/CW MCU v10.5/MCU/ARM_GCC_Support/ewl/lib/armv6-m"
+-L"C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Lib/GCC"
 -Wl,-Map,frdm-kl25z-acc-uart.map
 -n
 -specs=ewl_c.specs
@@ -24,4 +25,5 @@
 -Xlinker
 --undefined=__sformatter
 -Xlinker
---defsym=__sformatter=__sformatter
+--defsym=__sformatter=__sformatter 
+-larm_cortexM0l_math

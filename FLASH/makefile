@@ -61,7 +61,7 @@ frdm-kl25z-acc-uart.elf: $(OBJS) $(USER_OBJS) ../Project_Settings/Linker_Files/M
 	@echo 'Building target: $@'
 	@echo 'Executing target #7 $@'
 	@echo 'Invoking: ARM Ltd Windows GCC C Linker'
-	"$(ARMSourceryDirEnv)/arm-none-eabi-gcc"  $(USER_OBJS_QUOTED) $(LIBS_QUOTED) @"frdm-kl25z-acc-uart.args" -o"frdm-kl25z-acc-uart.elf"
+	"$(ARMSourceryDirEnv)/arm-none-eabi-gcc"  $(USER_OBJS_QUOTED)  @"frdm-kl25z-acc-uart.args" -o"frdm-kl25z-acc-uart.elf"
 	@echo 'Finished building target: $@'
 	@echo ' '
 

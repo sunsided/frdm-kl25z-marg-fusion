@@ -6,6 +6,6 @@ USER_OBJS :=
 
 USER_OBJS_QUOTED :=
 
-LIBS :=
+LIBS := -larm_cortexM0l_math
 
-LIBS_QUOTED :=
+LIBS_QUOTED := "-larm_cortexM0l_math"
