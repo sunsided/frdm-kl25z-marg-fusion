@@ -15,6 +15,7 @@
 -ffunction-sections
 -fdata-sections
 -Wall
+-std=gnu99
 -c
 -fmessage-length=0
 -specs=ewl_c.specs
