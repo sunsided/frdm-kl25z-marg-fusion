@@ -9,7 +9,7 @@
 
 void stupid_delay();
 
-void setup_clock()
+void InitClock()
 {
 	// KUDOS: https://www.youtube.com/watch?v=uiSTB4jkxhw
 	
@@ -50,7 +50,7 @@ void setup_gpios_for_led()
 
 int main(void)
 {
-	setup_clock();
+	InitClock();
 	
 	setup_gpios_for_led();
 	
