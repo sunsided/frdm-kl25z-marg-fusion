@@ -32,7 +32,7 @@
 #include <stdint.h>
 
 #if defined(__GNUC__)
-#define _BME_INLINE	__attribute__((always_inline))
+#define _BME_INLINE	__attribute__((always_inline)) inline
 #elif defined(__CWCC__)
 #define _BME_INLINE	__inline
 #endif
