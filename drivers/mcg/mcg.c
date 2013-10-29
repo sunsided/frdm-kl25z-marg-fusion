@@ -7,7 +7,7 @@
  */
 
 #include "derivative.h"
-#include "drivers/mcg/mcg.h"
+#include "mcg/mcg.h"
 
 
 // global variables

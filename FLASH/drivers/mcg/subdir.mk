@@ -2,37 +2,37 @@
 # Automatically-generated file. Do not edit!
 ################################################################################
 
--include ../../../makefile.local
+-include ../../makefile.local
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS_QUOTED += \
-"../Sources/drivers/mcg/mcg.c" \
+"../drivers/mcg/mcg.c" \
 
 C_SRCS += \
-../Sources/drivers/mcg/mcg.c \
+../drivers/mcg/mcg.c \
 
 OBJS += \
-./Sources/drivers/mcg/mcg.o \
+./drivers/mcg/mcg.o \
 
 C_DEPS += \
-./Sources/drivers/mcg/mcg.d \
+./drivers/mcg/mcg.d \
 
 OBJS_QUOTED += \
-"./Sources/drivers/mcg/mcg.o" \
+"./drivers/mcg/mcg.o" \
 
 C_DEPS_QUOTED += \
-"./Sources/drivers/mcg/mcg.d" \
+"./drivers/mcg/mcg.d" \
 
 OBJS_OS_FORMAT += \
-./Sources/drivers/mcg/mcg.o \
+./drivers/mcg/mcg.o \
 
 
 # Each subdirectory must supply rules for building sources it contributes
-Sources/drivers/mcg/mcg.o: ../Sources/drivers/mcg/mcg.c
+drivers/mcg/mcg.o: ../drivers/mcg/mcg.c
 	@echo 'Building file: $<'
-	@echo 'Executing target #3 $<'
+	@echo 'Executing target #1 $<'
 	@echo 'Invoking: ARM Ltd Windows GCC C Compiler'
-	"$(ARMSourceryDirEnv)/arm-none-eabi-gcc" "$<" @"Sources/drivers/mcg/mcg.args" -MMD -MP -MF"$(@:%.o=%.d)" -o"Sources/drivers/mcg/mcg.o"
+	"$(ARMSourceryDirEnv)/arm-none-eabi-gcc" "$<" @"drivers/mcg/mcg.args" -MMD -MP -MF"$(@:%.o=%.d)" -o"drivers/mcg/mcg.o"
 	@echo 'Finished building: $<'
 	@echo ' '
 

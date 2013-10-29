@@ -3,8 +3,9 @@
  *
  */
 
+#include "ARMCM0plus.h"
 #include "derivative.h" /* include peripheral declarations */
-#include "drivers/mcg/mcg.h"
+#include "mcg/mcg.h"
 
 void stupid_delay();
 
@@ -71,6 +72,7 @@ int main(void)
 	
 	UART0_C2 = 0b00001100; // all defaults, but TX and RX enabled
 	
+	/*
 	// wait for TX register to become empty
 	for (;;) {
 		int tx_register_full = (UART0_S1 & 0b10000000) == 0;
@@ -85,6 +87,7 @@ int main(void)
 		int tx_register_full = (UART0_S1 & 0b10000000) == 0;
 		if (!tx_register_full) break;
 	}
+	*/
 	
 	// LEDs are low active
 	GPIOB_PCOR  = 1<<18; // clear output to light red LED

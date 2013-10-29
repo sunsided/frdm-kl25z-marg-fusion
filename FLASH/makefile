@@ -14,8 +14,8 @@ RM := "$(GNU_Make_Install_DirEnv)/rm" -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include subdir.mk
+-include drivers/mcg/subdir.mk
 -include Sources/subdir.mk
--include Sources/drivers/mcg/subdir.mk
 -include Project_Settings/Startup_Code/subdir.mk
 -include objects.mk
 
@@ -67,7 +67,7 @@ frdm-kl25z-acc-uart.elf: $(OBJS) $(USER_OBJS) ../Project_Settings/Linker_Files/M
 
 # Other Targets
 clean:
-	-$(RM) $(S_DEPS_QUOTED) "./*/*/*.o" "./*/*/*/*.o" "./*/*.o"  $(S_UPPER_DEPS_QUOTED) $(ASM_DEPS_QUOTED) $(ASM_UPPER_DEPS_QUOTED) $(SX_DEPS_QUOTED) $(EXECUTABLES_QUOTED) "./*/*/*.d" "./*/*/*/*.d" "./*/*.d"  $(ProjDirPath)/FLASH/frdm-kl25z-acc-uart.elf
+	-$(RM) $(S_DEPS_QUOTED) "./*/*/*.o" "./*/*.o"  $(S_UPPER_DEPS_QUOTED) $(ASM_DEPS_QUOTED) $(ASM_UPPER_DEPS_QUOTED) $(SX_DEPS_QUOTED) $(EXECUTABLES_QUOTED) "./*/*/*.d" "./*/*.d"  $(ProjDirPath)/FLASH/frdm-kl25z-acc-uart.elf
 	-@echo ' '
 
 secondary-outputs:
