@@ -42,41 +42,87 @@ void setup_gpios_for_led()
 	GPIOD->PSOR  = 1<<1;  // set output to clear blue LED
 }
 
+#define UART_USE_FLLPLL_CLOCK	(0b01u)
+
 void setup_uart0()
 {
-	BME_OR_W(&SIM->SOPT2, SIM_SOPT2_UART0SRC(0b10));	// set UART0 clock to oscillator
-	BME_OR_W(&SIM->SCGC4, SIM_SCGC4_UART0_MASK);		// enable clock to UART0 module
+	/* enable clock gating to uart0 module */
+	BME_OR_W(&SIM->SCGC4, SIM_SCGC4_UART0_MASK);
 	
+	/* set uart clock to oscillator clock */
+	BME_OR_W(&SIM->SOPT2, SIM_SOPT2_UART0SRC(UART_USE_FLLPLL_CLOCK));
+	
+	/* enable clock gating to port A */
 	BME_OR_W(&SIM->SCGC5, SIM_SCGC5_PORTA_MASK); 		// enable clock to port A (PTA1=rx, PTA2=tx)
-	BME_OR_W(&PORTA->PCR[1], PORT_PCR_MUX(2) | PORT_PCR_DSE_MASK);	// alternative 2: RX
-	BME_OR_W(&PORTA->PCR[2], PORT_PCR_MUX(2) | PORT_PCR_DSE_MASK);	// alternative 2: TX
-		
-	// configure the UART0
-	UART0->BDH = 0b00000000 | UART_BDH_SBR(0); // polling, polling, 1 stop bit, default baud
-	UART0->BDL = UART_BDL_SBR(0b00000100) ; // default baud
 	
-	UART0->C1 = 0b00000000; // all defaults
-	UART0->C4 |= UART0_C4_OSR(15); // oversampling ratio of 16
+	/* set pins to uart0 rx/tx */
+	BME_OR_W(&PORTA->PCR[1], PORT_PCR_MUX(2));	// alternative 2: RX
+	BME_OR_W(&PORTA->PCR[2], PORT_PCR_MUX(2));	// alternative 2: TX
+		
+	/* target baud rate: 125000 @ 8 MHz clock
+	 * baud rate B will be 
+	 * B = clock / ((OSR+1)*SBR)
+	 * 
+	 * OSR: oversampling ratio, UART0_C4[3:0]
+	 * SBR: baud date modulo divisor, UART0_BDH[4:0], UART0_BDL[7:0]
+	 */
+	
+	const uint32_t uartclk_hz = XTAL_FREQ/2;
+	const uint32_t baud_rate = 9600;
+	const uint32_t oversampling = 3;
+	const uint16_t br = uartclk_hz / (baud_rate * (oversampling+1));
 	
 	// with SBR (modulo divisor): CLK / ((OSR+1)*SBR) = 125000
-	UART0->C2 = 0b00001100; // all defaults, but TX and RX enabled
 	
-	/*
+	/* configure the uart */
+	UART0->BDH = 0 << UART_BDH_LBKDIE_SHIFT /* disable line break detect interrupt */
+				| 0 << UART_BDH_RXEDGIE_SHIFT /* disable RX input active edge interrupt */
+				| 0 << UART_BDH_SBNS_SHIFT /* use one stop bit */
+				| UART_BDH_SBR((br & 0x1F00) >> 8); /* set high bits of scaler */
+	UART0->BDL = UART_BDL_SBR(br & 0x00FF) ; /* set low bits of scaler */
+	
+	/* set oversampling ratio */
+	UART0->C4 |= UART0_C4_OSR(oversampling);
+	
+	/* set oversampling ratio since oversampling is between 4 and 7 
+	 * and is optional for higher oversampling ratios */
+	if (oversampling >= 4)
+	{
+		UART0->C5 |= UART0_C5_BOTHEDGE_MASK;
+	}
+	
+	/* keep default settings for parity and loopback */
+	UART0->C1 = 0;
+			
+	/* enable rx and tx */
+	UART0->C2 = UART0_C2_TE_MASK | UART0_C2_RE_MASK;
+	
+	// blue on
+	GPIOB->PSOR = 1<<18;
+	GPIOB->PSOR = 1<<19;
+	GPIOD->PCOR = 1<<1;
+	
 	// wait for TX register to become empty
 	for (;;) {
-		int tx_register_full = (UART0_S1 & 0b10000000) == 0;
+		int tx_register_full = (UART0_S1 & UART0_S1_TDRE_MASK) == 0;
 		if (!tx_register_full) break;
 	}
 	
 	// send data
 	UART0_D = 0xA;
+	__NOP();
+	UART0_D = 0xA;
 	
 	// wait for TX register to become empty
 	for (;;) {
-		int tx_register_full = (UART0_S1 & 0b10000000) == 0;
+		int tx_register_full = (UART0_S1 & UART0_S1_TDRE_MASK) == 0;
 		if (!tx_register_full) break;
 	}
-	*/
+	
+	// blue off
+	GPIOB->PSOR = 1<<18;
+	GPIOB->PSOR = 1<<19;
+	GPIOD->PSOR = 1<<1;
 }
 
 int main(void)
