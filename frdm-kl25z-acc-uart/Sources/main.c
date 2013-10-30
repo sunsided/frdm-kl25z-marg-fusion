@@ -7,6 +7,8 @@
 #include "derivative.h" /* include peripheral declarations */
 #include "bme.h"
 
+//#include "uart/uart.h"
+
 #include "cpu/clock.h"
 #include "cpu/systick.h"
 #include "cpu/delay.h"
@@ -42,7 +44,7 @@ void setup_gpios_for_led()
 	GPIOD->PSOR  = 1<<1;  // set output to clear blue LED
 }
 
-#define UART_USE_FLLPLL_CLOCK	(0b01u)
+#define UART_USE_XTAL_CLOCK	(0b10u)
 
 void setup_uart0()
 {
@@ -50,7 +52,7 @@ void setup_uart0()
 	BME_OR_W(&SIM->SCGC4, SIM_SCGC4_UART0_MASK);
 	
 	/* set uart clock to oscillator clock */
-	BME_OR_W(&SIM->SOPT2, SIM_SOPT2_UART0SRC(UART_USE_FLLPLL_CLOCK));
+	BME_OR_W(&SIM->SOPT2, SIM_SOPT2_UART0SRC(UART_USE_XTAL_CLOCK));
 	
 	/* enable clock gating to port A */
 	BME_OR_W(&SIM->SCGC5, SIM_SCGC5_PORTA_MASK); 		// enable clock to port A (PTA1=rx, PTA2=tx)
@@ -58,8 +60,10 @@ void setup_uart0()
 	/* set pins to uart0 rx/tx */
 	BME_OR_W(&PORTA->PCR[1], PORT_PCR_MUX(2));	// alternative 2: RX
 	BME_OR_W(&PORTA->PCR[2], PORT_PCR_MUX(2));	// alternative 2: TX
-		
-	/* target baud rate: 125000 @ 8 MHz clock
+
+//	uart0_init(UART0_BASE_PTR, 8000, 19200);
+
+	/* target baud rate: 19200 @ 8 MHz clock
 	 * baud rate B will be 
 	 * B = clock / ((OSR+1)*SBR)
 	 * 
@@ -67,26 +71,37 @@ void setup_uart0()
 	 * SBR: baud date modulo divisor, UART0_BDH[4:0], UART0_BDL[7:0]
 	 */
 	
-	const uint32_t uartclk_hz = XTAL_FREQ/2;
-	const uint32_t baud_rate = 9600;
-	const uint32_t oversampling = 3;
-	const uint16_t br = uartclk_hz / (baud_rate * (oversampling+1));
+	static const uint32_t uartclk_hz = XTAL_FREQ;
+	static const uint32_t baud_rate = 19200;
+	static const uint32_t osr = 3;
+	uint16_t sbr = uartclk_hz / (baud_rate * (osr+1));
+	uint16_t calculated_baud = uartclk_hz / ((osr+1)*sbr);
+	
+	int32_t difference = (calculated_baud - baud_rate);
+	if (calculated_baud < baud_rate)
+	{
+		difference = (baud_rate - calculated_baud);
+	}
+	const int8_t valid = difference < (baud_rate/100*3);
 	
 	// with SBR (modulo divisor): CLK / ((OSR+1)*SBR) = 125000
 	
 	/* configure the uart */
+	UART0->BDH &= ~(UART0_BDH_SBR_MASK); 
+	UART0->BDL &= ~(UART0_BDL_SBR_MASK);
+	
 	UART0->BDH = 0 << UART_BDH_LBKDIE_SHIFT /* disable line break detect interrupt */
 				| 0 << UART_BDH_RXEDGIE_SHIFT /* disable RX input active edge interrupt */
 				| 0 << UART_BDH_SBNS_SHIFT /* use one stop bit */
-				| UART_BDH_SBR((br & 0x1F00) >> 8); /* set high bits of scaler */
-	UART0->BDL = UART_BDL_SBR(br & 0x00FF) ; /* set low bits of scaler */
+				| UART_BDH_SBR((sbr & 0x1F00) >> 8); /* set high bits of scaler */
+	UART0->BDL = UART_BDL_SBR(sbr & 0x00FF) ; /* set low bits of scaler */
 	
 	/* set oversampling ratio */
-	UART0->C4 |= UART0_C4_OSR(oversampling);
+	UART0->C4 |= UART0_C4_OSR(osr);
 	
 	/* set oversampling ratio since oversampling is between 4 and 7 
 	 * and is optional for higher oversampling ratios */
-	if (oversampling >= 4)
+	if (osr >= 4)
 	{
 		UART0->C5 |= UART0_C5_BOTHEDGE_MASK;
 	}
@@ -95,7 +110,7 @@ void setup_uart0()
 	UART0->C1 = 0;
 			
 	/* enable rx and tx */
-	UART0->C2 = UART0_C2_TE_MASK | UART0_C2_RE_MASK;
+	UART0->C2 |= UART0_C2_TE_MASK | UART0_C2_RE_MASK;
 	
 	// blue on
 	GPIOB->PSOR = 1<<18;
@@ -109,9 +124,9 @@ void setup_uart0()
 	}
 	
 	// send data
-	UART0_D = 0xA;
+	UART0->D = 0xA;
 	__NOP();
-	UART0_D = 0xA;
+	UART0->D = 0xA;
 	
 	// wait for TX register to become empty
 	for (;;) {
