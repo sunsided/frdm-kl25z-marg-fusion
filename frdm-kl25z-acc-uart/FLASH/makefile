@@ -2,7 +2,7 @@
 # Automatically-generated file. Do not edit!
 ################################################################################
 
-#Progress monitor hint: 8
+#Progress monitor hint: 20
 first : all
 -include ../makefile.init
 
@@ -14,7 +14,10 @@ RM := "$(GNU_Make_Install_DirEnv)/rm" -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include subdir.mk
+-include drivers/uart/subdir.mk
 -include drivers/mcg/subdir.mk
+-include cpu/subdir.mk
+-include common/subdir.mk
 -include Sources/subdir.mk
 -include Sources/cpu/subdir.mk
 -include Project_Settings/Startup_Code/subdir.mk
@@ -60,7 +63,7 @@ all: warning-messages explicit-dependencies frdm-kl25z-acc-uart.elf secondary-ou
 # Tool invocations
 frdm-kl25z-acc-uart.elf: $(OBJS) $(USER_OBJS) ../Project_Settings/Linker_Files/MKL25Z128_flash.ld
 	@echo 'Building target: $@'
-	@echo 'Executing target #9 $@'
+	@echo 'Executing target #21 $@'
 	@echo 'Invoking: ARM Ltd Windows GCC C Linker'
 	"$(ARMSourceryDirEnv)/arm-none-eabi-gcc"  $(USER_OBJS_QUOTED)  @"frdm-kl25z-acc-uart.args" -o"frdm-kl25z-acc-uart.elf"
 	@echo 'Finished building target: $@'
@@ -68,7 +71,7 @@ frdm-kl25z-acc-uart.elf: $(OBJS) $(USER_OBJS) ../Project_Settings/Linker_Files/M
 
 # Other Targets
 clean:
-	-$(RM) $(S_DEPS_QUOTED) "./*/*/*.o" "./*/*.o"  $(S_UPPER_DEPS_QUOTED) $(ASM_DEPS_QUOTED) $(ASM_UPPER_DEPS_QUOTED) $(SX_DEPS_QUOTED) $(EXECUTABLES_QUOTED) "./*/*/*.d" "./*/*.d"  $(ProjDirPath)/FLASH/frdm-kl25z-acc-uart.elf
+	-$(RM) "./*/*.d"  "./*/*/*.o" "./*/*.o"  $(S_UPPER_DEPS_QUOTED) $(ASM_DEPS_QUOTED) $(ASM_UPPER_DEPS_QUOTED) $(SX_DEPS_QUOTED) $(EXECUTABLES_QUOTED) "./*/*/*.d" "./*/*.d"  $(ProjDirPath)/FLASH/frdm-kl25z-acc-uart.elf
 	-@echo ' '
 
 secondary-outputs:

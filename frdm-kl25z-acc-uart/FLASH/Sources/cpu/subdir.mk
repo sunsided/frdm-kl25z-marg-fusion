@@ -37,7 +37,7 @@ OBJS_OS_FORMAT += \
 # Each subdirectory must supply rules for building sources it contributes
 Sources/cpu/clock.o: ../Sources/cpu/clock.c
 	@echo 'Building file: $<'
-	@echo 'Executing target #4 $<'
+	@echo 'Executing target #16 $<'
 	@echo 'Invoking: ARM Ltd Windows GCC C Compiler'
 	"$(ARMSourceryDirEnv)/arm-none-eabi-gcc" "$<" @"Sources/cpu/clock.args" -MMD -MP -MF"$(@:%.o=%.d)" -o"Sources/cpu/clock.o"
 	@echo 'Finished building: $<'
@@ -45,7 +45,7 @@ Sources/cpu/clock.o: ../Sources/cpu/clock.c
 
 Sources/cpu/systick.o: ../Sources/cpu/systick.c
 	@echo 'Building file: $<'
-	@echo 'Executing target #5 $<'
+	@echo 'Executing target #17 $<'
 	@echo 'Invoking: ARM Ltd Windows GCC C Compiler'
 	"$(ARMSourceryDirEnv)/arm-none-eabi-gcc" "$<" @"Sources/cpu/systick.args" -MMD -MP -MF"$(@:%.o=%.d)" -o"Sources/cpu/systick.o"
 	@echo 'Finished building: $<'

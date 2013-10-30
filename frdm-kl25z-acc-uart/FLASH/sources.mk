@@ -59,7 +59,10 @@ OBJS_OS_FORMAT :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
+drivers/uart \
 drivers/mcg \
+cpu \
+common \
 Sources \
 Sources/cpu \
 Project_Settings/Startup_Code \
