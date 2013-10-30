@@ -73,7 +73,7 @@ void setup_uart0()
 	
 	static const uint32_t uartclk_hz = XTAL_FREQ;
 	static const uint32_t baud_rate = 19200;
-	static const uint32_t osr = 3;
+	static const uint32_t osr = 2;
 	uint16_t sbr = uartclk_hz / (baud_rate * (osr+1));
 	uint16_t calculated_baud = uartclk_hz / ((osr+1)*sbr);
 	

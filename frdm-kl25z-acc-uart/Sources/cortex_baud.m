@@ -15,7 +15,7 @@ function [br, osr, baud_error] = cortex_baud(clock, baudrate)
     end
     
     br = 1:8192;
-    osr = 4:32;
+    osr = 1:31;
 
     found_br = 0;
     found_osr = 0;
@@ -32,7 +32,7 @@ function [br, osr, baud_error] = cortex_baud(clock, baudrate)
         
         % loop BR
         for br_value = br
-            rate = floor(clock/floor((br_value+1)*osr_value));
+            rate = floor(clock/br_value*(osr_value+1));
             if rate < 9600 
                 continue 
             end
@@ -40,7 +40,7 @@ function [br, osr, baud_error] = cortex_baud(clock, baudrate)
             % best match
             if rate == baudrate
                 found_br = br_value;
-                found_osr = osr_value-1;
+                found_osr = osr_value;
                 found_error = 0;
                 break
             end
@@ -50,7 +50,7 @@ function [br, osr, baud_error] = cortex_baud(clock, baudrate)
             if error < min_error
                 min_error = error;
                 found_br = br_value;
-                found_osr = osr_value-1;
+                found_osr = osr_value;
                 found_error = min_error;
             end
         end
