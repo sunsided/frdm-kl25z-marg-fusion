@@ -25,18 +25,18 @@
 void setup_gpios_for_led()
 {
 	// Set system clock gating to enable gate to port B
-	BME_OR_W(&SIM->SCGC5, SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTD_MASK);
+	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTD_MASK;
 	
 	// Set Port B, pin 18 and 19 to GPIO mode
-	BME_OR_W(&PORTB->PCR[18], PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK);
-	BME_OR_W(&PORTB->PCR[19], PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK);
+	PORTB->PCR[18] = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK; /* not using |= assignment here due to some of the flags being undefined at reset */
+	PORTB->PCR[19] = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK;
 	
 	// Set Port d, pin 1 GPIO mode
-	BME_OR_W(&PORTD->PCR[1], PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK);
+	PORTD->PCR[1] = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK;
 		
 	// Data direction for port B, pin 18 and 19 and port D, pin 1 set to output 
-	BME_OR_W(&GPIOB->PDDR, GPIO_PDDR_PDD(1<<18) | GPIO_PDDR_PDD(1<<19));
-	BME_OR_W(&GPIOD->PDDR, GPIO_PDDR_PDD(1<<1));
+	GPIOB->PDDR |= GPIO_PDDR_PDD(1<<18) | GPIO_PDDR_PDD(1<<19);
+	GPIOD->PDDR |= GPIO_PDDR_PDD(1<<1);
 	
 	// LEDs are low active
 	GPIOB->PCOR  = 1<<18; // clear output to light red LED
@@ -44,22 +44,25 @@ void setup_gpios_for_led()
 	GPIOD->PSOR  = 1<<1;  // set output to clear blue LED
 }
 
-#define UART_USE_XTAL_CLOCK	(0b10u)
-
 void setup_uart0()
 {
 	/* enable clock gating to uart0 module */
-	BME_OR_W(&SIM->SCGC4, SIM_SCGC4_UART0_MASK);
+	SIM->SCGC4 |= SIM_SCGC4_UART0_MASK;
+	
+	/* disable rx and tx */
+	UART0->C2 &= ~UART0_C2_TE_MASK & ~UART0_C2_RE_MASK;
 	
 	/* set uart clock to oscillator clock */
-	BME_OR_W(&SIM->SOPT2, SIM_SOPT2_UART0SRC(UART_USE_XTAL_CLOCK));
+	SIM->SOPT2 &= ~(SIM_SOPT2_UART0SRC_MASK | SIM_SOPT2_PLLFLLSEL_MASK); 
+	SIM->SOPT2 |= SIM_SOPT2_UART0SRC(0b01U) | SIM_SOPT2_CLKOUTSEL(1);
 	
 	/* enable clock gating to port A */
-	BME_OR_W(&SIM->SCGC5, SIM_SCGC5_PORTA_MASK); 		// enable clock to port A (PTA1=rx, PTA2=tx)
+	SIM->SCGC5 |= SIM_SCGC5_PORTA_MASK; /* enable clock to port A (PTA1=rx, PTA2=tx) */
 	
 	/* set pins to uart0 rx/tx */
-	BME_OR_W(&PORTA->PCR[1], PORT_PCR_MUX(2));	// alternative 2: RX
-	BME_OR_W(&PORTA->PCR[2], PORT_PCR_MUX(2));	// alternative 2: TX
+	/* not using |= assignment here due to some of the flags being undefined at reset */
+	PORTA->PCR[1] = PORT_PCR_MUX(2);	/* alternative 2: RX */
+	PORTA->PCR[2] = PORT_PCR_MUX(2);	/* alternative 2: TX */
 
 //	uart0_init(UART0_BASE_PTR, 8000, 19200);
 
@@ -71,11 +74,11 @@ void setup_uart0()
 	 * SBR: baud date modulo divisor, UART0_BDH[4:0], UART0_BDL[7:0]
 	 */
 	
-	static const uint32_t uartclk_hz = XTAL_FREQ;
-	static const uint32_t baud_rate = 19200;
-	static const uint32_t osr = 2;
-	uint16_t sbr = uartclk_hz / (baud_rate * (osr+1));
-	uint16_t calculated_baud = uartclk_hz / ((osr+1)*sbr);
+	static const uint32_t uartclk_hz = CORE_CLOCK/2;
+	static const uint32_t baud_rate = 115200U;
+	static const uint32_t osr = 3U;
+	static const uint16_t sbr = 52U;
+	uint32_t calculated_baud = uartclk_hz / ((osr+1)*sbr);
 	
 	int32_t difference = (calculated_baud - baud_rate);
 	if (calculated_baud < baud_rate)
@@ -87,24 +90,19 @@ void setup_uart0()
 	// with SBR (modulo divisor): CLK / ((OSR+1)*SBR) = 125000
 	
 	/* configure the uart */
-	UART0->BDH &= ~(UART0_BDH_SBR_MASK); 
-	UART0->BDL &= ~(UART0_BDL_SBR_MASK);
-	
-	UART0->BDH = 0 << UART_BDH_LBKDIE_SHIFT /* disable line break detect interrupt */
-				| 0 << UART_BDH_RXEDGIE_SHIFT /* disable RX input active edge interrupt */
-				| 0 << UART_BDH_SBNS_SHIFT /* use one stop bit */
+	UART0->BDH =  (0 << UART_BDH_LBKDIE_SHIFT) /* disable line break detect interrupt */
+				| (0 << UART_BDH_RXEDGIE_SHIFT) /* disable RX input active edge interrupt */
+				| (0 << UART_BDH_SBNS_SHIFT) /* use one stop bit */
 				| UART_BDH_SBR((sbr & 0x1F00) >> 8); /* set high bits of scaler */
 	UART0->BDL = UART_BDL_SBR(sbr & 0x00FF) ; /* set low bits of scaler */
 	
 	/* set oversampling ratio */
+	UART0->C4 &= ~UART0_C4_OSR_MASK;
 	UART0->C4 |= UART0_C4_OSR(osr);
 	
 	/* set oversampling ratio since oversampling is between 4 and 7 
 	 * and is optional for higher oversampling ratios */
-	if (osr >= 4)
-	{
-		UART0->C5 |= UART0_C5_BOTHEDGE_MASK;
-	}
+	UART0->C5 |= UART0_C5_BOTHEDGE_MASK;
 	
 	/* keep default settings for parity and loopback */
 	UART0->C1 = 0;
@@ -125,11 +123,9 @@ void setup_uart0()
 	
 	// send data
 	UART0->D = 0xA;
-	__NOP();
-	UART0->D = 0xA;
 	
 	// wait for TX register to become empty
-	for (;;) {
+	for (int i=3000; i>0; --i) {
 		int tx_register_full = (UART0_S1 & UART0_S1_TDRE_MASK) == 0;
 		if (!tx_register_full) break;
 	}
