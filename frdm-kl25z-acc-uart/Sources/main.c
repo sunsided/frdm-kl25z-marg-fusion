@@ -48,15 +48,17 @@ int main(void)
 	GPIOB->PSOR = 1<<19;
 	GPIOD->PCOR = 1<<1;
 	
+	/*
 	uint8_t c = 'a';
 	while (1)
-	{
+	{	
 		while(!(UART0_S1&UART_S1_TDRE_MASK) && !(UART0_S1&UART_S1_TC_MASK));
 		UART0->D = c;
 		
 		while(!(UART0_S1&UART_S1_RDRF_MASK));
 		c = UART0->D;
 	}
+	*/
 
 	// blue off
 	GPIOB->PSOR = 1<<18;
