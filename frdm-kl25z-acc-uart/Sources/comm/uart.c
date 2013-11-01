@@ -11,10 +11,11 @@
 #include "ARMCM0plus.h"
 #include "derivative.h" /* include peripheral declarations */
 #include "bme.h"
-#include "nice_names.h"
 
-#include "buffer.h"
-#include "uart.h"
+#include "comm/buffer.h"
+#include "comm/uart.h"
+
+#include "nice_names.h"
 
 buffer_t* uartReadFifo = 0; /*< the read buffer, initialized by Uart0_InitializeIrq() */
 buffer_t* uartWriteFifo = 0; /*< the write buffer, initialized by Uart0_InitializeIrq() */

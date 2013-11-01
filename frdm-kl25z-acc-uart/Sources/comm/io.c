@@ -7,10 +7,10 @@
 
 #include "ARMCM0plus.h"
 #include "derivative.h" /* include peripheral declarations */
-#include "nice_names.h"
+#include "comm/buffer.h"
+#include "comm/uart.h"
 
-#include "buffer.h"
-#include "uart.h"
+#include "nice_names.h"
 
 extern buffer_t* uartReadFifo; /*< the read buffer, initialized by Uart0_InitializeIrq() */
 extern buffer_t* uartWriteFifo; /*< the write buffer, initialized by Uart0_InitializeIrq() */
@@ -94,7 +94,25 @@ void IO_SendString(const char *string, uint8_t length)
 	for (uint8_t i=0; i<length; ++i)
 	{
 		RingBuffer_BlockWhileFull(uartWriteFifo);
-		RingBuffer_Write(uartWriteFifo, string[i]); /* TODO: RingBuffer_WriteBlocking() */
+		RingBuffer_Write(uartWriteFifo, string[i]);
+	}
+	
+	/* enable transmit IRQ */
+	Uart0_EnableTransmitIrq();
+}
+
+/**
+ * @brief Sends a zero-terminated string
+ * @param[in] string The string to send
+ */
+void IO_SendZString(const char *string)
+{
+	/* enqueue the bytes */
+	register uint8_t i=0;
+	for (char c=string[0]; (c=string[i]) != 0; ++i)
+	{
+		RingBuffer_BlockWhileFull(uartWriteFifo);
+		RingBuffer_Write(uartWriteFifo, c);
 	}
 	
 	/* enable transmit IRQ */

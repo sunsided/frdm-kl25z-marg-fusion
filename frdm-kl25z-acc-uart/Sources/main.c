@@ -13,6 +13,9 @@
 #include "comm/buffer.h"
 #include "comm/io.h"
 
+#include "i2c/i2c.h"
+#include "inertial/mma8451q.h"
+
 #include "nice_names.h"
 
 void setup_gpios_for_led()
@@ -51,6 +54,7 @@ int main(void)
 	
 	setup_gpios_for_led();
 	
+	InitI2C();
 	InitUart0();
 
 	/* initialize UART fifos */
@@ -61,12 +65,17 @@ int main(void)
 	Uart0_InitializeIrq(&uartInputFifo, &uartOutputFifo);
 	Uart0_EnableReceiveIrq();
 		
-	/* turn off LEDs; they are low active */
-	GPIOB->PCOR  = 1<<18; /* clear output to light red LED */
-	GPIOB->PSOR  = 1<<19; /* set output to clear green LED */
-	GPIOD->PSOR  = 1<<1; /* set output to clear blue LED */
+	/* turn off LEDs; they are low active, so clearing is enabling */
+	GPIOB->PSOR  = 1<<18;
+	GPIOB->PSOR  = 1<<19;
+	GPIOD->PCOR  = 1<<1;
 
-	IO_SendString("Oh my.", 6);
+	IO_SendZString("Accelerometer id:\0");
+		
+	uint8_t accelerometer = I2C_ReadRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_WHOAMI);
+	IO_SendByte(accelerometer);
+	
+	IO_SendZString("\r\n\0");
 	
 	for(;;) 
 	{

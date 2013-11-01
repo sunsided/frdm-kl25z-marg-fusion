@@ -47,6 +47,12 @@ void IO_SendInt32(uint32_t value);
 void IO_SendString(const char *string, uint8_t length);
 
 /**
+ * @brief Sends a zero-terminated string
+ * @param[in] string The string to send
+ */
+void IO_SendZString(const char *string);
+
+/**
  * @brief Sends a buffer
  * @param[in] string The data to send
  * @param[in] length The data length
