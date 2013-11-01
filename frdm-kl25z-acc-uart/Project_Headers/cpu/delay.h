@@ -22,6 +22,7 @@ void delay_ms(const uint16_t ms)
 {
 	const uint32_t start_ticks = SystemMilliseconds;
 	do {
+		__DSB();
 		__WFI();
 	} while((SystemMilliseconds - start_ticks) < ms);
 }
