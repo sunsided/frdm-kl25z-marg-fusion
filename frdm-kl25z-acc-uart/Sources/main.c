@@ -10,6 +10,8 @@
 #include "cpu/systick.h"
 #include "cpu/delay.h"
 #include "comm/uart.h"
+#include "comm/buffer.h"
+
 #include "nice_names.h"
 
 void setup_gpios_for_led()
@@ -43,6 +45,25 @@ int main(void)
 	
 	InitUart0();
 
+	buffer_t fifo;
+	uint8_t data[8] = {0,0,0,0,0,0,0,0};
+	
+	RingBuffer_Init(&fifo, &data, 8);
+	uint8_t empty = RingBuffer_Empty(&fifo);
+	RingBuffer_Write(&fifo, 1);
+	uint8_t count = RingBuffer_Count(&fifo);
+	RingBuffer_Write(&fifo, 2);
+	count = RingBuffer_Count(&fifo);
+	RingBuffer_Write(&fifo, 3);
+	RingBuffer_Write(&fifo, 4);
+	RingBuffer_Write(&fifo, 5);
+	RingBuffer_Write(&fifo, 6);
+	RingBuffer_Write(&fifo, 7);
+	RingBuffer_Write(&fifo, 8);
+	count = RingBuffer_Count(&fifo);
+	RingBuffer_Write(&fifo, 8);
+	count = RingBuffer_Count(&fifo);
+	
 	// blue on
 	GPIOB->PSOR = 1<<18;
 	GPIOB->PSOR = 1<<19;
