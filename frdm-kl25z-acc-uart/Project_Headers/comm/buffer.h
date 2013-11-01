@@ -96,4 +96,28 @@ __STATIC_INLINE const uint8_t RingBuffer_Full(buffer_t *buffer)
 	return RingBuffer_Count(buffer) >= buffer->size;
 }
 
+/**
+ * @brief Blocks until the ring buffer contains data 
+ * @param[in] buffer The ring buffer instance
+  */
+__STATIC_INLINE void RingBuffer_BlockWhileEmpty(buffer_t *buffer)
+{
+	while(RingBuffer_Empty(buffer)) 
+	{
+		__WFI();
+	}
+}
+
+/**
+ * @brief Blocks while the ring buffer is full 
+ * @param[in] buffer The ring buffer instance
+  */
+__STATIC_INLINE void RingBuffer_BlockWhileFull(buffer_t *buffer)
+{
+	while(RingBuffer_Full(buffer)) 
+	{
+		__WFI();
+	}
+}
+
 #endif /* BUFFER_H_ */

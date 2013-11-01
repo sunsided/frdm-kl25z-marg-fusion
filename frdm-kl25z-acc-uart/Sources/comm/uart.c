@@ -16,8 +16,8 @@
 #include "buffer.h"
 #include "uart.h"
 
-static buffer_t* uartReadFifo = 0; /*< the read buffer, initialized by Uart0_InitializeIrq() */
-static buffer_t* uartWriteFifo = 0; /*< the write buffer, initialized by Uart0_InitializeIrq() */
+buffer_t* uartReadFifo = 0; /*< the read buffer, initialized by Uart0_InitializeIrq() */
+buffer_t* uartWriteFifo = 0; /*< the write buffer, initialized by Uart0_InitializeIrq() */
 
 /*
  * @brief Sets up the UART0 for 115.2 kbaud on PTA1/RX, PTA2/TX using PLL/2 clocking.

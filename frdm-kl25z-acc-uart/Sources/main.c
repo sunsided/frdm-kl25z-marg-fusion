@@ -11,6 +11,7 @@
 #include "cpu/delay.h"
 #include "comm/uart.h"
 #include "comm/buffer.h"
+#include "comm/io.h"
 
 #include "nice_names.h"
 
@@ -65,6 +66,8 @@ int main(void)
 	GPIOB->PSOR  = 1<<19; /* set output to clear green LED */
 	GPIOD->PSOR  = 1<<1; /* set output to clear blue LED */
 
+	IO_SendString("Oh my.", 6);
+	
 	for(;;) 
 	{
 		/* lights off */
@@ -82,13 +85,10 @@ int main(void)
 			GPIOD->PSOR = 1<<1;
 			
 			/* fetch byte */
-			uint8_t data = RingBuffer_Read(&uartInputFifo);
+			uint8_t data = IO_ReadByte();
 			
 			/* echo to output */
-			RingBuffer_Write(&uartOutputFifo, data);
-			
-			/* enable transmit IRQ */
-			Uart0_EnableTransmitIrq();
+			IO_SendByte(data);
 		}
 	}
 	
