@@ -36,6 +36,13 @@ void setup_gpios_for_led()
 	GPIOD->PSOR  = 1<<1;  // set output to clear blue LED
 }
 
+#define UART_RX_BUFFER_SIZE	(32)
+#define UART_TX_BUFFER_SIZE	(32)
+uint8_t uartInputData[UART_RX_BUFFER_SIZE], 
+		uartOutputData[UART_TX_BUFFER_SIZE];
+buffer_t uartInputFifo, 
+		uartOutputFifo;
+
 int main(void)
 {
 	InitClock();
@@ -45,84 +52,44 @@ int main(void)
 	
 	InitUart0();
 
-	buffer_t fifo;
-	uint8_t data[8] = {0,0,0,0,0,0,0,0};
+	/* initialize UART fifos */
+	RingBuffer_Init(&uartInputFifo, &uartInputData, UART_RX_BUFFER_SIZE);
+	RingBuffer_Init(&uartOutputFifo, &uartOutputData, UART_TX_BUFFER_SIZE);
 	
-	RingBuffer_Init(&fifo, &data, 8);
-	uint8_t empty = RingBuffer_Empty(&fifo);
-	RingBuffer_Write(&fifo, 1);
-	uint8_t count = RingBuffer_Count(&fifo);
-	RingBuffer_Write(&fifo, 2);
-	count = RingBuffer_Count(&fifo);
-	RingBuffer_Write(&fifo, 3);
-	RingBuffer_Write(&fifo, 4);
-	RingBuffer_Write(&fifo, 5);
-	RingBuffer_Write(&fifo, 6);
-	RingBuffer_Write(&fifo, 7);
-	RingBuffer_Write(&fifo, 8);
-	count = RingBuffer_Count(&fifo);
-	RingBuffer_Write(&fifo, 8);
-	count = RingBuffer_Count(&fifo);
-	
-	// blue on
-	GPIOB->PSOR = 1<<18;
-	GPIOB->PSOR = 1<<19;
-	GPIOD->PCOR = 1<<1;
-	
-	/*
-	uint8_t c = 'a';
-	while (1)
-	{	
-		while(!(UART0_S1&UART_S1_TDRE_MASK) && !(UART0_S1&UART_S1_TC_MASK));
-		UART0->D = c;
+	/* initialize UART0 interrupts */
+	Uart0_InitializeIrq(&uartInputFifo, &uartOutputFifo);
+	Uart0_EnableReceiveIrq();
 		
-		while(!(UART0_S1&UART_S1_RDRF_MASK));
-		c = UART0->D;
-	}
-	*/
+	/* turn off LEDs; they are low active */
+	GPIOB->PCOR  = 1<<18; /* clear output to light red LED */
+	GPIOB->PSOR  = 1<<19; /* set output to clear green LED */
+	GPIOD->PSOR  = 1<<1; /* set output to clear blue LED */
 
-	// blue off
-	GPIOB->PSOR = 1<<18;
-	GPIOB->PSOR = 1<<19;
-	GPIOD->PSOR = 1<<1;
-	
-	// LEDs are low active
-	GPIOB->PCOR  = 1<<18; // clear output to light red LED
-	GPIOB->PSOR  = 1<<19; // set output to clear green LED
-	GPIOD->PSOR  = 1<<1; // set output to clear blue LED
-
-	// Toggle the LEDs
 	for(;;) 
 	{
-		// red
-		GPIOB->PCOR = 1<<18;
-		GPIOB->PSOR = 1<<19;
-		GPIOD->PSOR = 1<<1;
-		delay_ms(1500);
-		
-		// yellow
-		GPIOB->PCOR = 1<<18;
-		GPIOB->PCOR = 1<<19;
-		GPIOD->PSOR = 1<<1;
-		delay_ms(1500);
-		
-		// green
-		GPIOB->PSOR = 1<<18;
-		GPIOB->PCOR = 1<<19;
-		GPIOD->PSOR = 1<<1;
-		delay_ms(1500);
-		
-		// all
+		/* lights off */
 		GPIOB->PSOR = 1<<18;
 		GPIOB->PSOR = 1<<19;
 		GPIOD->PSOR = 1<<1;
-		delay_ms(10000);
+		delay_ms(10); /* TODO: should be __WFI() really, no need to loop */
 		
-		// blue
-		GPIOB->PSOR = 1<<18;
-		GPIOB->PSOR = 1<<19;
-		GPIOD->PCOR = 1<<1;
-		delay_ms(2000);
+		/* as long as there is data in the buffer */
+		while(!RingBuffer_Empty(&uartInputFifo))
+		{
+			// green
+			GPIOB->PSOR = 1<<18;
+			GPIOB->PCOR = 1<<19;
+			GPIOD->PSOR = 1<<1;
+			
+			/* fetch byte */
+			uint8_t data = RingBuffer_Read(&uartInputFifo);
+			
+			/* echo to output */
+			RingBuffer_Write(&uartOutputFifo, data);
+			
+			/* enable transmit IRQ */
+			Uart0_EnableTransmitIrq();
+		}
 	}
 	
 	return 0;

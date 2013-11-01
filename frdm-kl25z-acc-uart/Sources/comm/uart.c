@@ -13,8 +13,15 @@
 #include "bme.h"
 #include "nice_names.h"
 
+#include "buffer.h"
 #include "uart.h"
 
+static buffer_t* uartReadFifo = 0; /*< the read buffer, initialized by Uart0_InitializeIrq() */
+static buffer_t* uartWriteFifo = 0; /*< the write buffer, initialized by Uart0_InitializeIrq() */
+
+/*
+ * @brief Sets up the UART0 for 115.2 kbaud on PTA1/RX, PTA2/TX using PLL/2 clocking.
+ */
 void InitUart0()
 {
 	/*
@@ -48,9 +55,9 @@ void InitUart0()
 	
 	/* set pins to uart0 rx/tx */
 	/* not using |= assignment here due to some of the flags being undefined at reset */
-	PORTA->PCR[1] = PORT_PCR_MUX(2);	/* alternative 2: RX */
-	PORTA->PCR[2] = PORT_PCR_DSE_MASK | PORT_PCR_MUX(2);	/* alternative 2: TX */
-		
+	PORTA->PCR[1] = PORT_PCR_ISF_MASK | PORT_PCR_MUX(2);	/* alternative 2: RX */
+	PORTA->PCR[2] = PORT_PCR_ISF_MASK | PORT_PCR_MUX(2);	/* alternative 2: TX */
+	
 	/* configure the uart */
 	UART0->BDH =  (0 << UART_BDH_LBKDIE_SHIFT) /* disable line break detect interrupt */
 				| (0 << UART_BDH_RXEDGIE_SHIFT) /* disable RX input active edge interrupt */
@@ -85,6 +92,72 @@ void InitUart0()
 	
 	/* enable rx and tx */
 	UART0->C2 |= UART0_C2_TE_MASK | UART0_C2_RE_MASK;
+}
+
+/**
+ * @brief Initializes the interrupt for UART0
+ */
+void Uart0_InitializeIrq(buffer_t* receiveFifo, buffer_t* transmitFifo)
+{
+	/* initialize the structures */
+	uartReadFifo = receiveFifo;
+	uartWriteFifo = transmitFifo;
+	
+	/* disable specific interrupts */
+	Uart0_DisableReceiveIrq();
+	Uart0_DisableTransmitIrq();
+	
+	/* prepare interrupts for UART0 */
+	NVIC_ICPR |= 1 << UART0_IRQ;	/* clear pending flag */
+	NVIC_ISER |= 1 << UART0_IRQ;	/* enable interrupt */
+}
+
+/**
+ * @brief Handles the receiver part of the UART0 IRQ handler
+ */
+static inline void HandleReceiveInterrupt()
+{
+	uint8_t data = UART0->D;
+	RingBuffer_Write(uartReadFifo, data);
+}
+
+/**
+ * @brief Handles the receiver part of the UART0 IRQ handler
+ */
+static inline void HandleTransmitInterrupt()
+{
+	/* if the buffer is not empty, fetch a byte and send it */
+	if (!RingBuffer_Empty(uartWriteFifo))
+	{
+		const uint8_t data = RingBuffer_Read(uartWriteFifo);
+		UART0->D = data;
+	}
+	else
+	{
+		/* since the buffer was empty, disable the TDRE IRQ */
+		Uart0_DisableTransmitIrq();
+	}
+}
+
+/**
+ * @brief IRQ handler for UART0
+ */
+void UART0_IRQHandler()
+{
+	const uint8_t config = UART0->C2;
+	const uint8_t status = UART0->S1;
+	
+	/* handle the receiver full IRQ */
+	if ((config & UART0_C2_RIE_MASK) & (status & UART_S1_RDRF_MASK))
+	{
+		HandleReceiveInterrupt();
+	}
+	
+	/* handle the transmitter empty IRQ */
+	if ((config & UART0_C2_TIE_MASK) & (status & UART_S1_TDRE_MASK))
+	{
+		HandleTransmitInterrupt();
+	}
 }
 
 #endif /* UART_C_ */

@@ -8,6 +8,8 @@
 #ifndef BUFFER_H_
 #define BUFFER_H_
 
+#include "ARMCM0plus.h"
+
 /**
  * @brief Ring buffer type
  */
@@ -25,21 +27,7 @@ typedef struct {
  * @param[in] data The data buffer to be used; Length must be at least a size of two.
  * @param[in] size The data buffer size; Must be a size of two
  */
-static uint8_t RingBuffer_Init(buffer_t *buffer, uint8_t (*data)[], const uint32_t size)
-{
-	// only allow buffers sizes that are a power of two
-	if ((size & (size-1)) != 0) 
-	{
-		return 1;
-	}
-	
-	*(uint8_t**)(&buffer->data) = (uint8_t*)*data;
-	*(uint32_t*)(&buffer->size) = size;
-	*(uint32_t*)(&buffer->mask) = size-1;
-	buffer->writeIndex = buffer->readIndex = 0;
-	
-	return 0;
-}
+uint8_t RingBuffer_Init(buffer_t *buffer, uint8_t (*data)[], const uint32_t size);
 
 /**
  * @brief Resets the ring buffer
@@ -89,7 +77,7 @@ __STATIC_INLINE const uint8_t RingBuffer_Empty(buffer_t *buffer)
 /**
  * @brief Gets the count of unread items in the buffer
  * @param[in] buffer The ring buffer instance
- * @return The item count
+ * @return The item count. This value might be larger than the configured buffer size, indicating that an overflow has happened.
  */
 __STATIC_INLINE const uint32_t RingBuffer_Count(buffer_t *buffer)
 {
