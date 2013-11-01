@@ -15,6 +15,10 @@
 extern buffer_t* uartReadFifo; /*< the read buffer, initialized by Uart0_InitializeIrq() */
 extern buffer_t* uartWriteFifo; /*< the write buffer, initialized by Uart0_InitializeIrq() */
 
+/*
+ * TODO: Add variants with defined endianness by reading the AIRCR.ENDIANNESS bit.
+ */
+
 /**
  * @brief Sends a char without flushing the buffer.
  */
