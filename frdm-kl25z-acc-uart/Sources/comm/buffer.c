@@ -5,6 +5,7 @@
  *      Author: Markus
  */
 
+#include "derivative.h"
 #include "comm/buffer.h"
 
 /**

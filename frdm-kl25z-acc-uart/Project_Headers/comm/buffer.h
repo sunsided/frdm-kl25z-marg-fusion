@@ -9,6 +9,7 @@
 #define BUFFER_H_
 
 #include "ARMCM0plus.h"
+#include "derivative.h"
 
 /**
  * @brief Ring buffer type
