@@ -11,7 +11,7 @@
 /**
  * @brief I2C slave address of the MMA8451Q accelerometer
  */
-#define MMA8451Q_I2CADDR	(0b0011100)
+#define MMA8451Q_I2CADDR	(0b0011101) /* on the FRDM-KL25Z, the SA0 pin of the MMA8451Q is pulled high */
 
 /**
  * @brief WHO_A_I register for device identification

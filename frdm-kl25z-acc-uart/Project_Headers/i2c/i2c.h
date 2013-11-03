@@ -10,6 +10,9 @@
 
 #include "derivative.h"
 
+#define I2C_READ_ADDRESS(slaveAddress) 		((uint8_t)((slaveAddress << 1) | 1))
+#define I2C_WRITE_ADDRESS(slaveAddress) 	((uint8_t)((slaveAddress << 1) | 0))
+
 /**
  * @brief Initializes the SPI interface
  */

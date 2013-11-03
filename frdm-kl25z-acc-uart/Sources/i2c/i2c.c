@@ -11,7 +11,7 @@
 #include "i2c/i2c.h"
 
 /**
- * @brief Initializes the I2C interface
+ * @brief Initialises the I2C interface
  */
 void InitI2C()
 {
@@ -71,21 +71,21 @@ static inline void I2C_SendBlocking(const uint8_t value)
  */
 uint8_t I2C_ReadRegister(uint8_t slaveId, uint8_t registerAddress)
 {
-	/* for read accesses, last bit is zero */
-	slaveId <<= 1;
-	
 	/* send I2C start signal and set write direction*/
 	I2C0->C1 |= ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
 			  | ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
 	
 	/* send the slave address and wait for the I2C bus operation to complete */
-	I2C_SendBlocking(slaveId);
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(slaveId)); /* TODO: why are we even entering TX mode if we are sending the write ID? */
 	
 	/* send the register address */
 	I2C_SendBlocking(registerAddress);
 	
 	/* signal a repeated start condition */
 	I2C0->C1 |= (1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK;
+
+	/* send the read address */
+	I2C_SendBlocking(I2C_READ_ADDRESS(slaveId)); /* TODO: why are we even entering TX mode if we are sending the read ID? */
 	
 	/* switch to receive mode */
 	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
@@ -100,7 +100,7 @@ uint8_t I2C_ReadRegister(uint8_t slaveId, uint8_t registerAddress)
 	 * by clearing master mode.
 	 */
 	I2C_Wait();
-	I2C0_C1 &= ~((1 << I2C_C1_MST_MASK) & I2C_C1_MST_MASK)
+	I2C0->C1 &= ~((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK)
 			 | ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK); /* this shouldn't be necessary */
 
 	/* fetch the received byte */
