@@ -40,8 +40,8 @@ void InitI2C()
 	 * SCL divider (+/- 4). However the data sheet does not state anything
 	 * useful about that.
 	 */
-	I2C0->F = I2C_F_MULT(0x01) | I2C_F_ICR(0x05);
-	/*I2C0->F = I2C_F_MULT(0x00) | I2C_F_ICR(0x12);*/
+	/*I2C0->F = I2C_F_MULT(0x01) | I2C_F_ICR(0x05);*/
+	I2C0->F = I2C_F_MULT(0x00) | I2C_F_ICR(0x12);
 	
 	/* enable the I2C module */
 	I2C0->C1 = (1 << I2C_C1_IICEN_SHIFT) & I2C_C1_IICEN_MASK;
