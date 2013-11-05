@@ -11,6 +11,7 @@
 #define SIM 	SIM_BASE_PTR
 #define PORTA	PORTA_BASE_PTR
 #define PORTB	PORTB_BASE_PTR
+#define PORTC	PORTC_BASE_PTR
 #define PORTD	PORTD_BASE_PTR
 #define PORTE	PORTE_BASE_PTR
 #define GPIOB	FPTB_BASE_PTR /* fast GPIO using core IOPORT mapped registers */

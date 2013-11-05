@@ -53,10 +53,15 @@ int main(void)
 	InitSysTick();
 	
 	setup_gpios_for_led();
-	
+
 	InitI2C();
 	InitUart0();
 
+	/* setting PTC8/9 to I2C0 for wire sniffing */
+	SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK; /* clock to gate C */
+	PORTC->PCR[8] = PORT_PCR_MUX(2) | ((1 << PORT_PCR_PE_SHIFT) & PORT_PCR_PE_MASK); /* SCL: alternative 2 with pull-up enabled */
+	PORTC->PCR[9] = PORT_PCR_MUX(2) | ((1 << PORT_PCR_PE_SHIFT) & PORT_PCR_PE_MASK); /* SDA_ alternative 2 with pull-up enabled */
+	
 	/* initialize UART fifos */
 	RingBuffer_Init(&uartInputFifo, &uartInputData, UART_RX_BUFFER_SIZE);
 	RingBuffer_Init(&uartOutputFifo, &uartOutputData, UART_TX_BUFFER_SIZE);
@@ -69,10 +74,14 @@ int main(void)
 	GPIOB->PSOR  = 1<<18;
 	GPIOB->PSOR  = 1<<19;
 	GPIOD->PCOR  = 1<<1;
-
-	IO_SendZString("Accelerometer id:\0");
+	
+	IO_SendZString("MMQ8451Q\0");
 		
 	uint8_t accelerometer = MMA8451Q_WhoAmI();
+	IO_SendByte(accelerometer);
+	
+	MMA8451Q_SetDefaultActiveMode();
+	accelerometer = MMA8451Q_SystemMode();
 	IO_SendByte(accelerometer);
 	
 	IO_SendZString("\r\n\0");

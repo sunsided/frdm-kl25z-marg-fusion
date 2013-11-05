@@ -5,10 +5,13 @@
  *      Author: Markus
  */
 
+#include "ARMCM0plus.h"
 #include "derivative.h"
 #include "nice_names.h"
 
 #include "i2c/i2c.h"
+
+#define ENABLE_SPEEDHACK 	(0)
 
 /**
  * @brief Initialises the I2C interface
@@ -40,8 +43,11 @@ void InitI2C()
 	 * SCL divider (+/- 4). However the data sheet does not state anything
 	 * useful about that.
 	 */
-	I2C0->F = I2C_F_MULT(0x01) | I2C_F_ICR(0x05); /* NOTE: According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). */
-	/*I2C0->F = I2C_F_MULT(0x00) | I2C_F_ICR(0x12);*/ /* divide by 64 instead, so 375 kHz */
+#if ENABLE_SPEEDHACK
+	/*I2C0->F = I2C_F_MULT(0x01) | I2C_F_ICR(0x05);*/ /* NOTE: According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). */
+#else
+	I2C0->F = I2C_F_MULT(0x00) | I2C_F_ICR(0x12); /* divide by 64 instead, so 375 kHz */
+#endif
 	
 	/* enable the I2C module */
 	I2C0->C1 = (1 << I2C_C1_IICEN_SHIFT) & I2C_C1_IICEN_MASK;
@@ -54,6 +60,14 @@ static inline void I2C_Wait()
 {
 	while((I2C0->S & I2C_S_IICIF_MASK)==0) {}	/* loop until interrupt is detected */
 	I2C0->S |= I2C_S_IICIF_MASK; /* clear interrupt flag */
+}
+
+/**
+ * @brief Waits for an I2C bus operation to complete
+ */
+static inline void I2C_WaitWhileBusy()
+{
+	while((I2C0->S & I2C_S_BUSY_MASK)==0) {}
 }
 
 /**
@@ -71,9 +85,10 @@ static inline void I2C_SendBlocking(const uint8_t value)
  */
 uint8_t I2C_ReadRegister(uint8_t slaveId, uint8_t registerAddress)
 {
-	/* send I2C start signal and set write direction*/
+	/* send I2C start signal and set write direction, also enables ACK */
 	I2C0->C1 |= ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
 			  | ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+	I2C_WaitWhileBusy();
 	
 	/* send the slave address and wait for the I2C bus operation to complete */
 	I2C_SendBlocking(I2C_WRITE_ADDRESS(slaveId)); /* TODO: why are we even entering TX mode if we are sending the write ID? */
@@ -82,18 +97,23 @@ uint8_t I2C_ReadRegister(uint8_t slaveId, uint8_t registerAddress)
 	I2C_SendBlocking(registerAddress);
 	
 	/* signal a repeated start condition */
+#if ENABLE_SPEEDHACK
 	uint8_t reg = I2C0->F;
 	I2C0->F = reg & ~I2C_F_MULT_MASK; /* NOTE: According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). A solution is to temporarily disable the multiplier. */
+#endif
 	I2C0->C1 |= (1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK;
+#if ENABLE_SPEEDHACK
 	I2C0->F = reg;
+#endif
 
 	/* send the read address */
-	I2C_SendBlocking(I2C_READ_ADDRESS(slaveId)); /* TODO: why are we even entering TX mode if we are sending the read ID? */
+	I2C_SendBlocking(I2C_READ_ADDRESS(slaveId));
 	
 	/* switch to receive mode */
 	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+	//I2C0->C1 &= ~((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
 	
-	/* disable ACK because "this is the second to last byte being read" */
+	/* disable ACK because only one data byte will be read */
 	I2C0->C1 |= (1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK;
 	
 	/* read a dummy byte to drive the clock */
@@ -103,10 +123,43 @@ uint8_t I2C_ReadRegister(uint8_t slaveId, uint8_t registerAddress)
 	 * by clearing master mode.
 	 */
 	I2C_Wait();
-	I2C0->C1 &= ~((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK)
-			 | ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK); /* this shouldn't be necessary */
 
+	/* stop signal */
+	I2C0->C1 &= ~((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK);
+	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+	I2C_WaitWhileBusy();
+	__NOP();
+	
 	/* fetch the received byte */
 	result = I2C0->D;
+	
 	return result;
+}
+
+/**
+ * @brief Reads an 8-bit register from an I2C slave 
+ */
+void I2C_WriteRegister(uint8_t slaveId, uint8_t registerAddress, uint8_t value)
+{
+	/* send I2C start signal and set write direction*/
+	I2C0->C1 |= ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
+			  | ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+	I2C_WaitWhileBusy();
+		
+	/* send the slave address and wait for the I2C bus operation to complete */
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(slaveId));
+	
+	/* send the register address */
+	I2C_SendBlocking(registerAddress);
+		
+	/* send the register address */
+	I2C_SendBlocking(value);
+	
+	/* wait for another cycle, then issue stop signal
+	 * by clearing master mode.
+	 */
+	I2C0->C1 &= ~((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK);
+	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+	I2C_WaitWhileBusy();
+	__NOP();
 }
