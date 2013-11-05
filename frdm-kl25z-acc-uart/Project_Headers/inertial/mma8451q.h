@@ -14,8 +14,9 @@
 #define MMA8451Q_I2CADDR	(0b0011101) /* on the FRDM-KL25Z, the SA0 pin of the MMA8451Q is pulled high */
 
 /**
- * @brief WHO_A_I register for device identification
+ * @brief Reads the WHO_AM_I register from the MMA8451Q.
+ * @return Device identification code; Should be 0b00011010. 
  */
-#define MMA8451Q_REG_WHOAMI	(0x0D)
+uint8_t MMA8451Q_WhoAmI();
 
 #endif /* MMA8451Q_H_ */

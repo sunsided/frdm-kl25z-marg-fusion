@@ -72,7 +72,7 @@ int main(void)
 
 	IO_SendZString("Accelerometer id:\0");
 		
-	uint8_t accelerometer = I2C_ReadRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_WHOAMI);
+	uint8_t accelerometer = MMA8451Q_WhoAmI();
 	IO_SendByte(accelerometer);
 	
 	IO_SendZString("\r\n\0");
