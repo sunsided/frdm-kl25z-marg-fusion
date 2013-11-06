@@ -23,6 +23,20 @@
  */
 #define INTENTIONALLY_UNUSED(type) type __attribute__((unused)) TOKENPASTE(unused, __COUNTER__)
 
+/**
+ * @brief NULL address
+ */
+#ifndef NULL
+#define NULL	(0x0)
+#endif
+
+/**
+ * @brief Assertion
+ */
+#ifndef assert
+#define assert(condition) if (!condition) { while(1) {} }
+#define assert
+
 #define SIM 	SIM_BASE_PTR
 #define PORTA	PORTA_BASE_PTR
 #define PORTB	PORTB_BASE_PTR
