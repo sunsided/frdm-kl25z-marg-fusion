@@ -11,7 +11,11 @@
 
 #include "i2c/i2c.h"
 
-#define ENABLE_SPEEDHACK 	(0)
+/**
+ *  @brief According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). 
+ *  Setting this define to a nonzero value activates the proposed workaround (temporarily disabling the multiplier).
+ */
+#define ENABLE_SPEEDHACK 	(1)
 
 /**
  * @brief Initialises the I2C interface
@@ -44,7 +48,7 @@ void InitI2C()
 	 * useful about that.
 	 */
 #if ENABLE_SPEEDHACK
-	/*I2C0->F = I2C_F_MULT(0x01) | I2C_F_ICR(0x05);*/ /* NOTE: According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). */
+	I2C0->F = I2C_F_MULT(0x01) | I2C_F_ICR(0x05); /* NOTE: According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). */
 #else
 	I2C0->F = I2C_F_MULT(0x00) | I2C_F_ICR(0x12); /* divide by 64 instead, so 375 kHz */
 #endif
