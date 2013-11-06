@@ -11,6 +11,7 @@
 #include "comm/uart.h"
 
 #include "nice_names.h"
+#include "comm/io.h"
 
 extern buffer_t* uartReadFifo; /*< the read buffer, initialized by Uart0_InitializeIrq() */
 extern buffer_t* uartWriteFifo; /*< the write buffer, initialized by Uart0_InitializeIrq() */
@@ -47,7 +48,7 @@ void IO_SendByte(uint8_t value)
  * @brief Sends a 16bit value in native endianness
  * @param[in] value The value to send
  */
-void IO_SendInt16(uint16_t value)
+void IO_SendInt16(int16_t value)
 {
 	/* echo to output */
 	RingBuffer_BlockWhileFull(uartWriteFifo);
@@ -58,6 +59,52 @@ void IO_SendInt16(uint16_t value)
 	
 	/* enable transmit IRQ */
 	Uart0_EnableTransmitIrq();
+}
+
+/**
+ * @brief Sends a 16bit value as string
+ * @param[in] value The value to send
+ * 
+ * Must only be used after initialization of Uart0 interrupt.
+ */
+void IO_SendSInt16AsString(int16_t value)
+{
+	/* if value is negative, print sign and invert */
+	if (value < 0) 
+	{
+		IO_SendByteUncommited('-');
+		value = -value;
+	}
+	
+	/* send as unsigned */
+	IO_SendUInt16AsString((uint16_t)value);
+}
+
+/**
+ * @brief Sends a 16bit value as string
+ * @param[in] value The value to send
+ * 
+ * Must only be used after initialization of Uart0 interrupt.
+ */
+void IO_SendUInt16AsString(uint16_t value)
+{
+	char buf[5]; /* 5 digits */
+	char *p = &buf[0];
+	int8_t digits = 0;
+	
+	/* divide value by 10 until value is 0 */
+	do 
+	{
+		int16_t remainder = value % 10;
+		*p++ = (remainder < 10) ? (remainder + '0') : (remainder + 'a' - 10);
+		++digits;
+	} while (value /= 10);
+	
+	/* dump buffer */
+	do
+	{
+		IO_SendByte(*--p);
+	} while (--digits > 0);
 }
 
 /**

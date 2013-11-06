@@ -27,7 +27,23 @@ void IO_SendByte(uint8_t value);
  * 
  * Must only be used after initialization of Uart0 interrupt.
  */
-void IO_SendInt16(uint16_t value);
+void IO_SendInt16(int16_t value);
+
+/**
+ * @brief Sends a signed 16bit value as string
+ * @param[in] value The value to send
+ * 
+ * Must only be used after initialization of Uart0 interrupt.
+ */
+void IO_SendSInt16AsString(int16_t value);
+
+/**
+ * @brief Sends an unsigned 16bit value as string
+ * @param[in] value The value to send
+ * 
+ * Must only be used after initialization of Uart0 interrupt.
+ */
+void IO_SendUInt16AsString(uint16_t value);
 
 /**
  * @brief Sends a 32bit value in native endianness
