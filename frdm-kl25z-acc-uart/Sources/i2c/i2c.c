@@ -113,11 +113,19 @@ __STATIC_INLINE void I2C_SendRepeatedStart()
 	I2C0->F = reg & ~I2C_F_MULT_MASK; /* NOTE: According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). A solution is to temporarily disable the multiplier. */
 #endif
 	
-	I2C0->C1 |= (1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK;
+	I2C0->C1 |= ((1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK);
 
 #if ENABLE_SPEEDHACK
 	I2C0->F = reg;
 #endif	
+}
+
+/**
+ * @brief Enters receive mode.
+ */
+__STATIC_INLINE void I2C_EnterTransmitMode()
+{
+	I2C0->C1 |= ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK); /* TODO: use BME in all these places */
 }
 
 /**
@@ -184,7 +192,7 @@ __STATIC_INLINE void I2C_ReceiverModeDriveClock()
 /**
  * @brief Reads an 8-bit register from an I2C slave 
  */
-uint8_t I2C_ReadRegister(uint8_t slaveId, uint8_t registerAddress)
+uint8_t I2C_ReadRegister(register uint8_t slaveId, register uint8_t registerAddress)
 {
 	/* loop while the bus is still busy */
 	I2C_WaitWhileBusy();
@@ -289,7 +297,7 @@ static void I2C_ReadRegistersInternal(register uint8_t slaveId, register uint8_t
  * @param[in] registerCount The number of registers to read; Must be larger than zero.
  * @param[out] buffer The buffer to write into
  */
-void I2C_ReadRegisters(uint8_t slaveId, uint8_t startRegisterAddress, uint8_t registerCount, uint8_t *buffer)
+void I2C_ReadRegisters(register uint8_t slaveId, register uint8_t startRegisterAddress, register uint8_t registerCount, register uint8_t *buffer)
 {
 	assert(registerCount > 0);
 	
@@ -308,7 +316,7 @@ void I2C_ReadRegisters(uint8_t slaveId, uint8_t startRegisterAddress, uint8_t re
 /**
  * @brief Reads an 8-bit register from an I2C slave 
  */
-void I2C_WriteRegister(uint8_t slaveId, uint8_t registerAddress, uint8_t value)
+void I2C_WriteRegister(register uint8_t slaveId, register uint8_t registerAddress, register uint8_t value)
 {
 	/* loop while the bus is still busy */
 	I2C_WaitWhileBusy();	
@@ -317,6 +325,56 @@ void I2C_WriteRegister(uint8_t slaveId, uint8_t registerAddress, uint8_t value)
 	I2C_SendStart();
 		
 	/* send the slave address and wait for the I2C bus operation to complete */
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(slaveId));
+	
+	/* send the register address */
+	I2C_SendBlocking(registerAddress);
+		
+	/* send the register address */
+	I2C_SendBlocking(value);
+	
+	/* issue stop signal by clearing master mode. */
+	I2C_SendStop();
+}
+
+/**
+ * @brief Reads an 8-bit register from an I2C slave, modifies it and writes it back
+ * @param[in] slaveId The slave id
+ * @param[in] registerAddress The register to modify
+ * @param[in] orMask The mask to OR the register with
+ * @param[in] andMask The mask to AND the register with
+ * @return The register after modification
+ */
+uint8_t I2C_ModifyRegister(register uint8_t slaveId, register uint8_t registerAddress, register uint8_t orMask, register uint8_t andMask)
+{
+	/* loop while the bus is still busy */
+	I2C_WaitWhileBusy();
+
+	/* send the slave address and register */
+	I2C_SendStart();
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(slaveId));
+	I2C_SendBlocking(registerAddress);
+	
+	/* signal a repeated start condition */
+	I2C_SendRepeatedStart();
+	I2C_SendBlocking(I2C_READ_ADDRESS(slaveId));
+	
+	/* switch to receive mode but disable ACK because only one data byte will be read */
+	I2C_EnterReceiveModeWithoutAck();
+	I2C_ReceiverModeDriveClock();
+	
+	/* instead of a stop signal, send repeated start again */
+	I2C_SendRepeatedStart();
+	
+	/* fetch the last received byte */
+	register uint8_t value = I2C0->D;
+	
+	/* modify the register */
+	value |= orMask;
+	value &= andMask;
+
+	/* send the slave address and wait for the I2C bus operation to complete */
+	I2C_EnterTransmitMode();
 	I2C_SendBlocking(I2C_WRITE_ADDRESS(slaveId));
 	
 	/* send the register address */
