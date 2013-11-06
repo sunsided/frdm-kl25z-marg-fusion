@@ -26,6 +26,16 @@ void InitI2C();
  */
 uint8_t I2C_ReadRegister(uint8_t slaveId, uint8_t registerAddress);
 
+
+/**
+ * @brief Reads multiple 8-bit registers from an I2C slave
+ * @param[in] slaveId The slave device ID
+ * @param[in] startRegisterAddress The first register address
+ * @param[in] registerCount The number of registers to read; Must be larger than zero.
+ * @param[out] buffere The buffer to write into
+ */
+void I2C_ReadRegisters(uint8_t slaveId, uint8_t startRegisterAddress, uint8_t registerCount, uint8_t *buffer);
+
 /**
  * @brief Writes an 8-bit value to an 8-bit register on an I2C slave
  * @param[in] slaveId The device's I2C slave id
