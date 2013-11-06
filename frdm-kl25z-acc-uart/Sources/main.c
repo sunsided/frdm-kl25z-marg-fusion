@@ -77,32 +77,25 @@ int main(void)
 	
 	IO_SendZString("MMA8451Q\0");
 		
+	/*
 	uint8_t accelerometer = MMA8451Q_WhoAmI();
 	IO_SendByte(accelerometer);
+	*/
 	
 	MMA8451Q_SetDefaultActiveMode();
 	
+	/*
 	accelerometer = MMA8451Q_SystemMode();
 	IO_SendByte(accelerometer);
 	
 	accelerometer = MMA8451Q_Status();
 	IO_SendByte(accelerometer);
-	
-	uint8_t buffer[7] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-	mma8451q_acc_t a, b;
-	MMA8451Q_InitializeData(&a);
-	MMA8451Q_InitializeData(&b);
-	
-	I2C_ReadRegisters(MMA8451Q_I2CADDR, MMA8451Q_REG_STATUS, 7, buffer);
-
-	MMA8451Q_ReadAcceleration14bitNoFifo(&a);
-	MMA8451Q_ReadAcceleration14bitNoFifo(&b);
+	*/
 
 	IO_SendZString("\r\n\0");
-	
-	IO_SendSInt16AsString(-12345);
-	IO_SendByte(' ');
-	IO_SendUInt16AsString(10435);
+
+	mma8451q_acc_t acc;
+	MMA8451Q_InitializeData(&acc);
 	
 	for(;;) 
 	{
@@ -125,6 +118,18 @@ int main(void)
 			
 			/* echo to output */
 			IO_SendByte(data);
+		}
+		
+		/* read accelerometer */
+		MMA8451Q_ReadAcceleration14bitNoFifo(&acc);
+		if (acc.status != 0) 
+		{
+			IO_SendSInt16AsString(acc.x);
+			IO_SendByteUncommited(',');
+			IO_SendSInt16AsString(acc.y);
+			IO_SendByteUncommited(',');
+			IO_SendSInt16AsString(acc.z);
+			IO_SendZString("\r\n\0");
 		}
 	}
 	
