@@ -146,7 +146,7 @@ static inline void I2C_EnterReceiveModeWithoutAck()
  */
 static inline void I2C_ReceiverModeDriveClock()
 {
-	uint8_t ignored = I2C0->D;
+	INTENTIONALLY_UNUSED(register uint8_t) = I2C0->D;
 	I2C_Wait();
 }
 

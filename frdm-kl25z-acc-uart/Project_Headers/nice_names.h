@@ -8,6 +8,21 @@
 #ifndef NICE_NAMES_H_
 #define NICE_NAMES_H_
 
+/**
+ * @brief Helper macro for {@see TOKENPASTE(a,b)} to merge token
+ */
+#define TOKENPASTE_HELPER(x, y) x ## y
+
+/**
+ * @brief Merges two tokens, expanding any macros 
+ */
+#define TOKENPASTE(x, y) TOKENPASTE_HELPER(x, y)
+
+/**
+ * @brief Macro to mark variables that are unused by intention
+ */
+#define INTENTIONALLY_UNUSED(type) type __attribute__((unused)) TOKENPASTE(unused, __COUNTER__)
+
 #define SIM 	SIM_BASE_PTR
 #define PORTA	PORTA_BASE_PTR
 #define PORTB	PORTB_BASE_PTR
