@@ -31,6 +31,10 @@
 #define MMA8451Q_REG_WHOAMI				(0x0D)	/*< WHO_AM_I register for device identification */
 #define MMA8451Q_REG_XZY_DATA_CFG		(0x0E)	/*< XYZ_DATA_CFG sensitivity configuration */
 #define MMA8451Q_REG_CTRL_REG1			(0x2A)	/*< CTRL_REG1 System Control 1 Register */
+#define MMA8451Q_REG_CTRL_REG2			(0x2B)	/*< CTRL_REG2 System Control 2 Register */
+#define MMA8451Q_REG_CTRL_REG3			(0x2B)	/*< CTRL_REG2 System Control 3 Register */
+#define MMA8451Q_REG_CTRL_REG4			(0x2B)	/*< CTRL_REG2 System Control 4 Register */
+#define MMA8451Q_REG_CTRL_REG5			(0x2B)	/*< CTRL_REG2 System Control 5 Register */
 
 /**
  * @brief Sensitivity configuration
@@ -70,6 +74,55 @@ typedef enum {
 	MMA8451Q_LOWNOISE_DISABLED	= (0b0),	/*< Reduced noise/reduced maximum range disabled */
 	MMA8451Q_LOWNOISE_ENABLED	= (0b1)		/*< Reduced noise/reduced maximum range enabled */
 } mma8451q_lownoise_t;
+
+/**
+ * @brief Oversampling mode
+ */
+typedef enum {
+	MMA8451Q_OVERSAMPLING_NORMAL			= (0b00),		/*< Normal */
+	MMA8451Q_OVERSAMPLING_LOWNOISELOWPOWER	= (0b01),		/*< Low Noise Low Power */
+	MMA8451Q_OVERSAMPLING_HIGHRESOLUTION	= (0b10),		/*< High Resolution */
+	MMA8451Q_OVERSAMPLING_LOWPOWER			= (0b11),		/*< Low Power */
+} mma8451q_oversampling_t;
+
+/**
+ * @brief Interrupt pad mode
+ */
+typedef enum {
+	MMA8451Q_INTMODE_PUSHPULL	= (0b0),	/*< Push/Pull mode */
+	MMA8451Q_INTMODE_OPENDRAIN	= (0b1)		/*< Open Drain mode */
+} mma8451q_intmode_t;
+
+/**
+ * @brief Interrupt polarity
+ */
+typedef enum {
+	MMA8451Q_INTPOL_ACTIVELOW	= (0b0),	/*< active low interrupt */
+	MMA8451Q_INTPOL_ACTIVEHIGH	= (0b1)		/*< active high interrupt */
+} mma8451q_intpol_t;
+
+/**
+ * @brief Interrupt type
+ */
+typedef enum {
+	MMA8451Q_INT_DRDY	= (0x0),	/*< Data Ready */
+	MMA8451Q_INT_FFMT	= (0x2),	/*< Freefall/Motion */
+	MMA8451Q_INT_PULSE	= (0x3),	/*< Pulse Detection */
+	MMA8451Q_INT_LNDPRT	= (0x4),	/*< Landscape/Portrait */
+	MMA8451Q_INT_TRANS	= (0x5),	/*< Transient */
+	MMA8451Q_INT_FIFO	= (0x6),	/*< FIFO watermark */
+	MMA8451Q_INT_ASLP	= (0x7)		/*< Auto-Sleep/Wake */
+} mma8451q_interrupt_t;
+
+
+/**
+ * @brief Interrupt pin routing
+ */
+typedef enum {
+	MMA8451Q_INTPIN_INT1	= (0b1),	/*< interrupt routed to INT1 */
+	MMA8451Q_INTPIN_INT2	= (0b0)		/*< interrupt routed to INT2 */
+} mma8451q_intpin_t;
+
 
 /**
  * @brief Accelerometer data
@@ -157,5 +210,30 @@ static inline uint8_t MMA8451Q_WhoAmI()
  * @param[in] highpassEnabled Set to 1 to enable the high pass filter or to 0 otherwise (default)
  */
 void MMA8451Q_SetSensitivity(register mma8451q_sensitivity_t sensitivity, register mma8451q_hpo_t highpassEnabled);
+
+/**
+ * @brief Enables or disables interrupts
+ * @param[in] mode The mode
+ * @param[in] polarity The polarity
+ */
+void MMA8451Q_SetInterruptMode(register mma8451q_intmode_t mode, register mma8451q_intpol_t polarity);
+
+/**
+ * @brief Enables or disables specific interrupts
+ * @param[in] irq The interrupt
+ * @param[in] pin The pin
+ */
+void MMA8451Q_ConfigureInterrupt(register mma8451q_interrupt_t irq, register mma8451q_intpin_t pin);
+
+/**
+ * @brief Clears the interrupt configuration
+ */
+void MMA8451Q_ClearInterruptConfiguration();
+
+/**
+ * @brief Configures the oversampling modes
+ * @param[in] oversampling The oversampling mode
+ */
+void MMA8451Q_SetOversampling(register mma8451q_oversampling_t oversampling);
 
 #endif /* MMA8451Q_H_ */

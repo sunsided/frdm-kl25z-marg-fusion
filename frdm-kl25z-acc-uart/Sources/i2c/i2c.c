@@ -385,6 +385,7 @@ uint8_t I2C_ModifyRegister(register uint8_t slaveId, register uint8_t registerAd
 	
 	/* issue stop signal by clearing master mode. */
 	I2C_SendStop();
+	return value;
 }
 
 /**
