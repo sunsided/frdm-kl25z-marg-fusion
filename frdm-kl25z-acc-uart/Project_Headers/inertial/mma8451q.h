@@ -89,12 +89,19 @@ static inline uint8_t MMA8451Q_LandscapePortraitConfig()
 }
 
 /**
- * @brief Reads the SYSMOD register from the MMA8451Q.
- * @return Current system mode. 
+ * @brief Brings the MMA8451Q into passive mode
  */
-static inline void MMA8451Q_SetDefaultActiveMode()
+static inline void MMA8451Q_EnterPassiveMode()
 {
-	I2C_WriteRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG1, 0b00000001);
+	I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG1, I2C_MOD_NO_OR_MASK, ~0b00000001);
+}
+
+/**
+ * @brief Brings the MMA8451Q into active mode
+ */
+static inline void MMA8451Q_EnterActiveMode()
+{
+	I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG1, 0b00000001, I2C_MOD_NO_AND_MASK);
 }
 
 /**
