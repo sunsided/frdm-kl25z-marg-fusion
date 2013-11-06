@@ -75,7 +75,7 @@ int main(void)
 	GPIOB->PSOR  = 1<<19;
 	GPIOD->PCOR  = 1<<1;
 	
-	IO_SendZString("MMQ8451Q\0");
+	IO_SendZString("MMA8451Q\0");
 		
 	uint8_t accelerometer = MMA8451Q_WhoAmI();
 	IO_SendByte(accelerometer);
