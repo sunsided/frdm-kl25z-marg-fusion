@@ -67,7 +67,7 @@ static inline void I2C_Wait()
  */
 static inline void I2C_WaitWhileBusy()
 {
-	while((I2C0->S & I2C_S_BUSY_MASK)==0) {}
+	while((I2C0->S & I2C_S_BUSY_MASK)!=0) {}
 }
 
 /**
@@ -85,6 +85,9 @@ static inline void I2C_SendBlocking(const uint8_t value)
  */
 uint8_t I2C_ReadRegister(uint8_t slaveId, uint8_t registerAddress)
 {
+	/* loop while the bus is still busy */
+	I2C_WaitWhileBusy();
+	
 	/* send I2C start signal and set write direction, also enables ACK */
 	I2C0->C1 |= ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
 			  | ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
@@ -138,10 +141,12 @@ uint8_t I2C_ReadRegister(uint8_t slaveId, uint8_t registerAddress)
  */
 void I2C_WriteRegister(uint8_t slaveId, uint8_t registerAddress, uint8_t value)
 {
+	/* loop while the bus is still busy */
+	I2C_WaitWhileBusy();	
+	
 	/* send I2C start signal and set write direction*/
 	I2C0->C1 |= ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
 			  | ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
-	I2C_WaitWhileBusy();
 		
 	/* send the slave address and wait for the I2C bus operation to complete */
 	I2C_SendBlocking(I2C_WRITE_ADDRESS(slaveId));
@@ -157,8 +162,4 @@ void I2C_WriteRegister(uint8_t slaveId, uint8_t registerAddress, uint8_t value)
 	 */
 	I2C0->C1 &= ~((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK);
 	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
-	I2C_WaitWhileBusy();
-	
-	/* what ... why? patched this in from PE sources and it works now */
-	for(int n=0; n<40; ++n) __NOP();
 }
