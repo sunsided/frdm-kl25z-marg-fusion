@@ -88,18 +88,18 @@ int main(void)
 	
 	for(;;) 
 	{
-		/* lights off */
+		/* lights partially  */
 		GPIOB->PSOR = 1<<18;
-		GPIOB->PSOR = 1<<19;
+		GPIOB->PCOR = 1<<19;
 		GPIOD->PSOR = 1<<1;
-		delay_ms(10); /* TODO: should be __WFI() really, no need to loop */
+		__WFI();
 		
 		/* as long as there is data in the buffer */
 		while(!RingBuffer_Empty(&uartInputFifo))
 		{
-			// green
-			GPIOB->PSOR = 1<<18;
-			GPIOB->PCOR = 1<<19;
+			/* light one led */
+			GPIOB->PCOR = 1<<18;
+			GPIOB->PSOR = 1<<19;
 			GPIOD->PSOR = 1<<1;
 			
 			/* fetch byte */
