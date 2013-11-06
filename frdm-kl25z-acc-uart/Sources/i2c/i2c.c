@@ -21,7 +21,7 @@
 /**
  * @brief Initialises the I2C interface
  */
-void InitI2C()
+void I2C_Init()
 {
 	/* enable clock gating to I2C0 */
 	SIM->SCGC4 |= (1 << SIM_SCGC4_I2C0_SHIFT) & SIM_SCGC4_I2C0_MASK;
@@ -385,4 +385,17 @@ uint8_t I2C_ModifyRegister(register uint8_t slaveId, register uint8_t registerAd
 	
 	/* issue stop signal by clearing master mode. */
 	I2C_SendStop();
+}
+
+/**
+ * @brief Resets the bus by toggling master mode if the bus is busy. This will interrupt ongoing traffic, so use with caution.
+ */
+void I2C_ResetBus()
+{
+	if (I2C0->S & I2C_S_BUSY_MASK)
+	{
+		I2C_SendStart();
+		__WFI();
+		I2C_SendStop();
+	}
 }

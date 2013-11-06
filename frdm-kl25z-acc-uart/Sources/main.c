@@ -53,8 +53,10 @@ int main(void)
 	InitSysTick();
 	
 	setup_gpios_for_led();
-
-	InitI2C();
+	
+	I2C_Init();
+	I2C_ResetBus();
+	
 	InitUart0();
 
 	/* setting PTC8/9 to I2C0 for wire sniffing */

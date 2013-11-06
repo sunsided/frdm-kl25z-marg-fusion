@@ -33,7 +33,12 @@
 /**
  * @brief Initializes the SPI interface
  */
-void InitI2C();
+void I2C_Init();
+
+/**
+ * @brief Resets the bus by toggling master mode if the bus is busy. This will interrupt ongoing traffic, so use with caution.
+ */
+void I2C_ResetBus();
 
 /**
  * @brief Reads an 8-bit register from an I2C slave 
