@@ -100,6 +100,10 @@ int main(void)
 
 	IO_SendZString("\r\n\0");
 	
+	IO_SendSInt16AsString(-12345);
+	IO_SendByte(' ');
+	IO_SendUInt16AsString(10435);
+	
 	for(;;) 
 	{
 		/* lights partially  */
