@@ -62,13 +62,13 @@ void I2C_ReadRegisters(register uint8_t slaveId, register uint8_t startRegisterA
 void I2C_WriteRegister(register uint8_t slaveId, register uint8_t registerAddress, register uint8_t value);
 
 /**
- * @brief Reads an 8-bit register from an I2C slave, modifies it and writes it back
+ * @brief Reads an 8-bit register from an I2C slave, modifies it by FIRST and-ing with {@see andMask} and THEN or-ing with {@see orMask} and writes it back
  * @param[in] slaveId The slave id
  * @param[in] registerAddress The register to modify
  * @param[in] orMask The mask to OR the register with
  * @param[in] andMask The mask to AND the register with
  * @return The register after modification
  */
-uint8_t I2C_ModifyRegister(register uint8_t slaveId, uint8_t register registerAddress, register uint8_t orMask, register uint8_t andMask);
+uint8_t I2C_ModifyRegister(register uint8_t slaveId, uint8_t register registerAddress, register uint8_t andMask, register uint8_t orMask);
 
 #endif /* I2C_H_ */

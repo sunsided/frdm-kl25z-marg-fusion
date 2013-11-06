@@ -93,7 +93,7 @@ static inline uint8_t MMA8451Q_LandscapePortraitConfig()
  */
 static inline void MMA8451Q_EnterPassiveMode()
 {
-	I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG1, I2C_MOD_NO_OR_MASK, ~0b00000001);
+	I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG1, ~0b00000001, I2C_MOD_NO_OR_MASK);
 }
 
 /**
@@ -101,7 +101,7 @@ static inline void MMA8451Q_EnterPassiveMode()
  */
 static inline void MMA8451Q_EnterActiveMode()
 {
-	I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG1, 0b00000001, I2C_MOD_NO_AND_MASK);
+	I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG1, I2C_MOD_NO_AND_MASK, 0b00000001);
 }
 
 /**
