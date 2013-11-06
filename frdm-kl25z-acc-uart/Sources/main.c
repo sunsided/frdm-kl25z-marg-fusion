@@ -71,11 +71,6 @@ int main(void)
 	/* initialize UART0 interrupts */
 	Uart0_InitializeIrq(&uartInputFifo, &uartOutputFifo);
 	Uart0_EnableReceiveIrq();
-		
-	/* turn off LEDs; they are low active, so clearing is enabling */
-	GPIOB->PSOR  = 1<<18;
-	GPIOB->PSOR  = 1<<19;
-	GPIOD->PCOR  = 1<<1;
 	
 	IO_SendZString("MMA8451Q\0");
 		
@@ -85,6 +80,8 @@ int main(void)
 	*/
 	
 	MMA8451Q_EnterPassiveMode();
+	MMA8451Q_SetSensitivity(MMA8451Q_SENSITIVITY_2G, MMA8451Q_HPO_DISABLED);
+	MMA8451Q_SetDataRate(MMA8451Q_DATARATE_1p5Hz, MMA8451Q_LOWNOISE_ENABLED);
 	MMA8451Q_EnterActiveMode();
 	
 	/*
