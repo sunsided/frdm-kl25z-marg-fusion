@@ -85,6 +85,72 @@ static inline void I2C_SendBlocking(const uint8_t value)
 }
 
 /**
+ * @brief Sends a start condition and enters TX mode.
+ */
+static inline void I2C_SendStart()
+{
+	I2C0->C1 |= ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
+				  | ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+}
+
+/**
+ * @brief Sends a stop condition (also leaves TX mode)
+ */
+static inline void I2C_SendStop()
+{
+	I2C0->C1 &= ~((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK)
+			& ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+}
+
+/**
+ * @brief Sends a repeated start condition.
+ */
+static inline void I2C_SendRepeatedStart()
+{
+#if ENABLE_SPEEDHACK
+	uint8_t reg = I2C0->F;
+	I2C0->F = reg & ~I2C_F_MULT_MASK; /* NOTE: According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). A solution is to temporarily disable the multiplier. */
+#endif
+	
+	I2C0->C1 |= (1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK;
+
+#if ENABLE_SPEEDHACK
+	I2C0->F = reg;
+#endif	
+}
+
+/**
+ * @brief Enters receive mode and enables ACK.
+ * 
+ * Enabling ACK may be required when more than one data byte will be read.
+ */
+static inline void I2C_EnterReceiveModeWithAck()
+{
+	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)	
+			& ~((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
+}
+
+/**
+ * @brief Enters receive mode and disables ACK.
+ * 
+ * Disabling ACK may be required when only one data byte will be read.
+ */
+static inline void I2C_EnterReceiveModeWithoutAck()
+{
+	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+	I2C0->C1 |=  ((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
+}
+
+/**
+ * @brief Drives the clock in receiver mode in order to receive the first byte.
+ */
+static inline void I2C_ReceiverModeDriveClock()
+{
+	uint8_t ignored = I2C0->D;
+	I2C_Wait();
+}
+
+/**
  * @brief Reads an 8-bit register from an I2C slave 
  */
 uint8_t I2C_ReadRegister(uint8_t slaveId, uint8_t registerAddress)
@@ -93,50 +159,31 @@ uint8_t I2C_ReadRegister(uint8_t slaveId, uint8_t registerAddress)
 	I2C_WaitWhileBusy();
 	
 	/* send I2C start signal and set write direction, also enables ACK */
-	I2C0->C1 |= ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
-			  | ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+	I2C_SendStart();
 	
 	/* send the slave address and wait for the I2C bus operation to complete */
-	I2C_SendBlocking(I2C_WRITE_ADDRESS(slaveId)); /* TODO: why are we even entering TX mode if we are sending the write ID? */
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(slaveId));
 	
 	/* send the register address */
 	I2C_SendBlocking(registerAddress);
 	
 	/* signal a repeated start condition */
-#if ENABLE_SPEEDHACK
-	uint8_t reg = I2C0->F;
-	I2C0->F = reg & ~I2C_F_MULT_MASK; /* NOTE: According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). A solution is to temporarily disable the multiplier. */
-#endif
-	I2C0->C1 |= (1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK;
-#if ENABLE_SPEEDHACK
-	I2C0->F = reg;
-#endif
+	I2C_SendRepeatedStart();
 
 	/* send the read address */
 	I2C_SendBlocking(I2C_READ_ADDRESS(slaveId));
 	
-	/* switch to receive mode */
-	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);	
-	//I2C0->C1 &= ~((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
-
-	/* disable ACK because only one data byte will be read */
-	I2C0->C1 |= (1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK;
+	/* switch to receive mode but disable ACK because only one data byte will be read */
+	I2C_EnterReceiveModeWithoutAck();
 	
 	/* read a dummy byte to drive the clock */
-	uint8_t result = I2C0->D;
-
-	/* wait for another cycle, then issue stop signal
-	 * by clearing master mode.
-	 */
-	I2C_Wait();
+	I2C_ReceiverModeDriveClock();
 	
 	/* stop signal */
-	I2C0->C1 &= ~((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK);
-	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+	I2C_SendStop();
 	
-	/* fetch the received byte */
-	result = I2C0->D;
-	
+	/* fetch the last received byte */
+	uint8_t result = I2C0->D; 
 	return result;
 }
 
@@ -149,8 +196,7 @@ void I2C_WriteRegister(uint8_t slaveId, uint8_t registerAddress, uint8_t value)
 	I2C_WaitWhileBusy();	
 	
 	/* send I2C start signal and set write direction*/
-	I2C0->C1 |= ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
-			  | ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+	I2C_SendStart();
 		
 	/* send the slave address and wait for the I2C bus operation to complete */
 	I2C_SendBlocking(I2C_WRITE_ADDRESS(slaveId));
@@ -161,9 +207,6 @@ void I2C_WriteRegister(uint8_t slaveId, uint8_t registerAddress, uint8_t value)
 	/* send the register address */
 	I2C_SendBlocking(value);
 	
-	/* wait for another cycle, then issue stop signal
-	 * by clearing master mode.
-	 */
-	I2C0->C1 &= ~((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK);
-	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+	/* issue stop signal by clearing master mode. */
+	I2C_SendStop();
 }
