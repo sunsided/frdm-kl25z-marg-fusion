@@ -24,9 +24,20 @@
  * @brief Endianness
  */
 typedef enum {
-	LITTLE_ENDIAN = 0,							/*< little-endian */
-	BIG_ENDIAN = SCB_AIRCR_ENDIANNESS_MASK		/*< big-endian */
+	FROM_LITTLE_ENDIAN = 0,							/*< little-endian */
+	FROM_BIG_ENDIAN = SCB_AIRCR_ENDIANNESS_MASK		/*< big-endian */
 } endian_t;
+
+/**
+ * @brief Determines if endian correction to machine endianness is required given a source endianness
+ * @param[in] sourcEndianness The endianness of the value
+ * @return zero if endianness is same, nonzero otherwise 
+ */
+static inline uint8_t endianCorrectionRequired(const register endian_t sourceEndianness) 
+{
+	/* if both are equal, subtraction returns in zero (== not required) */
+	return sourceEndianness != (SCB_AIRCR & SCB_AIRCR_ENDIANNESS_MASK); 
+}
 
 /**
  * @brief Converts from a given endianness to machine endianness

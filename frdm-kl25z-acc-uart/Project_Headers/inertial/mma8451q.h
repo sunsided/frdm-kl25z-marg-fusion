@@ -32,6 +32,36 @@
 #define MMA8451Q_REG_CTRL_REG1			(0x2A)	/*< CTRL_REG1 System Control 1 Register */
 
 /**
+ * @brief Accelerometer data
+ */
+#pragma pack(1)
+typedef struct __attribute__ ((__packed__))
+{
+	uint8_t _padding; 	/*< padding byte */
+	uint8_t status;		/*< the status register contents */
+	int16_t x;			/*< the x acceleration */
+	int16_t y;			/*< the y acceleration */
+	int16_t z;			/*< the z acceleration */
+} mma8451q_acc_t;
+
+/**
+ * @brief Initializes a {@see mma8451q_acc_t} data structure
+ * @param[inout] The accelerometer data; Must not be null.
+ */
+static inline void MMA8451Q_InitializeData(mma8451q_acc_t *const data)
+{
+	uint32_t* ptr = (uint32_t*)data;
+	ptr[0] = 0;
+	ptr[1] = 0;
+}
+
+/**
+ * @brief Reads the accelerometer data in 14bit no-fifo mode
+ * @param[inout] The accelerometer data; Must not be null. 
+ */
+void MMA8451Q_ReadAcceleration14bitNoFifo(mma8451q_acc_t *const data);
+
+/**
  * @brief Reads the STATUS register from the MMA8451Q.
  * @return Status bits, see MMA8451Q_STATUS_XXXX defines. 
  */

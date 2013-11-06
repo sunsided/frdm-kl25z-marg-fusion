@@ -89,8 +89,15 @@ int main(void)
 	IO_SendByte(accelerometer);
 	
 	uint8_t buffer[7] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-	I2C_ReadRegisters(MMA8451Q_I2CADDR, MMA8451Q_REG_STATUS, 7, buffer);
+	mma8451q_acc_t a, b;
+	MMA8451Q_InitializeData(&a);
+	MMA8451Q_InitializeData(&b);
 	
+	I2C_ReadRegisters(MMA8451Q_I2CADDR, MMA8451Q_REG_STATUS, 7, buffer);
+
+	MMA8451Q_ReadAcceleration14bitNoFifo(&a);
+	MMA8451Q_ReadAcceleration14bitNoFifo(&b);
+
 	IO_SendZString("\r\n\0");
 	
 	for(;;) 
