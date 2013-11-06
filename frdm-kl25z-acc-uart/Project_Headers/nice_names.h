@@ -35,7 +35,7 @@
  */
 #ifndef assert
 #define assert(condition) if (!condition) { while(1) {} }
-#define assert
+#endif
 
 #define SIM 	SIM_BASE_PTR
 #define PORTA	PORTA_BASE_PTR
