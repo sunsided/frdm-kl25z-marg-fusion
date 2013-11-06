@@ -37,7 +37,7 @@
 #pragma pack(1)
 typedef struct __attribute__ ((__packed__))
 {
-	uint8_t _padding; 	/*< padding byte */
+	uint8_t :8; 		/*< padding byte */
 	uint8_t status;		/*< the status register contents */
 	int16_t x;			/*< the x acceleration */
 	int16_t y;			/*< the y acceleration */
