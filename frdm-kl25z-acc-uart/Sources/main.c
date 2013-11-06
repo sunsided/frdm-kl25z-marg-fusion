@@ -81,8 +81,15 @@ int main(void)
 	IO_SendByte(accelerometer);
 	
 	MMA8451Q_SetDefaultActiveMode();
+	
 	accelerometer = MMA8451Q_SystemMode();
 	IO_SendByte(accelerometer);
+	
+	accelerometer = MMA8451Q_Status();
+	IO_SendByte(accelerometer);
+	
+	uint8_t buffer[7] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+	I2C_ReadRegisters(MMA8451Q_I2CADDR, MMA8451Q_REG_STATUS, 7, buffer);
 	
 	IO_SendZString("\r\n\0");
 	
