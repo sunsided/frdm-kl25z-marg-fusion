@@ -32,9 +32,9 @@
 #define MMA8451Q_REG_XZY_DATA_CFG		(0x0E)	/*< XYZ_DATA_CFG sensitivity configuration */
 #define MMA8451Q_REG_CTRL_REG1			(0x2A)	/*< CTRL_REG1 System Control 1 Register */
 #define MMA8451Q_REG_CTRL_REG2			(0x2B)	/*< CTRL_REG2 System Control 2 Register */
-#define MMA8451Q_REG_CTRL_REG3			(0x2B)	/*< CTRL_REG2 System Control 3 Register */
-#define MMA8451Q_REG_CTRL_REG4			(0x2B)	/*< CTRL_REG2 System Control 4 Register */
-#define MMA8451Q_REG_CTRL_REG5			(0x2B)	/*< CTRL_REG2 System Control 5 Register */
+#define MMA8451Q_REG_CTRL_REG3			(0x2C)	/*< CTRL_REG2 System Control 3 Register */
+#define MMA8451Q_REG_CTRL_REG4			(0x2D)	/*< CTRL_REG2 System Control 4 Register */
+#define MMA8451Q_REG_CTRL_REG5			(0x2E)	/*< CTRL_REG2 System Control 5 Register */
 
 /**
  * @brief Sensitivity configuration
@@ -194,7 +194,7 @@ static inline void MMA8451Q_EnterActiveMode()
 /**
  * @brief Sets the data rate and the active mode
  */
-void MMA8451Q_SetDataRate(register mma8451q_datarate_t datarate, register mma8451q_lownoise_t lownoise);
+void MMA8451Q_SetDataRate(register mma8451q_datarate_t datarate, mma8451q_lownoise_t lownoise);
 /**
  * @brief Reads the WHO_AM_I register from the MMA8451Q.
  * @return Device identification code; Should be 0b00011010. 
@@ -209,21 +209,21 @@ static inline uint8_t MMA8451Q_WhoAmI()
  * @param[in] sensitivity The sensitivity
  * @param[in] highpassEnabled Set to 1 to enable the high pass filter or to 0 otherwise (default)
  */
-void MMA8451Q_SetSensitivity(register mma8451q_sensitivity_t sensitivity, register mma8451q_hpo_t highpassEnabled);
+void MMA8451Q_SetSensitivity(mma8451q_sensitivity_t sensitivity, mma8451q_hpo_t highpassEnabled);
 
 /**
  * @brief Enables or disables interrupts
  * @param[in] mode The mode
  * @param[in] polarity The polarity
  */
-void MMA8451Q_SetInterruptMode(register mma8451q_intmode_t mode, register mma8451q_intpol_t polarity);
+void MMA8451Q_SetInterruptMode(mma8451q_intmode_t mode, mma8451q_intpol_t polarity);
 
 /**
  * @brief Enables or disables specific interrupts
  * @param[in] irq The interrupt
  * @param[in] pin The pin
  */
-void MMA8451Q_ConfigureInterrupt(register mma8451q_interrupt_t irq, register mma8451q_intpin_t pin);
+void MMA8451Q_ConfigureInterrupt(mma8451q_interrupt_t irq, mma8451q_intpin_t pin);
 
 /**
  * @brief Clears the interrupt configuration
@@ -234,6 +234,6 @@ void MMA8451Q_ClearInterruptConfiguration();
  * @brief Configures the oversampling modes
  * @param[in] oversampling The oversampling mode
  */
-void MMA8451Q_SetOversampling(register mma8451q_oversampling_t oversampling);
+void MMA8451Q_SetOversampling(mma8451q_oversampling_t oversampling);
 
 #endif /* MMA8451Q_H_ */

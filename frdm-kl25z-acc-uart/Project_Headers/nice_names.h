@@ -43,6 +43,7 @@
 #define PORTC	PORTC_BASE_PTR
 #define PORTD	PORTD_BASE_PTR
 #define PORTE	PORTE_BASE_PTR
+#define GPIOA	FPTA_BASE_PTR /* fast GPIO using core IOPORT mapped registers */
 #define GPIOB	FPTB_BASE_PTR /* fast GPIO using core IOPORT mapped registers */
 #define GPIOD	FPTD_BASE_PTR /* fast GPIO using core IOPORT mapped registers */
 

@@ -47,6 +47,30 @@ uint8_t uartInputData[UART_RX_BUFFER_SIZE],
 buffer_t uartInputFifo, 
 		uartOutputFifo;
 
+#define MMA8451Q_INT1_PIN	14
+#define MMA8451Q_INT2_PIN	15
+
+/**
+ * @brief Indicates that polling the MMA8451Q is required
+ */
+static volatile uint8_t poll_mma8451q = 0;
+
+/**
+ * @brief Handler for interrupts on port A
+ */
+void PORTA_IRQHandler()
+{
+	register uint32_t isfr = PORTA->ISFR;
+	register uint32_t fromMMA8451Q = (isfr & (1 << MMA8451Q_INT1_PIN)) | (isfr & (1 << MMA8451Q_INT2_PIN));
+	if (fromMMA8451Q)
+	{
+		poll_mma8451q = 1;
+		
+		/* clear interrupts */
+		PORTA->ISFR |= (1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN);
+	}
+}
+
 int main(void)
 {
 	InitClock();
@@ -61,8 +85,8 @@ int main(void)
 
 	/* setting PTC8/9 to I2C0 for wire sniffing */
 	SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK; /* clock to gate C */
-	PORTC->PCR[8] = PORT_PCR_MUX(2) | ((1 << PORT_PCR_PE_SHIFT) & PORT_PCR_PE_MASK); /* SCL: alternative 2 with pull-up enabled */
-	PORTC->PCR[9] = PORT_PCR_MUX(2) | ((1 << PORT_PCR_PE_SHIFT) & PORT_PCR_PE_MASK); /* SDA_ alternative 2 with pull-up enabled */
+	PORTC->PCR[8] = PORT_PCR_MUX(2) | ((1 << PORT_PCR_PE_SHIFT) | PORT_PCR_PE_MASK); /* SCL: alternative 2 with pull-up enabled */
+	PORTC->PCR[9] = PORT_PCR_MUX(2) | ((1 << PORT_PCR_PE_SHIFT) | PORT_PCR_PE_MASK); /* SDA_ alternative 2 with pull-up enabled */
 	
 	/* initialize UART fifos */
 	RingBuffer_Init(&uartInputFifo, &uartInputData, UART_RX_BUFFER_SIZE);
@@ -79,11 +103,22 @@ int main(void)
 	IO_SendByte(accelerometer);
 	*/
 	
+	/* configure interrupts for accelerometer */
+	/* INT1_ACCEL is on PTA14, INT2_ACCEL is on PTA15 */
+	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTA_SHIFT) & SIM_SCGC5_PORTA_SHIFT; /* power to the masses */
+	PORTA->PCR[MMA8451Q_INT1_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
+	PORTA->PCR[MMA8451Q_INT2_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
+	GPIOA->PDDR &= ~(GPIO_PDDR_PDD(1<<14) | GPIO_PDDR_PDD(1<<15));
+	
+	/* prepare interrupts for pin change / PORTA */
+	NVIC_ICPR |= 1 << 30;	/* clear pending flag */
+	NVIC_ISER |= 1 << 30;	/* enable interrupt */
+	
+	/* configure accelerometer */
 	MMA8451Q_EnterPassiveMode();
 	MMA8451Q_SetSensitivity(MMA8451Q_SENSITIVITY_2G, MMA8451Q_HPO_DISABLED);
 	MMA8451Q_SetDataRate(MMA8451Q_DATARATE_1p5Hz, MMA8451Q_LOWNOISE_ENABLED);
 	MMA8451Q_SetOversampling(MMA8451Q_OVERSAMPLING_HIGHRESOLUTION);
-	
 	MMA8451Q_ClearInterruptConfiguration();
 	MMA8451Q_SetInterruptMode(MMA8451Q_INTMODE_OPENDRAIN, MMA8451Q_INTPOL_ACTIVELOW);
 	MMA8451Q_ConfigureInterrupt(MMA8451Q_INT_DRDY, MMA8451Q_INTPIN_INT2);
@@ -126,15 +161,19 @@ int main(void)
 		}
 		
 		/* read accelerometer */
-		MMA8451Q_ReadAcceleration14bitNoFifo(&acc);
-		if (acc.status != 0) 
+		if (poll_mma8451q)
 		{
-			IO_SendSInt16AsString(acc.x);
-			IO_SendByteUncommited(',');
-			IO_SendSInt16AsString(acc.y);
-			IO_SendByteUncommited(',');
-			IO_SendSInt16AsString(acc.z);
-			IO_SendZString("\r\n\0");
+			poll_mma8451q = 0;
+			MMA8451Q_ReadAcceleration14bitNoFifo(&acc);
+			if (acc.status != 0) 
+			{
+				IO_SendSInt16AsString(acc.x);
+				IO_SendByteUncommited(',');
+				IO_SendSInt16AsString(acc.y);
+				IO_SendByteUncommited(',');
+				IO_SendSInt16AsString(acc.z);
+				IO_SendZString("\r\n\0");
+			}
 		}
 	}
 	
