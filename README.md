@@ -23,3 +23,4 @@ to life without using Processor Expert, so just bare metal here. No CMSIS though
 
 - MMA8451Q accelerometer sensor data dumping in 14-bit non-fifo mode
 - Automatic endian conversion based on system settings
+- Interrupt-based update notification and polling
