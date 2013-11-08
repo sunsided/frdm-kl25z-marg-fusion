@@ -259,3 +259,86 @@ uint32_t IO_ReadInt32()
 	value = value << 8 | RingBuffer_Read(uartReadFifo);
 	return value;
 }
+
+/**
+ * @brief Sends a signed number in 2.12 format (signed 1.12)
+ * @param[in] input The value to send
+ * 
+ * Must only be used after initialisation of Uart0 interrupt.
+ */
+void IO_Send2p14AsString(int16_t input)
+{
+	/* Basic idea
+	 * ----------
+	 * To convert a number in m.n fixed-point format to 
+	 * floating point, it is cast to floating point and 
+	 * then scaled by 2^-n.
+	 * 
+	 * Problem
+	 * -------
+	 * 4096*2^-12 = 1.0	 		<--> 4096 >> 12 = 1
+	 * 4095*2^-12 = 0.999755	<--> 4095 >> 12 = 0 ! missing digits
+	 * 
+	 * Solution
+	 * --------
+	 * If we first scale the number by powers of 10 (shifting
+	 * in the decimal places from the right) and then shift right
+	 * by 12 bits ... 
+	 * 
+	 * 4095*10000 >> 12  = 09997
+	 * 
+	 * we get to the right digit. If we now subtract the result
+	 * of the previous scale, we get the digit alone:
+	 * 
+	 * (4095*10000) >> 12 - (4095*1000 >> 12) = 7
+	 * 
+	 * Unfortunately, for later decimal places these calculations
+	 * exceed 16 bit number range easily, so we will cast to
+	 * unsigned 32 bit integer first.
+	 * 
+	 * Note
+	 * ----
+	 * Since event the fourth decimal place can not be represented 
+	 * correctly anymore, only six decimal places will be rendered. 
+	 */
+	
+	static const uint32_t n = 12;
+	uint8_t digit[8];
+	
+	register uint32_t input_value = input;
+	register uint32_t current_value = input;
+	register uint32_t last_value = 0;
+	register uint32_t scaling = 1;
+	
+	if (input < 0) 
+	{
+		IO_SendByteUncommited('-');
+		input_value = -input;
+	}
+	else 
+	{
+		IO_SendByteUncommited(' ');
+	}
+	
+	/* proceed with the absolute value in 1.12 format 
+	 * and determine real part. 
+	 */
+	current_value = (input_value*scaling) >> n;
+	digit[0] = current_value - last_value;
+	last_value = current_value;
+	
+	/* now determine the remaining digits */
+	for(int i=2, scaling = 10; i<8; ++i, scaling *= 10)
+	{
+		current_value = (input_value*scaling) >> n;
+		digit[i] = current_value - last_value*10;
+		last_value = current_value;
+	}
+	
+	/* print the digits */
+	digit[1] = '.' - '0';
+	for (int i=0; i<8; ++i) 
+	{
+		IO_SendByte(digit[i] + '0');
+	}
+}

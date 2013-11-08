@@ -176,11 +176,11 @@ int main(void)
 			MMA8451Q_ReadAcceleration14bitNoFifo(&acc);
 			if (acc.status != 0) 
 			{
-				IO_SendSInt16AsString(acc.x);
+				IO_Send2p14AsString(acc.x);
 				IO_SendByteUncommited(',');
-				IO_SendSInt16AsString(acc.y);
+				IO_Send2p14AsString(acc.y);
 				IO_SendByteUncommited(',');
-				IO_SendSInt16AsString(acc.z);
+				IO_Send2p14AsString(acc.z);
 				IO_SendZString("\r\n\0");
 			}
 		}

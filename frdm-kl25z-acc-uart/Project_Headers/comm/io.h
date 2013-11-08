@@ -46,6 +46,14 @@ void IO_SendSInt16AsString(int16_t value);
 void IO_SendUInt16AsString(uint16_t value);
 
 /**
+ * @brief Sends a signed number in 2.12 format (signed 1.12)
+ * @param[in] value The value to send
+ * 
+ * Must only be used after initialization of Uart0 interrupt.
+ */
+void IO_Send2p14AsString(int16_t value);
+
+/**
  * @brief Sends a 32bit value in native endianness
  * @param[in] value The value to send
  * 
