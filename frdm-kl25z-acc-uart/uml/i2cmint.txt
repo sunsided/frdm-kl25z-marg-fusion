@@ -1,0 +1,42 @@
+@startuml
+[*]			--> START
+START 			--> SEND_WRITE_ADDRESS
+START: Send Start condition
+
+SEND_WRITE_ADDRESS	--> SEND_COMMAND
+SEND_WRITE_ADDRESS: Send the Slave address + W bit
+
+SEND_COMMAND		--> RESTART
+SEND_COMMAND        --> SEND_DATA : TX transfer
+SEND_COMMAND: Sends command or register
+
+SEND_DATA		-down-> SEND_DATA
+SEND_DATA		-down-> SEND_LAST_DATA
+SEND_DATA: Sends the data bytes
+
+SEND_LAST_DATA		-down-> STOP
+SEND_LAST_DATA		--> RESTART
+SEND_LAST_DATA: Sends the last data byte
+
+RESTART			--> SEND_WRITE_ADDRESS : TX transfer
+RESTART         --> SEND_READ_ADDRESS : RX transfer
+RESTART: Issues a restart condition
+
+SEND_READ_ADDRESS	--> READ_DATA
+SEND_READ_ADDRESS: Sends the slave address + R byte
+
+READ_DATA		-down-> READ_DATA : ACK
+READ_DATA		-down-> READ_2ND_LAST_DATA : ACK
+READ_DATA: Reads a data byte
+
+READ_2ND_LAST_DATA	-down-> READ_LAST_DATA : NACK
+READ_2ND_LAST_DATA: Reads a data byte and activates NACK 
+
+READ_LAST_DATA		--> RESTART
+READ_LAST_DATA		-down-> STOP
+READ_LAST_DATA: Reads the last data byte
+
+STOP			--> [*]
+STOP: Send Stop condition
+
+@enduml
