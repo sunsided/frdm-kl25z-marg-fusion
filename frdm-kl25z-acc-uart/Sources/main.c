@@ -5,6 +5,7 @@
 
 #include "ARMCM0plus.h"
 #include "derivative.h" /* include peripheral declarations */
+#include "bme.h"
 
 #include "cpu/clock.h"
 #include "cpu/systick.h"
@@ -60,14 +61,15 @@ static volatile uint8_t poll_mma8451q = 0;
  */
 void PORTA_IRQHandler()
 {
-	register uint32_t isfr = PORTA->ISFR;
-	register uint32_t fromMMA8451Q = (isfr & ((1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN)));
+	register uint32_t fromMMA8451Q = (PORTA->ISFR & ((1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN)));
 	if (fromMMA8451Q)
 	{
 		poll_mma8451q = 1;
 		
-		/* clear interrupts */
-		PORTA->ISFR |= (1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN);
+		/* clear interrupts using BME decorated logical OR store 
+		 * PORTA->ISFR |= (1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN); 
+		 */
+		BME_OR_W(&PORTA->ISFR, (1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN));
 	}
 }
 
