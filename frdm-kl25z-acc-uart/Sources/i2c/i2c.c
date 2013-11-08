@@ -240,7 +240,6 @@ uint8_t I2C_ModifyRegister(register uint8_t slaveId, register uint8_t registerAd
 	value |= orMask;
 
 	/* send the slave address and wait for the I2C bus operation to complete */
-	I2C_EnterTransmitMode();
 	I2C_SendBlocking(I2C_WRITE_ADDRESS(slaveId));
 	
 	/* send the register address */

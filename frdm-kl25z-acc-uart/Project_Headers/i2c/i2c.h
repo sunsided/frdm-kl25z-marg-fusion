@@ -135,7 +135,7 @@ __STATIC_INLINE void I2C_SendStart()
 }
 
 /**
- * @brief Enters receive mode.
+ * @brief Enters transmit mode.
  */
 __STATIC_INLINE void I2C_EnterTransmitMode()
 {
@@ -221,7 +221,7 @@ __STATIC_INLINE void I2C_EnterReceiveModeWithoutAck()
 }
 
 /**
- * @brief Sends a repeated start condition.
+ * @brief Sends a repeated start condition and enters TX mode.
  */
 __STATIC_INLINE void I2C_SendRepeatedStart()
 {
@@ -231,10 +231,12 @@ __STATIC_INLINE void I2C_SendRepeatedStart()
 #endif
 	
 #if !USE_BME
-	I2C0->C1 |= ((1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK);
+	I2C0->C1 |= ((1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK)
+			  | ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
 #else
 	BME_OR_B(&I2C0->C1, 
-			((1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK)	
+			  ((1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK)	
+			| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
 		);
 #endif
 
@@ -336,8 +338,10 @@ __STATIC_INLINE uint8_t I2C_ReceiveAndStop()
 }
 
 /**
- * @brief Reads a byte over the I2C bus and sends a repeated start condition
+ * @brief Reads a byte over the I2C bus and sends a repeated start condition.
  * @return There received byte
+ * 
+ * The I2C module is in transmit mode afterwards.
  */
 __STATIC_INLINE uint8_t I2C_ReceiveAndRestart()
 {
