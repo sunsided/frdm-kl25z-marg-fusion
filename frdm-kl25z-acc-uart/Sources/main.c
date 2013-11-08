@@ -98,7 +98,7 @@ int main(void)
 	Uart0_InitializeIrq(&uartInputFifo, &uartOutputFifo);
 	Uart0_EnableReceiveIrq();
 	
-	IO_SendZString("MMA8451Q\0");
+	IO_SendZString("MMA8451Q");
 		
 	/*
 	uint8_t accelerometer = MMA8451Q_WhoAmI();
