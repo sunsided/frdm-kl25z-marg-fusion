@@ -80,7 +80,12 @@ void I2C_Init()
 __STATIC_INLINE void I2C_Wait()
 {
 	while((I2C0->S & I2C_S_IICIF_MASK)==0) {}	/* loop until interrupt is detected */
+	
+#if !USE_BME
 	I2C0->S |= I2C_S_IICIF_MASK; /* clear interrupt flag */
+#else
+	BME_OR_B(&I2C0->S, ((1 << I2C_S_IICIF_SHIFT) << I2C_S_IICIF_MASK));
+#endif
 }
 
 /**
@@ -490,10 +495,22 @@ uint8_t I2C_ModifyRegister(register uint8_t slaveId, register uint8_t registerAd
  */
 void I2C_ResetBus()
 {
+#if !USE_BME
+	I2C0->S |= I2C_S_IICIF_MASK; /* clear interrupt flag */
+#else
+	BME_OR_B(&I2C0->S, ((1 << I2C_S_IICIF_SHIFT) << I2C_S_IICIF_MASK));
+#endif	
+	
 	if (I2C0->S & I2C_S_BUSY_MASK)
 	{
 		I2C_SendStart();
 		__WFI();
 		I2C_SendStop();
 	}
+	
+#if !USE_BME
+	I2C0->S |= I2C_S_IICIF_MASK; /* clear interrupt flag */
+#else
+	BME_OR_B(&I2C0->S, ((1 << I2C_S_IICIF_SHIFT) << I2C_S_IICIF_MASK));
+#endif	
 }
