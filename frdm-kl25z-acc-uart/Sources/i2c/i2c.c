@@ -91,8 +91,14 @@ __STATIC_INLINE void I2C_SendBlocking(const uint8_t value)
  */
 __STATIC_INLINE void I2C_SendStart()
 {
+#if 0	
 	I2C0->C1 |= ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
-				  | ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+				| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+#endif
+	BME_OR_B(&I2C0->C1, 
+			  ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
+			| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
+		);
 }
 
 /**
@@ -100,8 +106,16 @@ __STATIC_INLINE void I2C_SendStart()
  */
 __STATIC_INLINE void I2C_SendStop()
 {
+#if 0
 	I2C0->C1 &= ~((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK)
 			& ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+#endif
+	BME_AND_B(&I2C0->C1,
+			(uint8_t) ~(
+				  ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK)
+				| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
+			)
+		);
 }
 
 /**
@@ -114,7 +128,12 @@ __STATIC_INLINE void I2C_SendRepeatedStart()
 	I2C0->F = reg & ~I2C_F_MULT_MASK; /* NOTE: According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). A solution is to temporarily disable the multiplier. */
 #endif
 	
+#if 0
 	I2C0->C1 |= ((1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK);
+#endif
+	BME_OR_B(&I2C0->C1, 
+			((1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK)	
+		);
 
 #if ENABLE_SPEEDHACK
 	I2C0->F = reg;
