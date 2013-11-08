@@ -99,11 +99,7 @@ int main(void)
 	Uart0_EnableReceiveIrq();
 	
 	IO_SendZString("MMA8451Q");
-		
-	
-	mma8451q_confreg_t configuration;
-	MMA8451Q_FetchConfiguration(&configuration);
-	
+
 	
 	/*
 	uint8_t accelerometer = MMA8451Q_WhoAmI();
@@ -123,16 +119,19 @@ int main(void)
 	
 	/* configure accelerometer */
 	MMA8451Q_EnterPassiveMode();
-	MMA8451Q_SetSensitivity(MMA8451Q_SENSITIVITY_2G, MMA8451Q_HPO_DISABLED);
-	MMA8451Q_SetDataRate(MMA8451Q_DATARATE_1p5Hz, MMA8451Q_LOWNOISE_ENABLED);
-	MMA8451Q_SetOversampling(MMA8451Q_OVERSAMPLING_HIGHRESOLUTION);
-	MMA8451Q_ClearInterruptConfiguration();
-	MMA8451Q_SetInterruptMode(MMA8451Q_INTMODE_OPENDRAIN, MMA8451Q_INTPOL_ACTIVELOW);
-	MMA8451Q_ConfigureInterrupt(MMA8451Q_INT_DRDY, MMA8451Q_INTPIN_INT2);
-	MMA8451Q_EnterActiveMode();
-	
+
+	mma8451q_confreg_t configuration;
 	MMA8451Q_FetchConfiguration(&configuration);
+	
+	MMA8451Q_SetSensitivity(&configuration, MMA8451Q_SENSITIVITY_2G, MMA8451Q_HPO_DISABLED);
+	MMA8451Q_SetDataRate(&configuration, MMA8451Q_DATARATE_1p5Hz, MMA8451Q_LOWNOISE_ENABLED);
+	MMA8451Q_SetOversampling(&configuration, MMA8451Q_OVERSAMPLING_HIGHRESOLUTION);
+	MMA8451Q_ClearInterruptConfiguration(&configuration);
+	MMA8451Q_SetInterruptMode(&configuration, MMA8451Q_INTMODE_OPENDRAIN, MMA8451Q_INTPOL_ACTIVELOW);
+	MMA8451Q_ConfigureInterrupt(&configuration, MMA8451Q_INT_DRDY, MMA8451Q_INTPIN_INT2);
+	
 	MMA8451Q_StoreConfiguration(&configuration);
+	MMA8451Q_EnterActiveMode();
 	
 	/*
 	accelerometer = MMA8451Q_SystemMode();

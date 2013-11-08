@@ -10,18 +10,25 @@
 #include "nice_names.h"
 #include "inertial/mma8451q.h"
 
-#define CTRL_REG1_DR_MASK 		0x38
-#define CTRL_REG1_DR_SHIFT 		0x3
-#define CTRL_REG1_LNOISE_MASK 	0x4
-#define CTRL_REG1_LNOISE_SHIFT 	0x2
+#define CTRL_REG1_ACTIVE_SHIFT 	(0x00U)
+#define CTRL_REG1_ACTIVE_MASK 	(0x01U)
+#define CTRL_REG1_DR_MASK 		(0x38u)
+#define CTRL_REG1_DR_SHIFT 		(0x3u)
+#define CTRL_REG1_LNOISE_MASK 	(0x4u)
+#define CTRL_REG1_LNOISE_SHIFT 	(0x2u)
 
-#define CTRL_REG2_MODS_MASK 	0x38
-#define CTRL_REG2_MODS_SHIFT 	0x3
+#define CTRL_REG2_MODS_MASK 	(0x38u)
+#define CTRL_REG2_MODS_SHIFT 	(0x3u)
 
-#define CTRL_REG3_IPOL_MASK 	0x2
-#define CTRL_REG3_IPOL_SHIFT 	0x1
-#define CTRL_REG3_PPOD_MASK 	0x1
-#define CTRL_REG3_PPOD_SHIFT 	0x0
+#define CTRL_REG3_IPOL_MASK 	(0x2u)
+#define CTRL_REG3_IPOL_SHIFT 	(0x1u)
+#define CTRL_REG3_PPOD_MASK 	(0x1u)
+#define CTRL_REG3_PPOD_SHIFT 	(0x00u)
+
+#define XYZ_DATA_CFG_FS_SHIFT 	(0x0u)
+#define XYZ_DATA_CFG_FS_MASK 	(0x03u)
+#define XYZ_DATA_CFG_HPF_OUT_SHIFT (0x04u)
+#define XYZ_DATA_CFG_HPF_OUT_MASK (0x10u)
 
 /**
  * @brief Reads the accelerometer data in 14bit no-fifo mode
@@ -55,11 +62,19 @@ void MMA8451Q_ReadAcceleration14bitNoFifo(mma8451q_acc_t *const data)
 /**
  * @brief Sets the data rate and the active mode
  */
-void MMA8451Q_SetDataRate(mma8451q_datarate_t datarate, mma8451q_lownoise_t lownoise)
+void MMA8451Q_SetDataRate(mma8451q_confreg_t *const configuration, mma8451q_datarate_t datarate, mma8451q_lownoise_t lownoise)
 {
-	const register uint8_t value = ((datarate << CTRL_REG1_DR_SHIFT) & CTRL_REG1_DR_MASK) | ((lownoise << CTRL_REG1_LNOISE_SHIFT) & CTRL_REG1_LNOISE_MASK);
-	const register uint8_t mask = ~(CTRL_REG1_DR_MASK | CTRL_REG1_LNOISE_MASK);
-	I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG1, mask, value);
+	if (MMA8451Q_CONFIGURE_DIRECT == configuration)
+	{
+		const register uint8_t value = ((datarate << CTRL_REG1_DR_SHIFT) & CTRL_REG1_DR_MASK) | ((lownoise << CTRL_REG1_LNOISE_SHIFT) & CTRL_REG1_LNOISE_MASK);
+		const register uint8_t mask = (uint8_t)~(CTRL_REG1_DR_MASK | CTRL_REG1_LNOISE_MASK);
+		I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG1, mask, value); 
+	}
+	else
+	{
+		configuration->CTRL_REG1 &= ~(CTRL_REG1_DR_MASK | CTRL_REG1_LNOISE_MASK);
+		configuration->CTRL_REG1 |= ((datarate << CTRL_REG1_DR_SHIFT) & CTRL_REG1_DR_MASK) | ((lownoise << CTRL_REG1_LNOISE_SHIFT) & CTRL_REG1_LNOISE_MASK);
+	}
 }
 
 /**
@@ -84,11 +99,19 @@ uint8_t MMA8451Q_LandscapePortraitConfig()
  * @brief Configures the oversampling modes
  * @param[in] oversampling The oversampling mode
  */
-void MMA8451Q_SetOversampling(mma8451q_oversampling_t oversampling)
+void MMA8451Q_SetOversampling(mma8451q_confreg_t *const configuration, mma8451q_oversampling_t oversampling)
 {
-	const register uint8_t value = (oversampling << CTRL_REG2_MODS_SHIFT) & CTRL_REG2_MODS_MASK;
-	const register uint8_t mask = ~(CTRL_REG2_MODS_MASK);
-	I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG2, mask, value);
+	if (MMA8451Q_CONFIGURE_DIRECT == configuration)
+	{
+		const register uint8_t value = (oversampling << CTRL_REG2_MODS_SHIFT) & CTRL_REG2_MODS_MASK;
+		const register uint8_t mask = (uint8_t)~(CTRL_REG2_MODS_MASK);
+		I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG2, mask, value);
+	}
+	else
+	{
+		configuration->CTRL_REG2 &= ~(CTRL_REG2_MODS_MASK);
+		configuration->CTRL_REG2 |= (oversampling << CTRL_REG2_MODS_SHIFT) & CTRL_REG2_MODS_MASK;
+	}
 }
 
 /**
@@ -96,9 +119,17 @@ void MMA8451Q_SetOversampling(mma8451q_oversampling_t oversampling)
  * @param[in] sensitivity The sensitivity
  * @param[in] highpassEnabled Set to 1 to enable the high pass filter or to 0 otherwise (default)
  */
-void MMA8451Q_SetSensitivity(mma8451q_sensitivity_t sensitivity, mma8451q_hpo_t highpassEnabled)
+void MMA8451Q_SetSensitivity(mma8451q_confreg_t *const configuration, mma8451q_sensitivity_t sensitivity, mma8451q_hpo_t highpassEnabled)
 {
-	I2C_WriteRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_XZY_DATA_CFG, (sensitivity & 0x03) | ((highpassEnabled << 4) & 0x10));
+	if (MMA8451Q_CONFIGURE_DIRECT == configuration)
+	{
+		I2C_WriteRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_XYZ_DATA_CFG, (sensitivity & 0x03) | ((highpassEnabled << 4) & 0x10));
+	}
+	else
+	{
+		configuration->XYZ_DATA_CFG = ((sensitivity << XYZ_DATA_CFG_FS_SHIFT) & XYZ_DATA_CFG_FS_MASK) 
+									| ((highpassEnabled << XYZ_DATA_CFG_HPF_OUT_SHIFT) & XYZ_DATA_CFG_HPF_OUT_MASK);
+	}
 }
 
 /**
@@ -106,20 +137,29 @@ void MMA8451Q_SetSensitivity(mma8451q_sensitivity_t sensitivity, mma8451q_hpo_t 
  * @param[in] mode The mode
  * @param[in] polarity The polarity
  */
-void MMA8451Q_SetInterruptMode(mma8451q_intmode_t mode, mma8451q_intpol_t polarity)
+void MMA8451Q_SetInterruptMode(mma8451q_confreg_t *const configuration, mma8451q_intmode_t mode, mma8451q_intpol_t polarity)
 {
-	const uint8_t value = ((mode << CTRL_REG3_PPOD_SHIFT) & CTRL_REG3_PPOD_MASK)
+	if (MMA8451Q_CONFIGURE_DIRECT == configuration)
+	{
+		const uint8_t value = ((mode << CTRL_REG3_PPOD_SHIFT) & CTRL_REG3_PPOD_MASK)
+									| ((polarity << CTRL_REG3_IPOL_SHIFT) & CTRL_REG3_IPOL_MASK);
+		const uint8_t mask = (uint8_t)~(CTRL_REG3_IPOL_MASK | CTRL_REG3_PPOD_MASK);
+		I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG3, mask, value);
+	}
+	else
+	{
+		configuration->CTRL_REG3 &= ~(CTRL_REG3_IPOL_MASK | CTRL_REG3_PPOD_MASK);;
+		configuration->CTRL_REG3 |= ((mode << CTRL_REG3_PPOD_SHIFT) & CTRL_REG3_PPOD_MASK)
 								| ((polarity << CTRL_REG3_IPOL_SHIFT) & CTRL_REG3_IPOL_MASK);
-	const uint8_t mask = ~(CTRL_REG3_IPOL_MASK | CTRL_REG3_PPOD_MASK);
-	I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG3, mask, value);
+	}
 }
 
 /**
- * @brief Enables or disables specific interrupts
+ * @brief Configures and enables specific interrupts
  * @param[in] irq The interrupt
  * @param[in] pin The pin
  */
-void MMA8451Q_ConfigureInterrupt(mma8451q_interrupt_t irq, mma8451q_intpin_t pin)
+void MMA8451Q_ConfigureInterrupt(mma8451q_confreg_t *const configuration, mma8451q_interrupt_t irq, mma8451q_intpin_t pin)
 {
 	/* interrupt pin. Assume that the interrupt 1 should be set */
 	uint8_t clearMask = I2C_MOD_NO_AND_MASK;
@@ -130,20 +170,38 @@ void MMA8451Q_ConfigureInterrupt(mma8451q_interrupt_t irq, mma8451q_intpin_t pin
 	{
 		clearMask = ~(1 << irq);
 		setMask = I2C_MOD_NO_OR_MASK;
-	}
-	I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG5, clearMask, setMask);	
+	}	
 	
-	/* interrupt enable */
-	I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG4, I2C_MOD_NO_AND_MASK, 1 << irq);
+	if (MMA8451Q_CONFIGURE_DIRECT == configuration)
+	{
+		I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG5, clearMask, setMask);	
+		
+		/* interrupt enable */
+		I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG4, I2C_MOD_NO_AND_MASK, 1 << irq);
+	}
+	else
+	{
+		configuration->CTRL_REG4 |= 1 << irq;
+		configuration->CTRL_REG5 &= clearMask;
+		configuration->CTRL_REG5 |= setMask;
+	}
 }
 
 /**
  * @brief Clears the interrupt configuration
  */
-void MMA8451Q_ClearInterruptConfiguration()
+void MMA8451Q_ClearInterruptConfiguration(mma8451q_confreg_t *const configuration)
 {
-	I2C_WriteRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG4, 0);
-	I2C_WriteRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG5, 0);	
+	if (MMA8451Q_CONFIGURE_DIRECT == configuration)
+	{
+		I2C_WriteRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG4, 0);
+		I2C_WriteRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG5, 0);
+	}
+	else
+	{
+		configuration->CTRL_REG4 = 0;
+		configuration->CTRL_REG5 = 0;
+	}
 }
 
 /**
@@ -252,9 +310,15 @@ void MMA8451Q_StoreConfiguration(const mma8451q_confreg_t *const configuration)
 	
 	/* loop while the bus is still busy */
 	I2C_WaitWhileBusy();
-		
-	/* start register addressing at 0x09 */
+	
+	/* start register addressing at 0x2A - enter passive mode */
 	I2C_SendStart();
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(MMA8451Q_I2CADDR));
+	I2C_SendBlocking(MMA8451Q_REG_CTRL_REG1);
+	I2C_SendBlocking(configuration->CTRL_REG1 & ~((1 << CTRL_REG1_ACTIVE_SHIFT) & CTRL_REG1_ACTIVE_MASK)); /* 0x2A, clear active mode */
+	
+	/* start register addressing at 0x09 */
+	I2C_SendRepeatedStart();
 	I2C_SendBlocking(I2C_WRITE_ADDRESS(MMA8451Q_I2CADDR));
 	I2C_SendBlocking(MMA8451Q_REG_F_SETUP);
 	I2C_SendBlocking(configuration->F_SETUP); /* 0x09 */
@@ -263,7 +327,7 @@ void MMA8451Q_StoreConfiguration(const mma8451q_confreg_t *const configuration)
 	/* repeat write at 0x0E */
 	I2C_SendRepeatedStart();
 	I2C_SendBlocking(I2C_WRITE_ADDRESS(MMA8451Q_I2CADDR));
-	I2C_SendBlocking(MMA8451Q_REG_XZY_DATA_CFG);
+	I2C_SendBlocking(MMA8451Q_REG_XYZ_DATA_CFG);
 	I2C_SendBlocking(configuration->XYZ_DATA_CFG); /* 0x0E */
 	I2C_SendBlocking(configuration->HP_FILTER_CUTOFF); /* 0x0F */
 	
@@ -309,7 +373,7 @@ void MMA8451Q_StoreConfiguration(const mma8451q_confreg_t *const configuration)
 	I2C_SendBlocking(configuration->PULSE_LTCY); /* 0x27 */
 	I2C_SendBlocking(configuration->PULSE_WIND); /* 0x28 */
 	I2C_SendBlocking(configuration->ASLP_COUNT); /* 0x29 */
-	I2C_SendBlocking(configuration->CTRL_REG1);  /* 0x2A */
+	I2C_SendBlocking(configuration->CTRL_REG1 & ~((1 << CTRL_REG1_ACTIVE_SHIFT) & CTRL_REG1_ACTIVE_MASK));  /* 0x2A, clear active mode */
 	I2C_SendBlocking(configuration->CTRL_REG2);  /* 0x2B */
 	I2C_SendBlocking(configuration->CTRL_REG3); /* 0x2C */
 	I2C_SendBlocking(configuration->CTRL_REG4); /* 0x2D */
@@ -317,6 +381,12 @@ void MMA8451Q_StoreConfiguration(const mma8451q_confreg_t *const configuration)
 	I2C_SendBlocking(configuration->OFF_X); /* 0x2F */
 	I2C_SendBlocking(configuration->OFF_Y); /* 0x30 */
 	I2C_SendBlocking(configuration->OFF_Z); /* 0x31 */
+	
+	/* rewind to 0x2A - enter desired mode */
+	I2C_SendRepeatedStart();
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(MMA8451Q_I2CADDR));
+	I2C_SendBlocking(MMA8451Q_REG_CTRL_REG1);
+	I2C_SendBlocking(configuration->CTRL_REG1); /* 0x2A, write real value */
 	
 	I2C_SendStop();
 }

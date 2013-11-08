@@ -30,7 +30,7 @@
 #define MMA8451Q_REG_SYSMOD				(0x0B)	/*< SYSMOD register for system mode identification */
 #define MMA8451Q_REG_PL_CFG				(0x11)	/*< PL_CFG register for portrait/landscape detection configuration */
 #define MMA8451Q_REG_WHOAMI				(0x0D)	/*< WHO_AM_I register for device identification */
-#define MMA8451Q_REG_XZY_DATA_CFG		(0x0E)	/*< XYZ_DATA_CFG sensitivity configuration */
+#define MMA8451Q_REG_XYZ_DATA_CFG		(0x0E)	/*< XYZ_DATA_CFG sensitivity configuration */
 #define MMA8451Q_REG_PL_CFG				(0x11)	/*< PL_CFG landscape/portrait configuration */
 #define MMA8451Q_REG_FF_MT_THS			(0x17)	/*< MT_THS freefall/motion threshold */
 #define MMA8451Q_TRANSIENT_CFG			(0x1D)	/*< TRANSIENT_CFG transient functional block configuration */
@@ -188,6 +188,11 @@ typedef struct {
 } mma8451q_confreg_t;
 
 /**
+ * @brief Macro for usage in configuration commands that executes configuration changes directly
+ */
+#define MMA8451Q_CONFIGURE_DIRECT ((mma8451q_confreg_t*)0x0)
+
+/**
  * @brief Fetches the configuration into a {@see mma8451q_confreg_t} data structure
  * @param[inout] The configuration data data; Must not be null.
  */
@@ -247,16 +252,21 @@ static inline void MMA8451Q_EnterPassiveMode()
 
 /**
  * @brief Brings the MMA8451Q into active mode
+ * @param[inout] configuration The configuration structure or {@see MMA8451Q_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
  */
 static inline void MMA8451Q_EnterActiveMode()
 {
-	I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG1, I2C_MOD_NO_AND_MASK, 0b00000001);
+	I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG1, I2C_MOD_NO_AND_MASK, 0x01);
 }
 
 /**
  * @brief Sets the data rate and the active mode
+ * @param[inout] configuration The configuration structure or {@see MMA8451Q_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] datarate The data rate
+ * @param[in] lownoise The low noise state
  */
-void MMA8451Q_SetDataRate(register mma8451q_datarate_t datarate, mma8451q_lownoise_t lownoise);
+void MMA8451Q_SetDataRate(mma8451q_confreg_t *const configuration, register mma8451q_datarate_t datarate, mma8451q_lownoise_t lownoise);
+
 /**
  * @brief Reads the WHO_AM_I register from the MMA8451Q.
  * @return Device identification code; Should be 0b00011010. 
@@ -268,34 +278,39 @@ static inline uint8_t MMA8451Q_WhoAmI()
 
 /**
  * @brief Configures the sensitivity and the high pass filter
+ * @param[inout] configuration The configuration structure or {@see MMA8451Q_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
  * @param[in] sensitivity The sensitivity
  * @param[in] highpassEnabled Set to 1 to enable the high pass filter or to 0 otherwise (default)
  */
-void MMA8451Q_SetSensitivity(mma8451q_sensitivity_t sensitivity, mma8451q_hpo_t highpassEnabled);
+void MMA8451Q_SetSensitivity(mma8451q_confreg_t *const configuration, mma8451q_sensitivity_t sensitivity, mma8451q_hpo_t highpassEnabled);
 
 /**
  * @brief Enables or disables interrupts
+ * @param[inout] configuration The configuration structure or {@see MMA8451Q_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
  * @param[in] mode The mode
  * @param[in] polarity The polarity
  */
-void MMA8451Q_SetInterruptMode(mma8451q_intmode_t mode, mma8451q_intpol_t polarity);
+void MMA8451Q_SetInterruptMode(mma8451q_confreg_t *const configuration, mma8451q_intmode_t mode, mma8451q_intpol_t polarity);
 
 /**
- * @brief Enables or disables specific interrupts
+ * @brief Configures and enables specific interrupts
+ * @param[inout] configuration The configuration structure or {@see MMA8451Q_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
  * @param[in] irq The interrupt
  * @param[in] pin The pin
  */
-void MMA8451Q_ConfigureInterrupt(mma8451q_interrupt_t irq, mma8451q_intpin_t pin);
+void MMA8451Q_ConfigureInterrupt(mma8451q_confreg_t *const configuration, mma8451q_interrupt_t irq, mma8451q_intpin_t pin);
 
 /**
  * @brief Clears the interrupt configuration
+ * @param[inout] configuration The configuration structure or {@see MMA8451Q_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
  */
-void MMA8451Q_ClearInterruptConfiguration();
+void MMA8451Q_ClearInterruptConfiguration(mma8451q_confreg_t *const configuration);
 
 /**
  * @brief Configures the oversampling modes
+ * @param[inout] configuration The configuration structure or {@see MMA8451Q_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
  * @param[in] oversampling The oversampling mode
  */
-void MMA8451Q_SetOversampling(mma8451q_oversampling_t oversampling);
+void MMA8451Q_SetOversampling(mma8451q_confreg_t *const configuration, mma8451q_oversampling_t oversampling);
 
 #endif /* MMA8451Q_H_ */
