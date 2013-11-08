@@ -266,7 +266,7 @@ uint32_t IO_ReadInt32()
  * 
  * Must only be used after initialisation of Uart0 interrupt.
  */
-void IO_Send2p14AsString(int16_t input)
+void IO_Send2p14AsString(register int16_t input)
 {
 	/* Basic idea
 	 * ----------
@@ -302,18 +302,19 @@ void IO_Send2p14AsString(int16_t input)
 	 * correctly anymore, only six decimal places will be rendered. 
 	 */
 	
-	static const uint32_t n = 12;
-	uint8_t digit[8];
+#define Q2p12_M  2
+#define Q2p12_N 12	
+
+	register uint8_t digit;
 	
 	register uint32_t input_value = input;
 	register uint32_t current_value = input;
 	register uint32_t last_value = 0;
-	register uint32_t scaling = 1;
 	
 	if (input < 0) 
 	{
 		IO_SendByteUncommited('-');
-		input_value = -input;
+		input_value = -input_value;
 	}
 	else 
 	{
@@ -323,22 +324,44 @@ void IO_Send2p14AsString(int16_t input)
 	/* proceed with the absolute value in 1.12 format 
 	 * and determine real part. 
 	 */
-	current_value = (input_value*scaling) >> n;
-	digit[0] = current_value - last_value;
+	current_value = (input_value) >> Q2p12_N;
+	digit = current_value;
 	last_value = current_value;
 	
-	/* now determine the remaining digits */
-	for(int i=2, scaling = 10; i<8; ++i, scaling *= 10)
-	{
-		current_value = (input_value*scaling) >> n;
-		digit[i] = current_value - last_value*10;
-		last_value = current_value;
-	}
+	IO_SendByte(digit + '0');
+	IO_SendByte('.');
 	
-	/* print the digits */
-	digit[1] = '.' - '0';
-	for (int i=0; i<8; ++i) 
-	{
-		IO_SendByte(digit[i] + '0');
-	}
+	/* now determine the remaining digits */
+	current_value = (input_value*10) >> Q2p12_N;
+	digit = current_value - last_value*10;
+	last_value = current_value;
+	IO_SendByte(digit + '0');
+	
+	current_value = (input_value*100) >> Q2p12_N;
+	digit = current_value - last_value*10;
+	last_value = current_value;
+	IO_SendByte(digit + '0');
+	
+	current_value = (input_value*1000) >> Q2p12_N;
+	digit = current_value - last_value*10;
+	last_value = current_value;
+	IO_SendByte(digit + '0');
+	
+	current_value = (input_value*10000) >> Q2p12_N;
+	digit = current_value - last_value*10;
+	last_value = current_value;
+	IO_SendByte(digit + '0');
+	
+	current_value = (input_value*100000) >> Q2p12_N;
+	digit = current_value - last_value*10;
+	last_value = current_value;
+	IO_SendByte(digit + '0');
+	
+	current_value = (input_value*1000000) >> Q2p12_N;
+	digit = current_value - last_value*10;
+	last_value = current_value;
+	IO_SendByte(digit + '0');
+
+#undef Q2p12_M
+#undef Q2p12_N
 }

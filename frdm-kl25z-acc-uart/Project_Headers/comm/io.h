@@ -51,7 +51,7 @@ void IO_SendUInt16AsString(uint16_t value);
  * 
  * Must only be used after initialization of Uart0 interrupt.
  */
-void IO_Send2p14AsString(int16_t value);
+void IO_Send2p14AsString(register int16_t value);
 
 /**
  * @brief Sends a 32bit value in native endianness
