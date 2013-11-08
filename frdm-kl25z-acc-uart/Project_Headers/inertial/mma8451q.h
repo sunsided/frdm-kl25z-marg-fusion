@@ -31,6 +31,7 @@
 #define MMA8451Q_REG_PL_CFG				(0x11)	/*< PL_CFG register for portrait/landscape detection configuration */
 #define MMA8451Q_REG_WHOAMI				(0x0D)	/*< WHO_AM_I register for device identification */
 #define MMA8451Q_REG_XZY_DATA_CFG		(0x0E)	/*< XYZ_DATA_CFG sensitivity configuration */
+#define MMA8451Q_TRANSIENT_CFG			(0x1D)	/*< TRANSIENT_CFG transient functional block configuration */
 #define MMA8451Q_REG_CTRL_REG1			(0x2A)	/*< CTRL_REG1 System Control 1 Register */
 #define MMA8451Q_REG_CTRL_REG2			(0x2B)	/*< CTRL_REG2 System Control 2 Register */
 #define MMA8451Q_REG_CTRL_REG3			(0x2C)	/*< CTRL_REG2 System Control 3 Register */

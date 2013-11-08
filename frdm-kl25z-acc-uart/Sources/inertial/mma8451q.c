@@ -157,25 +157,15 @@ void MMA8451Q_FetchConfiguration(mma8451q_confreg_t *const configuration)
 	/* loop while the bus is still busy */
 	I2C_WaitWhileBusy();
 	
-	/* send I2C start signal and set write direction, also enables ACK */
+	/* start register addressing */
 	I2C_SendStart();
-	
-	/* send the slave address and wait for the I2C bus operation to complete */
 	I2C_SendBlocking(I2C_WRITE_ADDRESS(MMA8451Q_I2CADDR));
-	
-	/* send the register address, we start at F_SETUP and bulk-read to the bitter end */
 	I2C_SendBlocking(MMA8451Q_REG_F_SETUP);
-	
-	/* signal a repeated start condition */
-	I2C_SendRepeatedStart();
 
-	/* send the read address */
+	/* start read */
+	I2C_SendRepeatedStart();
 	I2C_SendBlocking(I2C_READ_ADDRESS(MMA8451Q_I2CADDR));
-	
-	/* switch to receive mode and assume more than one register */
 	I2C_EnterReceiveModeWithAck();
-	
-	/* read a dummy byte to drive the clock */
 	I2C_ReceiverModeDriveClock();
 	
 	/* read the registers */
@@ -199,17 +189,35 @@ void MMA8451Q_FetchConfiguration(mma8451q_confreg_t *const configuration)
 	
 	I2C_ReceiverModeDriveClock(); /* skip 1 register */
 	
+#if 1
+	/* After FF_MT_THS (0x17) and FF_MT_COUNT (0x18)
+	 * the next 4 registers are undefined, so bulk-reading
+	 * over them may yield in undesired behaviour
+	 */
+	configuration->FF_MT_THS = I2C_ReceiveDrivingWithNack();
+	configuration->FF_MT_COUNT = I2C_ReceiveAndRestart();
+	
+	/* restart read at 0x1D */
+	I2C_EnterTransmitMode();
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(MMA8451Q_I2CADDR));
+	I2C_SendBlocking(MMA8451Q_TRANSIENT_CFG);
+	
+	/* re-enter read mode */
+	I2C_SendRepeatedStart();
+	I2C_SendBlocking(I2C_READ_ADDRESS(MMA8451Q_I2CADDR));
+	I2C_EnterReceiveModeWithAck();
+	I2C_ReceiverModeDriveClock();
+#else
+	/* bulk-read through the next registers */
 	configuration->FF_MT_THS = I2C_ReceiveDriving();
 	configuration->FF_MT_COUNT = I2C_ReceiveDriving();
 	
-	/* NOTE: The next 4 registers are undefined, so a restart condition may be
-	 * needed instead. 
-	 */
 	I2C_ReceiverModeDriveClock(); /* skip 4 registers */
 	I2C_ReceiverModeDriveClock();
 	I2C_ReceiverModeDriveClock();
 	I2C_ReceiverModeDriveClock();
-	
+#endif
+		
 	configuration->TRANSIENT_CFG = I2C_ReceiveDriving();
 	configuration->TRANSIENT_SCR = I2C_ReceiveDriving();
 	configuration->TRANSIENT_THS = I2C_ReceiveDriving();
