@@ -61,7 +61,7 @@ static volatile uint8_t poll_mma8451q = 0;
 void PORTA_IRQHandler()
 {
 	register uint32_t isfr = PORTA->ISFR;
-	register uint32_t fromMMA8451Q = (isfr & (1 << MMA8451Q_INT1_PIN)) | (isfr & (1 << MMA8451Q_INT2_PIN));
+	register uint32_t fromMMA8451Q = (isfr & ((1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN)));
 	if (fromMMA8451Q)
 	{
 		poll_mma8451q = 1;
