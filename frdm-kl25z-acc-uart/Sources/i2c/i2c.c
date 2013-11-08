@@ -7,6 +7,7 @@
 
 #include "ARMCM0plus.h"
 #include "derivative.h"
+#include "bme.h"
 
 #include "nice_names.h"
 
@@ -154,10 +155,32 @@ __STATIC_INLINE void I2C_EnterReceiveModeWithAck()
  */
 __STATIC_INLINE void I2C_EnterReceiveModeWithoutAck()
 {
+	/* Straightforward method of clearing TX mode and
+	 * setting NACK bit sending.
+	 */
+#if 0
 	register uint8_t reg = I2C0->C1;
 	reg &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
 	reg |=  ((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
 	I2C0->C1 = reg;
+#endif
+	
+	/* Alternative using the Bit Manipulation Engine
+	 * and decorated Logic AND/OR stores */
+#if 0
+	BME_AND_B(&I2C0->C1, ~(1 << I2C_C1_TX_SHIFT));
+	BME_OR_B(&I2C0->C1,   1 << I2C_C1_TXAK_SHIFT);
+#endif
+	
+	/* Even better alternative: BME Bit Field Insert
+	 * - TX   bit is 0x10 (5th bit, 0b00010000)
+	 * - TXAK bit is 0x08 (4th bit, 0b00001000)
+	 * Thus the following can be deduced:
+	 * - The mask for clearing both bits is 0x18 (0b00011000)
+	 *   This corresponds to a 2 bit wide mask, shifted by 3 
+	 * - The mask for setting  TXAK bit  is 0x08 (0b00001000)
+	 */
+	BME_BFI_B(&I2C0->C1, 0x08, 3, 2);
 }
 
 /**
