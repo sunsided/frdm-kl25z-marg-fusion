@@ -138,6 +138,62 @@ typedef struct __attribute__ ((__packed__))
 } mma8451q_acc_t;
 
 /**
+ * @brief The MMA8451Q configuration registers
+ */
+typedef struct {
+	uint8_t F_SETUP;			/*< FIFO setup, register address 0x09 */
+	uint8_t TRIG_CFG;			/*< Map of FIFO data capture events, register address 0x0A */
+	const uint8_t SYSMOD;		/*< Current System Mode, register address 0x0B */
+	/* skipped 1 register */
+	const uint8_t WHO_AM_I;		/*< Device ID (0x1A), register address 0x0D */
+	uint8_t XYZ_DATA_CFG;		/*< Dynamic Range Settings, register address 0x0E */
+	uint8_t HP_FILTER_CUTOFF;	/*< Cutoff frequency, register address 0x0F */
+	/* skipped 1 register */
+	uint8_t PL_CFG;				/*< Landscape/Portrait configuration., register address 0x11 */
+	uint8_t PL_COUNT;			/*< Landscape/Portrait debounce counter, register address 0x12 */
+	uint8_t PL_BF_ZCOMP;		/*< Back/Front, Z-Lock Trip threshold, register address 0x13 */
+	uint8_t P_L_THS_REG;		/*< Portrait to Landscape Trip Angle, register address 0x14 */
+	uint8_t FF_MT_CFG;			/*< Freefall/Motion functional block configuration, register address 0x15 */
+	/* skipped 1 register */ 
+	uint8_t FF_MT_THS;			/*< Freefall/Motion threshold register, register address 0x17 */
+	uint8_t FF_MT_COUNT;		/*< Freefall/Motion debounce counter, register address 0x18 */
+	/* skipped 4 registers */
+	uint8_t TRANSIENT_CFG;		/*< Transient functional block configuration, register address 0x1D */
+	uint8_t TRANSIENT_SCR;		/*< Transient event status register, register address 0x1E */
+	uint8_t TRANSIENT_THS;		/*< Transient event threshold, register address 0x1F */
+	uint8_t TRANSIENT_COUNT;	/*< Transient debounce counter, register address 0x20 */
+	uint8_t PULSE_CFG;			/*< ELE, Double_XYZ or Single_XYZ, register address 0x21 */
+	/* skipped 1 register */
+	uint8_t PULSE_THSX;			/*< X pulse threshold, register address 0x23 */
+	uint8_t PULSE_THSY;			/*< Y pulse threshold, register address 0x24 */
+	uint8_t PULSE_THSZ;			/*< Z pulse threshold, register address 0x25 */
+	uint8_t PULSE_TMLT;			/*< Time limit for pulse, register address 0x26 */
+	uint8_t PULSE_LTCY;			/*< Latency time for 2nd pulse, register address 0x27 */
+	uint8_t PULSE_WIND;			/*< Window time for 2nd pulse, register address 0x28 */
+	uint8_t ASPL_COUNT;			/*< Counter setting for Auto-SLEEP, register address 0x29 */
+	uint8_t CTRL_REG1;			/*< ODR, Active/Standby mode, register address 0x2A */
+	uint8_t CTRL_REG2;			/*< Sleep Enable, OS Modes, RST, ST, register address 0x2B */
+	uint8_t CTRL_REG3;			/*< Wake from Sleep, IPOL, PP_OD, register address 0x2C */
+	uint8_t CTRL_REG4;			/*< Interrupt enable register, register address 0x2D */
+	uint8_t CTRL_REG5;			/*< Interrupt pin (INT1/INT2) map, register address 0x2E */
+	uint8_t OFF_X;				/*< X-axis offset adjust, register address 0x2F */
+	uint8_t OFF_Y;				/*< Y-axis offset adjust, register address 0x30 */
+	uint8_t OFF_Z;				/*< Z-axis offset adjust, register address 0x31 */
+} mma8451q_confreg_t;
+
+/**
+ * @brief Fetches the configuration into a {@see mma8451q_confreg_t} data structure
+ * @param[inout] The configuration data data; Must not be null.
+ */
+void MMA8451Q_FetchConfiguration(mma8451q_confreg_t *const configuration);
+
+/**
+ * @brief Stores the configuration from a {@see mma8451q_confreg_t} data structure
+ * @param[in] The configuration data data; Must not be null.
+ */
+void MMA8451Q_StoreConfiguration(const mma8451q_confreg_t *const configuration);
+
+/**
  * @brief Initializes a {@see mma8451q_acc_t} data structure
  * @param[inout] The accelerometer data; Must not be null.
  */

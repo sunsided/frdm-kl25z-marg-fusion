@@ -7,6 +7,7 @@
 
 #include "ARMCM0plus.h"
 #include "endian.h"
+#include "nice_names.h"
 #include "inertial/mma8451q.h"
 
 #define CTRL_REG1_DR_MASK 		0x38
@@ -143,4 +144,22 @@ void MMA8451Q_ClearInterruptConfiguration()
 {
 	I2C_WriteRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG4, 0);
 	I2C_WriteRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG5, 0);	
+}
+
+/**
+ * @brief Fetches the configuration into a {@see mma8451q_confreg_t} data structure
+ * @param[inout] The configuration data data; Must not be null.
+ */
+void MMA8451Q_FetchConfiguration(mma8451q_confreg_t *const configuration)
+{
+	assert(configuration != 0x0);
+}
+
+/**
+ * @brief Stores the configuration from a {@see mma8451q_confreg_t} data structure
+ * @param[in] The configuration data data; Must not be null.
+ */
+void MMA8451Q_StoreConfiguration(const mma8451q_confreg_t *const configuration)
+{
+	assert(configuration != 0x0);
 }
