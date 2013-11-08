@@ -504,7 +504,12 @@ void I2C_ResetBus()
 	if (I2C0->S & I2C_S_BUSY_MASK)
 	{
 		I2C_SendStart();
-		__WFI();
+		
+		I2C_SendBlocking(0xAA);
+		I2C_SendBlocking(0xAA);
+		I2C_SendBlocking(0xAA);
+		I2C_SendBlocking(0xAA);
+		
 		I2C_SendStop();
 	}
 	
