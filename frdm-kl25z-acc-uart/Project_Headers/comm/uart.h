@@ -8,6 +8,17 @@
 #ifndef UART_H_
 #define UART_H_
 
+/**
+ * @brief Enables or disables decorated storage support using the
+ * Bit Manipulation Engine.
+ */
+#define USE_BME 1
+
+#if USE_BME
+#include "bme.h"
+#endif
+
+#include "nice_names.h"
 #include "buffer.h"
 
 /*
@@ -30,7 +41,11 @@ void Uart0_InitializeIrq(buffer_t *restrict const readFifo, buffer_t *restrict c
  */
 static inline void Uart0_EnableReceiveIrq()
 {
-	UART0_C2 |= UART0_C2_RIE_MASK;
+#if !USE_BME
+	UART0->C2 |= UART0_C2_RIE_MASK;
+#else
+	BME_OR_B(&UART0->C2, (1 << UART0_C2_RIE_SHIFT) & UART0_C2_RIE_MASK);
+#endif
 }
 
 /**
@@ -38,7 +53,11 @@ static inline void Uart0_EnableReceiveIrq()
  */
 static inline void Uart0_DisableReceiveIrq()
 {
-	UART0_C2 &= ~UART0_C2_RIE_MASK;
+#if !USE_BME
+	UART0->C2 &= ~UART0_C2_RIE_MASK;
+#else
+	BME_AND_B(&UART0->C2, (uint8_t)~((1 << UART0_C2_RIE_SHIFT) & UART0_C2_RIE_MASK));
+#endif
 }
 
 /**
@@ -46,7 +65,11 @@ static inline void Uart0_DisableReceiveIrq()
  */
 static inline void Uart0_EnableTransmitIrq()
 {
-	UART0_C2 |= UART0_C2_TIE_MASK;
+#if !USE_BME
+	UART0->C2 |= UART0_C2_RIE_MASK;
+#else
+	BME_OR_B(&UART0->C2, (1 << UART0_C2_TIE_SHIFT) & UART0_C2_TIE_MASK);
+#endif
 }
 
 /**
@@ -54,7 +77,11 @@ static inline void Uart0_EnableTransmitIrq()
  */
 static inline void Uart0_DisableTransmitIrq()
 {
-	UART0_C2 &= ~UART0_C2_TIE_MASK;
+#if !USE_BME
+	UART0->C2 &= ~UART0_C2_TIE_MASK;
+#else
+	BME_AND_B(&UART0->C2, (uint8_t)~((1 << UART0_C2_TIE_SHIFT) & UART0_C2_TIE_MASK));
+#endif
 }
 
 #endif /* UART_H_ */
