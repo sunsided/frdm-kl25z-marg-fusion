@@ -23,7 +23,7 @@ void InitUart0();
 /**
  * @brief Initializes the interrupt for UART0
  */
-void Uart0_InitializeIrq(buffer_t* readFifo, buffer_t* writeFifo);
+void Uart0_InitializeIrq(buffer_t *restrict const readFifo, buffer_t *restrict const writeFifo);
 
 /**
  * @brief Enables the UART0 RX interrupt

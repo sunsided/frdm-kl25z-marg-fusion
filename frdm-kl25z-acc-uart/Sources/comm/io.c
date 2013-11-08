@@ -152,7 +152,7 @@ void IO_SendString(const char *string, uint8_t length)
  * @brief Sends a zero-terminated string
  * @param[in] string The string to send
  */
-void IO_SendZString(const char *string)
+void IO_SendZString(const char *const string)
 {
 	/* enqueue the bytes */
 	register uint8_t i=0;
@@ -171,7 +171,7 @@ void IO_SendZString(const char *string)
  * @param[in] string The string to send
  * @param[in] length The string length
  */
-void IO_SendBuffer(const uint8_t *string, uint8_t length)
+void IO_SendBuffer(const uint8_t *const string, uint8_t length)
 {
 	/* enqueue the bytes */
 	for (uint8_t i=0; i<length; ++i)

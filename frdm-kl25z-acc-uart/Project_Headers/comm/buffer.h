@@ -28,7 +28,7 @@ typedef struct {
  * @param[in] data The data buffer to be used; Length must be at least a size of two.
  * @param[in] size The data buffer size; Must be a size of two
  */
-uint8_t RingBuffer_Init(buffer_t *buffer, uint8_t (*data)[], const uint32_t size);
+uint8_t RingBuffer_Init(buffer_t *const buffer, uint8_t (*const data)[], const uint32_t size);
 
 /**
  * @brief Resets the ring buffer
@@ -56,7 +56,7 @@ __STATIC_INLINE void RingBuffer_Write(buffer_t *buffer, const uint8_t data)
  * @param[in] buffer The ring buffer instance
  * @return The data read
  */
-__STATIC_INLINE const uint8_t RingBuffer_Read(buffer_t *buffer)
+__STATIC_INLINE const uint8_t RingBuffer_Read(buffer_t *const buffer)
 {
 	const uint8_t data = buffer->data[buffer->mask & (buffer->readIndex++)];
 	__DMB();
@@ -68,7 +68,7 @@ __STATIC_INLINE const uint8_t RingBuffer_Read(buffer_t *buffer)
  * @param[in] buffer The ring buffer instance
  * @return nonzero if empty, zero otherwise
  */
-__STATIC_INLINE const uint8_t RingBuffer_Empty(buffer_t *buffer)
+__STATIC_INLINE const uint8_t RingBuffer_Empty(const buffer_t *const buffer)
 {
 	__DMB();
 	/* no masking required here because indices are free running and only masked on access */
@@ -80,7 +80,7 @@ __STATIC_INLINE const uint8_t RingBuffer_Empty(buffer_t *buffer)
  * @param[in] buffer The ring buffer instance
  * @return The item count. This value might be larger than the configured buffer size, indicating that an overflow has happened.
  */
-__STATIC_INLINE const uint32_t RingBuffer_Count(buffer_t *buffer)
+__STATIC_INLINE const uint32_t RingBuffer_Count(const buffer_t *const buffer)
 {
 	__DMB();
 	/* no masking required here because indices are free running and only masked on access */
@@ -92,7 +92,7 @@ __STATIC_INLINE const uint32_t RingBuffer_Count(buffer_t *buffer)
  * @param[in] buffer The ring buffer instance
  * @return nonzero if full, zero otherwise
  */
-__STATIC_INLINE const uint8_t RingBuffer_Full(buffer_t *buffer)
+__STATIC_INLINE const uint8_t RingBuffer_Full(const buffer_t *const buffer)
 {
 	return RingBuffer_Count(buffer) >= buffer->size;
 }
@@ -101,7 +101,7 @@ __STATIC_INLINE const uint8_t RingBuffer_Full(buffer_t *buffer)
  * @brief Blocks until the ring buffer contains data 
  * @param[in] buffer The ring buffer instance
   */
-__STATIC_INLINE void RingBuffer_BlockWhileEmpty(buffer_t *buffer)
+__STATIC_INLINE void RingBuffer_BlockWhileEmpty(const buffer_t *const buffer)
 {
 	while(RingBuffer_Empty(buffer)) 
 	{
@@ -113,7 +113,7 @@ __STATIC_INLINE void RingBuffer_BlockWhileEmpty(buffer_t *buffer)
  * @brief Blocks while the ring buffer is full 
  * @param[in] buffer The ring buffer instance
   */
-__STATIC_INLINE void RingBuffer_BlockWhileFull(buffer_t *buffer)
+__STATIC_INLINE void RingBuffer_BlockWhileFull(const buffer_t *const buffer)
 {
 	while(RingBuffer_Full(buffer)) 
 	{

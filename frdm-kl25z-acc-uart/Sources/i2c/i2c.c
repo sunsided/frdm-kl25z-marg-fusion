@@ -330,7 +330,7 @@ uint8_t I2C_ReadRegister(register uint8_t slaveId, register uint8_t registerAddr
  * @param[in] registerCount The number of registers to read; Must be greater than or equal to two.
  * @param[out] buffere The buffer to write into
  */
-static void I2C_ReadRegistersInternal(register uint8_t slaveId, register uint8_t startRegisterAddress, register uint8_t registerCount, uint8_t *buffer)
+static void I2C_ReadRegistersInternal(register uint8_t slaveId, register uint8_t startRegisterAddress, register uint8_t registerCount, uint8_t *const buffer)
 {
 	assert(registerCount >= 2);
 	

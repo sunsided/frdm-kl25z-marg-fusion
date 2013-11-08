@@ -66,7 +66,7 @@ void IO_SendString(const char *string, uint8_t length);
  * @brief Sends a zero-terminated string
  * @param[in] string The string to send
  */
-void IO_SendZString(const char *string);
+void IO_SendZString(const char *const string);
 
 /**
  * @brief Sends a buffer
@@ -75,7 +75,7 @@ void IO_SendZString(const char *string);
  * 
  * Must only be used after initialization of Uart0 interrupt.
  */
-void IO_SendBuffer(const uint8_t *buffer, uint8_t length);
+void IO_SendBuffer(const uint8_t *const buffer, uint8_t length);
 
 /**
  * @brief Flushes the IO.

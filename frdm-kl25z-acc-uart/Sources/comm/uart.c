@@ -98,7 +98,7 @@ void InitUart0()
 /**
  * @brief Initializes the interrupt for UART0
  */
-void Uart0_InitializeIrq(buffer_t* receiveFifo, buffer_t* transmitFifo)
+void Uart0_InitializeIrq(buffer_t *restrict const receiveFifo, buffer_t *restrict const transmitFifo)
 {
 	/* initialize the structures */
 	uartReadFifo = receiveFifo;

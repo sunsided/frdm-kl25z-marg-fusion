@@ -14,7 +14,7 @@
  * @param[in] data The data buffer to be used; Length must be at least a size of two.
  * @param[in] size The data buffer size; Must be a size of two
  */
-uint8_t RingBuffer_Init(buffer_t *buffer, uint8_t (*data)[], const uint32_t size)
+uint8_t RingBuffer_Init(buffer_t *const buffer, uint8_t (*const data)[], const uint32_t size)
 {
 	// only allow buffers sizes that are a power of two
 	if ((size & (size-1)) != 0) 
