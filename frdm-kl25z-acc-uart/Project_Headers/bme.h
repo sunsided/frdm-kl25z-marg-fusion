@@ -47,39 +47,39 @@
 
 
 /* Decorated Store: Logical AND */
-void BME_AND_B(volatile uint8_t *addr, register uint8_t wdata);
-void BME_AND_H(volatile uint16_t *addr, register uint16_t wdata);
-void BME_AND_W(volatile uint32_t *addr, register uint32_t wdata);
+static void BME_AND_B(volatile uint8_t *addr, register uint8_t wdata);
+static void BME_AND_H(volatile uint16_t *addr, register uint16_t wdata);
+static void BME_AND_W(volatile uint32_t *addr, register uint32_t wdata);
 
 /* Decorated Store: Logical OR */
-void BME_OR_B(volatile uint8_t *addr, register uint8_t wdata);
-void BME_OR_H(volatile uint16_t *addr, register uint16_t wdata);
-void BME_OR_W(volatile uint32_t *addr, register uint32_t wdata);
+static void BME_OR_B(volatile uint8_t *addr, register uint8_t wdata);
+static void BME_OR_H(volatile uint16_t *addr, register uint16_t wdata);
+static void BME_OR_W(volatile uint32_t *addr, register uint32_t wdata);
 
 /* Decorated Store: Logical XOR */
-void BME_XOR_B(volatile uint8_t *addr, register uint8_t wdata);
-void BME_XOR_H(volatile uint16_t *addr, register uint16_t wdata);
-void BME_XOR_W(volatile uint32_t *addr, register uint32_t wdata);
+static void BME_XOR_B(volatile uint8_t *addr, register uint8_t wdata);
+static void BME_XOR_H(volatile uint16_t *addr, register uint16_t wdata);
+static void BME_XOR_W(volatile uint32_t *addr, register uint32_t wdata);
 
 /* Decorated Store: Bit Field Insert */
-void BME_BFI_B(volatile uint8_t *addr, register uint8_t wdata, uint8_t bit, uint8_t width);
-void BME_BFI_H(volatile uint16_t *addr, register uint16_t wdata, uint8_t bit, uint8_t width);
-void BME_BFI_W(volatile uint32_t *addr, register uint32_t wdata, uint8_t bit, uint8_t width);
+static void BME_BFI_B(volatile uint8_t *addr, register uint8_t wdata, uint8_t bit, uint8_t width);
+static void BME_BFI_H(volatile uint16_t *addr, register uint16_t wdata, uint8_t bit, uint8_t width);
+static void BME_BFI_W(volatile uint32_t *addr, register uint32_t wdata, uint8_t bit, uint8_t width);
 
 /* Decorated Load: Load and Clear 1-bit */
-uint8_t BME_LDC1_B(volatile uint8_t *addr, uint8_t bit);
-uint16_t BME_LDC1_H(volatile uint16_t *addr, uint8_t bit);
-uint32_t BME_LDC1_W(volatile uint32_t *addr, uint8_t bit);
+static uint8_t BME_LAC1_B(volatile uint8_t *addr, uint8_t bit);
+static uint16_t BME_LAC1_H(volatile uint16_t *addr, uint8_t bit);
+static uint32_t BME_LAC1_W(volatile uint32_t *addr, uint8_t bit);
 
 /* Decorated Load: Load and Set 1-bit */
-uint8_t BME_LDS1_B(volatile uint8_t *addr, uint8_t bit);
-uint16_t BME_LDS1_H(volatile uint16_t *addr, uint8_t bit);
-uint32_t BME_LDS1_W(volatile uint32_t *addr, uint8_t bit);
+static uint8_t BME_LAS1_B(volatile uint8_t *addr, uint8_t bit);
+static uint16_t BME_LAS1_H(volatile uint16_t *addr, uint8_t bit);
+static uint32_t BME_LAS1_W(volatile uint32_t *addr, uint8_t bit);
 
 /* Decorated Load: Unsigned Bit Field Extract */
-uint8_t BME_UBFX_B(volatile uint8_t *addr, uint8_t bit, uint8_t width);
-uint16_t BME_UBFX_H(volatile uint16_t *addr, uint8_t bit, uint8_t width);
-uint32_t BME_UBFX_W(volatile uint32_t *addr, uint8_t bit, uint8_t width);
+static uint8_t BME_UBFX_B(volatile uint8_t *addr, uint8_t bit, uint8_t width);
+static uint16_t BME_UBFX_H(volatile uint16_t *addr, uint8_t bit, uint8_t width);
+static uint32_t BME_UBFX_W(volatile uint32_t *addr, uint8_t bit, uint8_t width);
 
 
 _BME_INLINE void BME_AND_W (volatile uint32_t *addr, register uint32_t wdata)
