@@ -117,6 +117,132 @@ __STATIC_INLINE void I2C_WaitWhileBusy()
 	while((I2C0->S & I2C_S_BUSY_MASK)!=0) {}
 }
 
+
+/**
+ * @brief Sends a start condition and enters TX mode.
+ */
+__STATIC_INLINE void I2C_SendStart()
+{
+#if !USE_BME	
+	I2C0->C1 |= ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
+				| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+#else
+	BME_OR_B(&I2C0->C1, 
+			  ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
+			| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
+		);
+#endif
+}
+
+/**
+ * @brief Enters receive mode.
+ */
+__STATIC_INLINE void I2C_EnterTransmitMode()
+{
+#if !USE_BME
+	I2C0->C1 |= ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+#else
+	BME_OR_B(&I2C0->C1, 
+			((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
+		);
+#endif
+}
+
+/**
+ * @brief Enters receive mode.
+ */
+__STATIC_INLINE void I2C_EnterReceiveMode()
+{
+#if !USE_BME
+	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+#else
+	BME_AND_B(&I2C0->C1,
+			(uint8_t)
+			~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
+		);
+#endif
+}
+
+/**
+ * @brief Enters receive mode and enables ACK.
+ * 
+ * Enabling ACK may be required when more than one data byte will be read.
+ */
+__STATIC_INLINE void I2C_EnterReceiveModeWithAck()
+{
+#if !USE_BME
+	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)	
+			& ~((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
+#else
+	BME_AND_B(&I2C0->C1,
+			(uint8_t) ~(
+				  ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
+				| ((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK)
+			)
+		);
+#endif
+}
+
+/**
+ * @brief Enters receive mode and disables ACK.
+ * 
+ * Disabling ACK may be required when only one data byte will be read.
+ */
+__STATIC_INLINE void I2C_EnterReceiveModeWithoutAck()
+{
+	/* Straightforward method of clearing TX mode and
+	 * setting NACK bit sending.
+	 */
+#if !USE_BME
+	register uint8_t reg = I2C0->C1;
+	reg &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+	reg |=  ((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
+	I2C0->C1 = reg;
+#else
+	
+	/* Alternative using the Bit Manipulation Engine
+	 * and decorated Logic AND/OR stores */
+#if 0
+	BME_AND_B(&I2C0->C1, ~(1 << I2C_C1_TX_SHIFT));
+	BME_OR_B(&I2C0->C1,   1 << I2C_C1_TXAK_SHIFT);
+#endif
+	
+	/* Even better alternative: BME Bit Field Insert
+	 * - TX   bit is 0x10 (5th bit, 0b00010000)
+	 * - TXAK bit is 0x08 (4th bit, 0b00001000)
+	 * Thus the following can be deduced:
+	 * - The mask for clearing both bits is 0x18 (0b00011000)
+	 *   This corresponds to a 2 bit wide mask, shifted by 3 
+	 * - The mask for setting  TXAK bit  is 0x08 (0b00001000)
+	 */
+	BME_BFI_B(&I2C0->C1, 0x08, 3, 2);
+
+#endif /* USE_BME */
+}
+
+/**
+ * @brief Sends a repeated start condition.
+ */
+__STATIC_INLINE void I2C_SendRepeatedStart()
+{
+#if I2C_ENABLE_E6070_SPEEDHACK
+	register uint8_t reg = I2C0->F;
+	I2C0->F = reg & ~I2C_F_MULT_MASK; /* NOTE: According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). A solution is to temporarily disable the multiplier. */
+#endif
+	
+#if !USE_BME
+	I2C0->C1 |= ((1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK);
+#else
+	BME_OR_B(&I2C0->C1, 
+			((1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK)	
+		);
+#endif
+
+#if I2C_ENABLE_E6070_SPEEDHACK
+	I2C0->F = reg;
+#endif	
+}
+
 /**
  * @brief Sends a stop condition (also leaves TX mode)
  */
@@ -207,131 +333,6 @@ __STATIC_INLINE uint8_t I2C_ReceiveAndStop()
 {
 	I2C_SendStop();
 	return I2C0->D;
-}
-
-/**
- * @brief Sends a start condition and enters TX mode.
- */
-__STATIC_INLINE void I2C_SendStart()
-{
-#if !USE_BME	
-	I2C0->C1 |= ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
-				| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
-#else
-	BME_OR_B(&I2C0->C1, 
-			  ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
-			| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
-		);
-#endif
-}
-
-/**
- * @brief Sends a repeated start condition.
- */
-__STATIC_INLINE void I2C_SendRepeatedStart()
-{
-#if I2C_ENABLE_E6070_SPEEDHACK
-	register uint8_t reg = I2C0->F;
-	I2C0->F = reg & ~I2C_F_MULT_MASK; /* NOTE: According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). A solution is to temporarily disable the multiplier. */
-#endif
-	
-#if !USE_BME
-	I2C0->C1 |= ((1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK);
-#else
-	BME_OR_B(&I2C0->C1, 
-			((1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK)	
-		);
-#endif
-
-#if I2C_ENABLE_E6070_SPEEDHACK
-	I2C0->F = reg;
-#endif	
-}
-
-/**
- * @brief Enters receive mode.
- */
-__STATIC_INLINE void I2C_EnterTransmitMode()
-{
-#if !USE_BME
-	I2C0->C1 |= ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
-#else
-	BME_OR_B(&I2C0->C1, 
-			((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
-		);
-#endif
-}
-
-/**
- * @brief Enters receive mode.
- */
-__STATIC_INLINE void I2C_EnterReceiveMode()
-{
-#if !USE_BME
-	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
-#else
-	BME_AND_B(&I2C0->C1,
-			(uint8_t)
-			~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
-		);
-#endif
-}
-
-/**
- * @brief Enters receive mode and enables ACK.
- * 
- * Enabling ACK may be required when more than one data byte will be read.
- */
-__STATIC_INLINE void I2C_EnterReceiveModeWithAck()
-{
-#if !USE_BME
-	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)	
-			& ~((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
-#else
-	BME_AND_B(&I2C0->C1,
-			(uint8_t) ~(
-				  ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
-				| ((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK)
-			)
-		);
-#endif
-}
-
-/**
- * @brief Enters receive mode and disables ACK.
- * 
- * Disabling ACK may be required when only one data byte will be read.
- */
-__STATIC_INLINE void I2C_EnterReceiveModeWithoutAck()
-{
-	/* Straightforward method of clearing TX mode and
-	 * setting NACK bit sending.
-	 */
-#if !USE_BME
-	register uint8_t reg = I2C0->C1;
-	reg &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
-	reg |=  ((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
-	I2C0->C1 = reg;
-#else
-	
-	/* Alternative using the Bit Manipulation Engine
-	 * and decorated Logic AND/OR stores */
-#if 0
-	BME_AND_B(&I2C0->C1, ~(1 << I2C_C1_TX_SHIFT));
-	BME_OR_B(&I2C0->C1,   1 << I2C_C1_TXAK_SHIFT);
-#endif
-	
-	/* Even better alternative: BME Bit Field Insert
-	 * - TX   bit is 0x10 (5th bit, 0b00010000)
-	 * - TXAK bit is 0x08 (4th bit, 0b00001000)
-	 * Thus the following can be deduced:
-	 * - The mask for clearing both bits is 0x18 (0b00011000)
-	 *   This corresponds to a 2 bit wide mask, shifted by 3 
-	 * - The mask for setting  TXAK bit  is 0x08 (0b00001000)
-	 */
-	BME_BFI_B(&I2C0->C1, 0x08, 3, 2);
-
-#endif /* USE_BME */
 }
 
 /**
