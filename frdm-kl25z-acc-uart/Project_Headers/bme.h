@@ -32,9 +32,9 @@
 #include <stdint.h>
 
 #if defined(__GNUC__)
-#define _BME_INLINE	__attribute__((always_inline)) inline
+#define _BME_INLINE	__attribute__((always_inline)) static inline
 #elif defined(__CWCC__)
-#define _BME_INLINE	__inline
+#define _BME_INLINE	static __inline
 #endif
 
 #define BME_AND_MASK	(1<<26)
