@@ -118,6 +118,57 @@ __STATIC_INLINE void I2C_WaitWhileBusy()
 }
 
 /**
+ * @brief Sends a stop condition (also leaves TX mode)
+ */
+__STATIC_INLINE void I2C_SendStop()
+{
+#if !USE_BME
+	I2C0->C1 &= ~((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK)
+			& ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+#else
+	BME_AND_B(&I2C0->C1,
+			(uint8_t) ~(
+				  ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK)
+				| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
+			)
+		);
+#endif
+}
+
+/**
+ * @brief Enables sending of ACK
+ * 
+ * Enabling ACK may be required when more than one data byte will be read.
+ */
+__STATIC_INLINE void I2C_EnableAck()
+{
+#if !USE_BME
+	I2C0->C1 &= ~((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
+#else
+	BME_AND_B(&I2C0->C1, 
+			(uint8_t)
+			~((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK)
+	);
+#endif
+}
+
+/**
+ * @brief Enables sending of NACK (disabling ACK)
+ * 
+ * Enabling NACK may be required when no more data byte will be read.
+ */
+__STATIC_INLINE void I2C_DisableAck()
+{
+#if !USE_BME
+	I2C0->C1 |= ((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
+#else
+	BME_OR_B(&I2C0->C1,
+			((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK)
+		);
+#endif
+}
+
+/**
  * @brief Sends a byte over the I2C bus and waits for the operation to complete
  * @param[in] value The byte to send
  */
@@ -125,6 +176,37 @@ __STATIC_INLINE void I2C_SendBlocking(const uint8_t value)
 {
 	I2C0->D = value;
 	I2C_Wait();
+}
+
+/**
+ * @brief Reads a byte over the I2C bus and drives the clock for another byte
+ * @return There received byte
+ */
+__STATIC_INLINE uint8_t I2C_ReceiveDriving()
+{
+	register uint8_t value = I2C0->D;
+	I2C_Wait();
+	return value;
+}
+
+/**
+ * @brief Reads a byte over the I2C bus and drives the clock for another byte, while sending NACK
+ * @return There received byte
+ */
+__STATIC_INLINE uint8_t I2C_ReceiveDrivingWithNack()
+{
+	I2C_DisableAck();
+	return I2C_ReceiveDriving();
+}
+
+/**
+ * @brief Reads the last byte over the I2C bus and sends a stop condition
+ * @return There received byte
+ */
+__STATIC_INLINE uint8_t I2C_ReceiveAndStop()
+{
+	I2C_SendStop();
+	return I2C0->D;
 }
 
 /**
@@ -139,24 +221,6 @@ __STATIC_INLINE void I2C_SendStart()
 	BME_OR_B(&I2C0->C1, 
 			  ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
 			| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
-		);
-#endif
-}
-
-/**
- * @brief Sends a stop condition (also leaves TX mode)
- */
-__STATIC_INLINE void I2C_SendStop()
-{
-#if !USE_BME
-	I2C0->C1 &= ~((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK)
-			& ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
-#else
-	BME_AND_B(&I2C0->C1,
-			(uint8_t) ~(
-				  ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK)
-				| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
-			)
 		);
 #endif
 }
@@ -268,39 +332,6 @@ __STATIC_INLINE void I2C_EnterReceiveModeWithoutAck()
 	BME_BFI_B(&I2C0->C1, 0x08, 3, 2);
 
 #endif /* USE_BME */
-}
-
-/**
- * @brief Enables sending of ACK
- * 
- * Enabling ACK may be required when more than one data byte will be read.
- */
-__STATIC_INLINE void I2C_EnableAck()
-{
-#if !USE_BME
-	I2C0->C1 &= ~((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
-#else
-	BME_AND_B(&I2C0->C1, 
-			(uint8_t)
-			~((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK)
-	);
-#endif
-}
-
-/**
- * @brief Enables sending of NACK (disabling ACK)
- * 
- * Enabling NACK may be required when no more data byte will be read.
- */
-__STATIC_INLINE void I2C_DisableAck()
-{
-#if !USE_BME
-	I2C0->C1 |= ((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
-#else
-	BME_OR_B(&I2C0->C1,
-			((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK)
-		);
-#endif
 }
 
 /**
