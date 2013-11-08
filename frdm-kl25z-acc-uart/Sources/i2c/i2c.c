@@ -7,13 +7,6 @@
 
 #include "i2c/i2c.h"
 
-
-/**
- *  @brief According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). 
- *  Setting this define to a nonzero value activates the proposed workaround (temporarily disabling the multiplier).
- */
-#define ENABLE_SPEEDHACK 	(1)
-
 /**
  * @brief Initialises the I2C interface
  */

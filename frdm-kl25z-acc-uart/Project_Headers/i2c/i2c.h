@@ -14,6 +14,12 @@
  */
 #define I2C_USE_BME 1
 
+/**
+ *  @brief According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). 
+ *  Setting this define to a nonzero value activates the proposed workaround (temporarily disabling the multiplier).
+ */
+#define I2C_ENABLE_E6070_SPEEDHACK 	(1)
+
 #include "ARMCM0plus.h"
 #include "derivative.h"
 #include "nice_names.h"
@@ -160,7 +166,7 @@ __STATIC_INLINE void I2C_SendStop()
  */
 __STATIC_INLINE void I2C_SendRepeatedStart()
 {
-#if ENABLE_SPEEDHACK
+#if I2C_ENABLE_E6070_SPEEDHACK
 	register uint8_t reg = I2C0->F;
 	I2C0->F = reg & ~I2C_F_MULT_MASK; /* NOTE: According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). A solution is to temporarily disable the multiplier. */
 #endif
@@ -173,7 +179,7 @@ __STATIC_INLINE void I2C_SendRepeatedStart()
 		);
 #endif
 
-#if ENABLE_SPEEDHACK
+#if I2C_ENABLE_E6070_SPEEDHACK
 	I2C0->F = reg;
 #endif	
 }
