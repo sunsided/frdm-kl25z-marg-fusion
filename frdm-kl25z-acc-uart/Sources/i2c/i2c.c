@@ -5,13 +5,20 @@
  *      Author: Markus
  */
 
+/**
+ * @brief Enables or disables decorated storage support using the
+ * Bit Manipulation Engine.
+ */
+#define USE_BME 1
+
 #include "ARMCM0plus.h"
 #include "derivative.h"
-#include "bme.h"
-
 #include "nice_names.h"
-
 #include "i2c/i2c.h"
+
+#if USE_BME
+#include "bme.h"
+#endif
 
 /**
  *  @brief According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). 
@@ -25,10 +32,18 @@
 void I2C_Init()
 {
 	/* enable clock gating to I2C0 */
+#if !USE_BME
 	SIM->SCGC4 |= (1 << SIM_SCGC4_I2C0_SHIFT) & SIM_SCGC4_I2C0_MASK;
+#else
+	BME_OR_W(&SIM->SCGC4, (1 << SIM_SCGC4_I2C0_SHIFT) & SIM_SCGC4_I2C0_MASK);
+#endif
 	
 	/* enable the clock gate to port E */
+#if !USE_BME
 	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTE_SHIFT) & SIM_SCGC5_PORTE_MASK;
+#else
+	BME_OR_W(&SIM->SCGC5, (1 << SIM_SCGC5_PORTE_SHIFT) & SIM_SCGC5_PORTE_MASK);
+#endif
 	
 	/* configure port E pins to I2C operation */
 	PORTE->PCR[24] = PORT_PCR_MUX(5); /* SCL */
@@ -91,14 +106,15 @@ __STATIC_INLINE void I2C_SendBlocking(const uint8_t value)
  */
 __STATIC_INLINE void I2C_SendStart()
 {
-#if 0	
+#if !USE_BME	
 	I2C0->C1 |= ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
 				| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
-#endif
+#else
 	BME_OR_B(&I2C0->C1, 
 			  ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
 			| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
 		);
+#endif
 }
 
 /**
@@ -106,16 +122,17 @@ __STATIC_INLINE void I2C_SendStart()
  */
 __STATIC_INLINE void I2C_SendStop()
 {
-#if 0
+#if !USE_BME
 	I2C0->C1 &= ~((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK)
 			& ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
-#endif
+#else
 	BME_AND_B(&I2C0->C1,
 			(uint8_t) ~(
 				  ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK)
 				| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
 			)
 		);
+#endif
 }
 
 /**
@@ -128,12 +145,13 @@ __STATIC_INLINE void I2C_SendRepeatedStart()
 	I2C0->F = reg & ~I2C_F_MULT_MASK; /* NOTE: According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). A solution is to temporarily disable the multiplier. */
 #endif
 	
-#if 0
+#if !USE_BME
 	I2C0->C1 |= ((1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK);
-#endif
+#else
 	BME_OR_B(&I2C0->C1, 
 			((1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK)	
 		);
+#endif
 
 #if ENABLE_SPEEDHACK
 	I2C0->F = reg;
@@ -145,7 +163,13 @@ __STATIC_INLINE void I2C_SendRepeatedStart()
  */
 __STATIC_INLINE void I2C_EnterTransmitMode()
 {
-	I2C0->C1 |= ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK); /* TODO: use BME in all these places */
+#if !USE_BME
+	I2C0->C1 |= ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+#else
+	BME_OR_B(&I2C0->C1, 
+			((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
+		);
+#endif
 }
 
 /**
@@ -153,7 +177,14 @@ __STATIC_INLINE void I2C_EnterTransmitMode()
  */
 __STATIC_INLINE void I2C_EnterReceiveMode()
 {
+#if !USE_BME
 	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
+#else
+	BME_AND_B(&I2C0->C1,
+			(uint8_t)
+			~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
+		);
+#endif
 }
 
 /**
@@ -163,8 +194,17 @@ __STATIC_INLINE void I2C_EnterReceiveMode()
  */
 __STATIC_INLINE void I2C_EnterReceiveModeWithAck()
 {
+#if !USE_BME
 	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)	
 			& ~((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
+#else
+	BME_AND_B(&I2C0->C1,
+			(uint8_t) ~(
+				  ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)
+				| ((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK)
+			)
+		);
+#endif
 }
 
 /**
@@ -177,12 +217,12 @@ __STATIC_INLINE void I2C_EnterReceiveModeWithoutAck()
 	/* Straightforward method of clearing TX mode and
 	 * setting NACK bit sending.
 	 */
-#if 0
+#if !USE_BME
 	register uint8_t reg = I2C0->C1;
 	reg &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
 	reg |=  ((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
 	I2C0->C1 = reg;
-#endif
+#else
 	
 	/* Alternative using the Bit Manipulation Engine
 	 * and decorated Logic AND/OR stores */
@@ -200,6 +240,8 @@ __STATIC_INLINE void I2C_EnterReceiveModeWithoutAck()
 	 * - The mask for setting  TXAK bit  is 0x08 (0b00001000)
 	 */
 	BME_BFI_B(&I2C0->C1, 0x08, 3, 2);
+
+#endif /* USE_BME */
 }
 
 /**
@@ -209,7 +251,14 @@ __STATIC_INLINE void I2C_EnterReceiveModeWithoutAck()
  */
 __STATIC_INLINE void I2C_EnableAck()
 {
+#if !USE_BME
 	I2C0->C1 &= ~((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
+#else
+	BME_AND_B(&I2C0->C1, 
+			(uint8_t)
+			~((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK)
+	);
+#endif
 }
 
 /**
@@ -219,7 +268,13 @@ __STATIC_INLINE void I2C_EnableAck()
  */
 __STATIC_INLINE void I2C_DisableAck()
 {
+#if !USE_BME
 	I2C0->C1 |= ((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
+#else
+	BME_OR_B(&I2C0->C1,
+			((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK)
+		);
+#endif
 }
 
 /**
