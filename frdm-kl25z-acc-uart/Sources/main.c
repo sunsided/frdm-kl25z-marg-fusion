@@ -132,6 +132,7 @@ int main(void)
 	MMA8451Q_EnterActiveMode();
 	
 	MMA8451Q_FetchConfiguration(&configuration);
+	MMA8451Q_StoreConfiguration(&configuration);
 	
 	/*
 	accelerometer = MMA8451Q_SystemMode();
