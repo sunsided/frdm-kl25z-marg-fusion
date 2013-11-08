@@ -13,14 +13,14 @@
 void I2C_Init()
 {
 	/* enable clock gating to I2C0 */
-#if !USE_BME
+#if !I2C_USE_BME
 	SIM->SCGC4 |= (1 << SIM_SCGC4_I2C0_SHIFT) & SIM_SCGC4_I2C0_MASK;
 #else
 	BME_OR_W(&SIM->SCGC4, (1 << SIM_SCGC4_I2C0_SHIFT) & SIM_SCGC4_I2C0_MASK);
 #endif
 	
 	/* enable the clock gate to port E */
-#if !USE_BME
+#if !I2C_USE_BME
 	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTE_SHIFT) & SIM_SCGC5_PORTE_MASK;
 #else
 	BME_OR_W(&SIM->SCGC5, (1 << SIM_SCGC5_PORTE_SHIFT) & SIM_SCGC5_PORTE_MASK);
@@ -258,7 +258,7 @@ uint8_t I2C_ModifyRegister(register uint8_t slaveId, register uint8_t registerAd
  */
 void I2C_ResetBus()
 {
-#if !USE_BME
+#if !I2C_USE_BME
 	I2C0->S |= I2C_S_IICIF_MASK; /* clear interrupt flag */
 #else
 	BME_OR_B(&I2C0->S, ((1 << I2C_S_IICIF_SHIFT) << I2C_S_IICIF_MASK));
@@ -276,7 +276,7 @@ void I2C_ResetBus()
 		I2C_SendStop();
 	}
 	
-#if !USE_BME
+#if !I2C_USE_BME
 	I2C0->S |= I2C_S_IICIF_MASK; /* clear interrupt flag */
 #else
 	BME_OR_B(&I2C0->S, ((1 << I2C_S_IICIF_SHIFT) << I2C_S_IICIF_MASK));

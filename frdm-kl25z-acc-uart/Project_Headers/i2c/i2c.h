@@ -24,7 +24,7 @@
 #include "derivative.h"
 #include "nice_names.h"
 
-#if USE_BME
+#if I2C_USE_BME
 #include "bme.h"
 #endif
 
@@ -102,7 +102,7 @@ __STATIC_INLINE void I2C_Wait()
 {
 	while((I2C0->S & I2C_S_IICIF_MASK)==0) {}	/* loop until interrupt is detected */
 	
-#if !USE_BME
+#if !I2C_USE_BME
 	I2C0->S |= I2C_S_IICIF_MASK; /* clear interrupt flag */
 #else
 	BME_OR_B(&I2C0->S, ((1 << I2C_S_IICIF_SHIFT) << I2C_S_IICIF_MASK));
@@ -123,7 +123,7 @@ __STATIC_INLINE void I2C_WaitWhileBusy()
  */
 __STATIC_INLINE void I2C_SendStart()
 {
-#if !USE_BME	
+#if !I2C_USE_BME	
 	I2C0->C1 |= ((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK) 
 				| ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
 #else
@@ -139,7 +139,7 @@ __STATIC_INLINE void I2C_SendStart()
  */
 __STATIC_INLINE void I2C_EnterTransmitMode()
 {
-#if !USE_BME
+#if !I2C_USE_BME
 	I2C0->C1 |= ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
 #else
 	BME_OR_B(&I2C0->C1, 
@@ -153,7 +153,7 @@ __STATIC_INLINE void I2C_EnterTransmitMode()
  */
 __STATIC_INLINE void I2C_EnterReceiveMode()
 {
-#if !USE_BME
+#if !I2C_USE_BME
 	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
 #else
 	BME_AND_B(&I2C0->C1,
@@ -170,7 +170,7 @@ __STATIC_INLINE void I2C_EnterReceiveMode()
  */
 __STATIC_INLINE void I2C_EnterReceiveModeWithAck()
 {
-#if !USE_BME
+#if !I2C_USE_BME
 	I2C0->C1 &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK)	
 			& ~((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
 #else
@@ -193,7 +193,7 @@ __STATIC_INLINE void I2C_EnterReceiveModeWithoutAck()
 	/* Straightforward method of clearing TX mode and
 	 * setting NACK bit sending.
 	 */
-#if !USE_BME
+#if !I2C_USE_BME
 	register uint8_t reg = I2C0->C1;
 	reg &= ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
 	reg |=  ((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
@@ -230,7 +230,7 @@ __STATIC_INLINE void I2C_SendRepeatedStart()
 	I2C0->F = reg & ~I2C_F_MULT_MASK; /* NOTE: According to KINETIS_L_2N97F errata (e6070), repeated start condition can not be sent if prescaler is any other than 1 (0x0). A solution is to temporarily disable the multiplier. */
 #endif
 	
-#if !USE_BME
+#if !I2C_USE_BME
 	I2C0->C1 |= ((1 << I2C_C1_RSTA_SHIFT) & I2C_C1_RSTA_MASK)
 			  | ((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
 #else
@@ -250,7 +250,7 @@ __STATIC_INLINE void I2C_SendRepeatedStart()
  */
 __STATIC_INLINE void I2C_SendStop()
 {
-#if !USE_BME
+#if !I2C_USE_BME
 	I2C0->C1 &= ~((1 << I2C_C1_MST_SHIFT) & I2C_C1_MST_MASK)
 			& ~((1 << I2C_C1_TX_SHIFT) & I2C_C1_TX_MASK);
 #else
@@ -270,7 +270,7 @@ __STATIC_INLINE void I2C_SendStop()
  */
 __STATIC_INLINE void I2C_EnableAck()
 {
-#if !USE_BME
+#if !I2C_USE_BME
 	I2C0->C1 &= ~((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
 #else
 	BME_AND_B(&I2C0->C1, 
@@ -287,7 +287,7 @@ __STATIC_INLINE void I2C_EnableAck()
  */
 __STATIC_INLINE void I2C_DisableAck()
 {
-#if !USE_BME
+#if !I2C_USE_BME
 	I2C0->C1 |= ((1 << I2C_C1_TXAK_SHIFT) & I2C_C1_TXAK_MASK);
 #else
 	BME_OR_B(&I2C0->C1,
