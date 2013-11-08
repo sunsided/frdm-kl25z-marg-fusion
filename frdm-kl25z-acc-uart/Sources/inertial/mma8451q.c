@@ -153,6 +153,86 @@ void MMA8451Q_ClearInterruptConfiguration()
 void MMA8451Q_FetchConfiguration(mma8451q_confreg_t *const configuration)
 {
 	assert(configuration != 0x0);
+		
+	/* loop while the bus is still busy */
+	I2C_WaitWhileBusy();
+	
+	/* send I2C start signal and set write direction, also enables ACK */
+	I2C_SendStart();
+	
+	/* send the slave address and wait for the I2C bus operation to complete */
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(MMA8451Q_I2CADDR));
+	
+	/* send the register address, we start at F_SETUP and bulk-read to the bitter end */
+	I2C_SendBlocking(MMA8451Q_REG_F_SETUP);
+	
+	/* signal a repeated start condition */
+	I2C_SendRepeatedStart();
+
+	/* send the read address */
+	I2C_SendBlocking(I2C_READ_ADDRESS(MMA8451Q_I2CADDR));
+	
+	/* switch to receive mode and assume more than one register */
+	I2C_EnterReceiveModeWithAck();
+	
+	/* read a dummy byte to drive the clock */
+	I2C_ReceiverModeDriveClock();
+	
+	/* read the registers */
+	configuration->F_SETUP = I2C_ReceiveDriving();
+	configuration->TRIG_CFG = I2C_ReceiveDriving();
+	*((uint8_t*)&configuration->SYSMOD) = I2C_ReceiveDriving();
+	
+	I2C_ReceiverModeDriveClock(); /* skip 1 register */
+	
+	*((uint8_t*)&configuration->WHO_AM_I) = I2C_ReceiveDriving();
+	configuration->XYZ_DATA_CFG = I2C_ReceiveDriving();
+	configuration->HP_FILTER_CUTOFF = I2C_ReceiveDriving();
+	
+	I2C_ReceiverModeDriveClock(); /* skip 1 register */
+	
+	configuration->PL_CFG = I2C_ReceiveDriving();
+	configuration->PL_COUNT = I2C_ReceiveDriving();
+	configuration->PL_BF_ZCOMP = I2C_ReceiveDriving();
+	configuration->P_L_THS_REG = I2C_ReceiveDriving();
+	configuration->FF_MT_CFG = I2C_ReceiveDriving();
+	
+	I2C_ReceiverModeDriveClock(); /* skip 1 register */
+	
+	configuration->FF_MT_THS = I2C_ReceiveDriving();
+	configuration->FF_MT_COUNT = I2C_ReceiveDriving();
+	
+	/* NOTE: The next 4 registers are undefined, so a restart condition may be
+	 * needed instead. 
+	 */
+	I2C_ReceiverModeDriveClock(); /* skip 4 registers */
+	I2C_ReceiverModeDriveClock();
+	I2C_ReceiverModeDriveClock();
+	I2C_ReceiverModeDriveClock();
+	
+	configuration->TRANSIENT_CFG = I2C_ReceiveDriving();
+	configuration->TRANSIENT_SCR = I2C_ReceiveDriving();
+	configuration->TRANSIENT_THS = I2C_ReceiveDriving();
+	configuration->TRANSIENT_COUNT = I2C_ReceiveDriving();
+	configuration->PULSE_CFG = I2C_ReceiveDriving();
+	
+	I2C_ReceiverModeDriveClock(); /* skip 1 register */
+	
+	configuration->PULSE_THSX = I2C_ReceiveDriving();
+	configuration->PULSE_THSY = I2C_ReceiveDriving();
+	configuration->PULSE_THSZ = I2C_ReceiveDriving();
+	configuration->PULSE_TMLT = I2C_ReceiveDriving();
+	configuration->PULSE_LTCY = I2C_ReceiveDriving();
+	configuration->PULSE_WIND = I2C_ReceiveDriving();
+	configuration->ASPL_COUNT = I2C_ReceiveDriving();
+	configuration->CTRL_REG1 = I2C_ReceiveDriving();
+	configuration->CTRL_REG2 = I2C_ReceiveDriving();
+	configuration->CTRL_REG3 = I2C_ReceiveDriving();
+	configuration->CTRL_REG4 = I2C_ReceiveDriving();
+	configuration->CTRL_REG5 = I2C_ReceiveDriving();
+	configuration->OFF_X = I2C_ReceiveDriving();
+	configuration->OFF_Y = I2C_ReceiveDrivingWithNack();
+	configuration->OFF_Z = I2C_ReceiveAndStop();
 }
 
 /**

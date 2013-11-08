@@ -26,6 +26,7 @@
 #define MMA8451Q_STATUS_ZDR(status)		(status & 0b00000001)	/*< Z data ready */
 
 #define MMA8451Q_REG_STATUS				(0x00)	/*< STATUS register */
+#define MMA8451Q_REG_F_SETUP			(0x09)	/*< F_SETUP register */
 #define MMA8451Q_REG_SYSMOD				(0x0B)	/*< SYSMOD register for system mode identification */
 #define MMA8451Q_REG_PL_CFG				(0x11)	/*< PL_CFG register for portrait/landscape detection configuration */
 #define MMA8451Q_REG_WHOAMI				(0x0D)	/*< WHO_AM_I register for device identification */
