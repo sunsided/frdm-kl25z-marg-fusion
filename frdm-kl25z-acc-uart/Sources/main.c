@@ -100,6 +100,11 @@ int main(void)
 	
 	IO_SendZString("MMA8451Q");
 		
+	
+	mma8451q_confreg_t configuration;
+	MMA8451Q_FetchConfiguration(&configuration);
+	
+	
 	/*
 	uint8_t accelerometer = MMA8451Q_WhoAmI();
 	IO_SendByte(accelerometer);
@@ -125,6 +130,8 @@ int main(void)
 	MMA8451Q_SetInterruptMode(MMA8451Q_INTMODE_OPENDRAIN, MMA8451Q_INTPOL_ACTIVELOW);
 	MMA8451Q_ConfigureInterrupt(MMA8451Q_INT_DRDY, MMA8451Q_INTPIN_INT2);
 	MMA8451Q_EnterActiveMode();
+	
+	MMA8451Q_FetchConfiguration(&configuration);
 	
 	/*
 	accelerometer = MMA8451Q_SystemMode();
