@@ -336,6 +336,16 @@ __STATIC_INLINE uint8_t I2C_ReceiveAndStop()
 }
 
 /**
+ * @brief Reads a byte over the I2C bus and sends a repeated start condition
+ * @return There received byte
+ */
+__STATIC_INLINE uint8_t I2C_ReceiveAndRestart()
+{
+	I2C_SendRepeatedStart();
+	return I2C0->D;
+}
+
+/**
  * @brief Drives the clock in receiver mode in order to receive the first byte.
  */
 __STATIC_INLINE void I2C_ReceiverModeDriveClock()
