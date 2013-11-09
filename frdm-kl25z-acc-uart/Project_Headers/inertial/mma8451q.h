@@ -256,6 +256,14 @@ static inline void MMA8451Q_EnterPassiveMode()
 }
 
 /**
+ * @brief Resets the MMA8451Q
+ */
+static inline void MMA8451Q_Reset()
+{
+	I2C_WriteRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG2, 0b01000000);
+}
+
+/**
  * @brief Brings the MMA8451Q into active mode
  * @param[inout] configuration The configuration structure or {@see MMA8451Q_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
  */
