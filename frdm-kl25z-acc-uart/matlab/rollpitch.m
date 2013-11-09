@@ -21,13 +21,19 @@ function [rp] = rollpitch(acc)
     % Prepare result
     rp = [NaN; NaN];
     
-    % Get x-z component angle
-    xz_cross = cross(x, zref);
-    xangle   = xz_cross(2);
-    rp(1)     = asin(xangle);
-
-    % Get y-z component angle
+    % Get y-z component angle (roll)
     zy_cross = cross(zref, y);
     yangle   = zy_cross(1);
-    rp(2)    = asin(yangle);
+    rp(1)    = asin(yangle);
+    if acc(3) < 0
+       rp(1) = pi - rp(1);
+    end
+    
+    % Get x-z component angle (pitch)
+    xz_cross = cross(x, zref);
+    xangle   = xz_cross(2);
+    rp(2)     = asin(xangle);
+    if acc(3) < 0
+       rp(2) = -rp(2);
+    end
 end
