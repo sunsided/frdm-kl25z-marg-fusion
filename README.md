@@ -9,7 +9,7 @@ to life without using Processor Expert, so just bare metal here. No CMSIS though
 ### System ###
 
 - Clock in PLL engaged mode (PEE) with 48 MHz core, 24 MHz bus
-- SysTick timer running at 1ms
+- SysTick timer running at 0.25ms
 - delay_ms() function with low power wait support (WFI)
 
 ### Communication ###
