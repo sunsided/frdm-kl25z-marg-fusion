@@ -50,6 +50,12 @@ function serial_test
         'ZColor', [0.973 0.973 0.973], ...
         'Color', [0.1 0.1 0.1] ...
         );
+    
+    % Prepare title
+    titleHandle = title(axesHandle, '', ...
+        'Color', [1 1 1], ...
+        'Interpreter', 'none' ...
+        );
 
     % Prepare the data array
     xtrack = NaN(1, 10);
@@ -73,7 +79,6 @@ function serial_test
         'MarkerSize', 1, ...
         'Color', [0.872 0.049 0.327] ...
         );
-    
     
     %set(plotHandle(1), 'MarkerSize', 20);
     
@@ -150,19 +155,29 @@ function serial_test
                     double(typecast(data(5:6), 'int16'));
                     ] / 4096;
                 
+                rp = rollpitch(xyz);
+                
                 %msg = sprintf('x: %+1.5f  y: %+1.5f  z: %+1.5f', xyz(1), xyz(2), xyz(3));
                 %disp(msg);
                     
-                % Render with 60 Hz
+                % Render with 30 Hz
                 duration = toc;
-                if duration > 1/60
+                if duration > 1/30
+                    % Prepare the track
                     xtrack = [xtrack(2:end) xyz(1)];
                     ytrack = [ytrack(2:end) xyz(2)];
                     ztrack = [ztrack(2:end) xyz(3)];
                     
+                    % Set the plot data
                     set(plotHandle, 'XData', xyz(1), 'YData', xyz(2), 'ZData', xyz(3));
                     set(trackHandle, 'XData', xtrack, 'YData', ytrack, 'ZData', ztrack);
+
+                    % Set the title
+                    rpdegree = rp * 180/pi;
+                    msg = sprintf('roll %+1.4f, yaw %+1.4f', rpdegree(1), rpdegree(2));
+                    set(titleHandle, 'String', msg);
                     
+                    % Set the axis labels
                     xlabel(['x: ' num2str(xyz(1))]);
                     ylabel(['y: ' num2str(xyz(2))]);
                     zlabel(['z: ' num2str(xyz(3))]);
