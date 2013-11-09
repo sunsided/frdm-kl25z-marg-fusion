@@ -1,5 +1,6 @@
 function serial_test
-    
+    close all; clear all;
+
     % We turn it back on in the end
     cleanupHandler = onCleanup(@cleanUp);
 
@@ -21,7 +22,7 @@ function serial_test
         'DataBits', 8, ...
         'Parity', 'none', ...
         'StopBits', 1, ...
-        'TimeOut', 10, ...
+        'TimeOut', 1, ...
         'InputBufferSize', 1024, ...
         'ReadAsyncMode', 'continuous', ...
         'Terminator', 0, ...
@@ -32,9 +33,61 @@ function serial_test
     % Connecting to the port
     fopen(s);
 
+    % Prepare plot
+    figureHandle = figure('NumberTitle', 'off', ...
+        'Name', 'MMA8451Q Output', ...
+        'Color', [0.027 0.211 0.259], ...
+        'Visible', 'off' ...
+        );
+    
+    % Prepare axes
+    axesHandle = axes('Parent', figureHandle, ...
+        'XGrid', 'on', ...
+        'XColor', [0.973 0.973 0.973], ...
+        'YGrid', 'on', ...
+        'YColor', [0.973 0.973 0.973], ...
+        'ZGrid', 'on', ...
+        'ZColor', [0.973 0.973 0.973], ...
+        'Color', [0.1 0.1 0.1], ...
+        'ZDir', 'reverse' ...
+        );
+
+    % Prepare the data array
+    xtrack = NaN(1, 10);
+    ytrack = NaN(1, 10);
+    ztrack = NaN(1, 10);
+    
+    % Prepare the plot
+    hold on;
+    plotHandle = line(NaN, NaN, NaN, ...
+        'Parent', axesHandle, ...
+        'Marker', 'v', ...
+        'LineWidth', 2, ...
+        'MarkerSize', 20, ...
+        'Color', [0.972 0.149 0.427] ...
+        );
+    trackHandle = line(xtrack, ytrack, ztrack, ...
+        'Parent', axesHandle, ...
+        'LineStyle', ':', ...
+        'Marker', '.', ...
+        'LineWidth', 1, ...
+        'MarkerSize', 1, ...
+        'Color', [0.972 0.149 0.427] ...
+        );
+    
+    %set(plotHandle(1), 'MarkerSize', 20);
+    
+    xlim(axesHandle, [-1 1]);
+    ylim(axesHandle, [-1 1]);
+    zlim(axesHandle, [-1 1]);
+    
+    view(axesHandle, -37.5, 30);
+    axis square;
+    set(figureHandle, 'Visible', 'on');
+    
     % Grab jobject for fread
     sjobject = igetfield(s, 'jobject');
-    
+        
     % Definitions
     SOH     = uint8(1);
     STX     = uint8(2);
@@ -65,8 +118,11 @@ function serial_test
     % Debugging
     %byteCircBuf = NaN(1, 24);
     
+    % Start timing for the graphics loop
+    tic;
+    
     % Reading the data
-    bulkSize = 40;
+    bulkSize = 80;
     byteIndices = 1:bulkSize;
     lastByte = 0;
     while true
@@ -97,8 +153,26 @@ function serial_test
                     double(typecast(data(5:6), 'int16'));
                     ] / 4096;
                 
-                msg = sprintf('x: %+1.5f  y: %+1.5f  z: %+1.5f', xyz(1), xyz(2), xyz(3));
-                disp(msg);
+                %msg = sprintf('x: %+1.5f  y: %+1.5f  z: %+1.5f', xyz(1), xyz(2), xyz(3));
+                %disp(msg);
+                    
+                % Render with 60 Hz
+                duration = toc;
+                if duration > 1/60
+                    xtrack = [xtrack(2:end) xyz(1)];
+                    ytrack = [ytrack(2:end) xyz(2)];
+                    ztrack = [ztrack(2:end) xyz(3)];
+                    
+                    set(plotHandle, 'XData', xyz(1), 'YData', xyz(2), 'ZData', xyz(3));
+                    set(trackHandle, 'XData', xtrack, 'YData', ytrack, 'ZData', ztrack);
+                    
+                    xlabel(num2str(xyz(1)));
+                    ylabel(num2str(xyz(2)));
+                    zlabel(num2str(xyz(3)));
+                    
+                    drawnow;
+                    tic;
+                end;
                 
                 % Thanks, but no.
                 dataReady = false;
