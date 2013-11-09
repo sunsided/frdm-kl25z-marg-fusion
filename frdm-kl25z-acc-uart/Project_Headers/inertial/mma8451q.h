@@ -138,9 +138,14 @@ typedef struct __attribute__ ((__packed__))
 {
 	uint8_t :8; 		/*< padding byte */
 	uint8_t status;		/*< the status register contents */
-	int16_t x;			/*< the x acceleration */
-	int16_t y;			/*< the y acceleration */
-	int16_t z;			/*< the z acceleration */
+	union {
+		struct {
+			int16_t x;			/*< the x acceleration */
+			int16_t y;			/*< the y acceleration */
+			int16_t z;			/*< the z acceleration */
+		};
+		int16_t xyz[3];
+	};
 } mma8451q_acc_t;
 
 /**
