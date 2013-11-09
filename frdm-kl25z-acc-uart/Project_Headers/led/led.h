@@ -127,4 +127,15 @@ static inline void LED_Off()
 	LED_BlueOff();
 }
 
+
+/**
+ * @brief LED Traffic Light!
+ */
+void TrafficLight();
+
+/**
+ * @brief LED Double Flash!
+ */
+void DoubleFlash();
+
 #endif /* LED_H_ */

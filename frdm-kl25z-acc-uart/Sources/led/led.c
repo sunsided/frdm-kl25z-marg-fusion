@@ -8,6 +8,7 @@
 #include "derivative.h"
 #include "nice_names.h"
 
+#include "cpu/delay.h"
 #include "led/led.h"
 
 /**
@@ -31,4 +32,31 @@ void LED_Init()
 	
 	/* disable all leds */
 	LED_Off();
+}
+
+/**
+ * @brief LED Traffic Light!
+ */
+void TrafficLight()
+{
+	LED_Red();
+	delay_ms(1000);
+	LED_Yellow();
+	delay_ms(1000);
+	LED_Green();
+	delay_ms(1000);
+}
+
+/**
+ * @brief LED Double Flash!
+ */
+void DoubleFlash()
+{
+	LED_White();
+	delay_ms(50);
+	LED_Off();
+	delay_ms(50);
+	LED_White();
+	delay_ms(50);
+	LED_Off();	
 }
