@@ -76,10 +76,12 @@ void InitMMA8451Q()
 	
 	/* configure accelerometer */
 	MMA8451Q_EnterPassiveMode();
+	MMA8451Q_Reset();
+	delay_ms(20);
 	MMA8451Q_FetchConfiguration(&configuration);
 	
 	MMA8451Q_SetSensitivity(&configuration, MMA8451Q_SENSITIVITY_2G, MMA8451Q_HPO_DISABLED);
-	MMA8451Q_SetDataRate(&configuration, MMA8451Q_DATARATE_800Hz, MMA8451Q_LOWNOISE_ENABLED);
+	MMA8451Q_SetDataRate(&configuration, MMA8451Q_DATARATE_400Hz, MMA8451Q_LOWNOISE_ENABLED);
 	MMA8451Q_SetOversampling(&configuration, MMA8451Q_OVERSAMPLING_HIGHRESOLUTION);
 	MMA8451Q_ClearInterruptConfiguration(&configuration);
 	MMA8451Q_SetInterruptMode(&configuration, MMA8451Q_INTMODE_OPENDRAIN, MMA8451Q_INTPOL_ACTIVELOW);
@@ -160,7 +162,11 @@ int main(void)
 			 * 
 			 * The problem is with the current protocol, as
 			 * 800 Hz * (12 Data Byte + 5 Byte protocol) = 134.400 bit,
-			 * yet only 115.200 kbaud are configured for the wire. 
+			 * yet only 115.200 kbaud are configured for the wire.
+			 * 
+			 * After fixing this issue it turns out that this was only half 
+			 * the truth. It seems that no matter what, as soon as an axis
+			 * is close to zero g the device stops sending interrupts.
 			 */
 			
 			poll_mma8451q = 0;
