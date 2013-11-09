@@ -8,6 +8,9 @@
 #ifndef DELAY_H_
 #define DELAY_H_
 
+#include "ARMCM0plus.h"
+#include "derivative.h"
+
 /**
  * @brief The system tick counter
  */
@@ -18,7 +21,7 @@ extern const volatile uint32_t SystemMilliseconds;
  * @param[in] ms The delay time in milliseconds
  * @return none.
  */
-void delay_ms(const uint16_t ms) 
+static inline void delay_ms(const uint16_t ms) 
 {
 	const uint32_t start_ticks = SystemMilliseconds;
 	do {
