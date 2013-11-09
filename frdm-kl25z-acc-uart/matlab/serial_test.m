@@ -163,9 +163,9 @@ function serial_test
                     set(plotHandle, 'XData', xyz(1), 'YData', xyz(2), 'ZData', xyz(3));
                     set(trackHandle, 'XData', xtrack, 'YData', ytrack, 'ZData', ztrack);
                     
-                    xlabel(num2str(xyz(1)));
-                    ylabel(num2str(xyz(2)));
-                    zlabel(num2str(xyz(3)));
+                    xlabel(['x: ' num2str(xyz(1))]);
+                    ylabel(['y: ' num2str(xyz(2))]);
+                    zlabel(['z: ' num2str(xyz(3))]);
                     
                     drawnow;
                     tic;
