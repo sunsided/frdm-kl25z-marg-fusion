@@ -32,10 +32,16 @@ void InitSysTick()
 volatile uint32_t SystemMilliseconds = 0;
 
 /**
+ * @brief 250µs Counter
+ */
+static uint32_t freeRunner = 0;
+
+/**
  * @brief The SysTick interrupt handler
  * @return none.
  */
 void SysTick_Handler() 
 {
-	++SystemMilliseconds;
+	SystemMilliseconds += ((++freeRunner) & 0b100) >> 2;
+	freeRunner &= 0b11;
 }

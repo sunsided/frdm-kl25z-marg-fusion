@@ -48,6 +48,7 @@ void PORTA_IRQHandler()
 	{
 		poll_mma8451q = 1;
 		LED_RedOn();
+		GPIOC->PSOR  = 1<<1;
 		
 		/* clear interrupts using BME decorated logical OR store 
 		 * PORTA->ISFR |= (1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN); 
@@ -81,7 +82,7 @@ void InitMMA8451Q()
 	MMA8451Q_FetchConfiguration(&configuration);
 	
 	MMA8451Q_SetSensitivity(&configuration, MMA8451Q_SENSITIVITY_2G, MMA8451Q_HPO_DISABLED);
-	MMA8451Q_SetDataRate(&configuration, MMA8451Q_DATARATE_400Hz, MMA8451Q_LOWNOISE_ENABLED);
+	MMA8451Q_SetDataRate(&configuration, MMA8451Q_DATARATE_800Hz, MMA8451Q_LOWNOISE_ENABLED);
 	MMA8451Q_SetOversampling(&configuration, MMA8451Q_OVERSAMPLING_HIGHRESOLUTION);
 	MMA8451Q_ClearInterruptConfiguration(&configuration);
 	MMA8451Q_SetInterruptMode(&configuration, MMA8451Q_INTMODE_OPENDRAIN, MMA8451Q_INTPOL_ACTIVELOW);
@@ -89,6 +90,33 @@ void InitMMA8451Q()
 	
 	MMA8451Q_StoreConfiguration(&configuration);
 	MMA8451Q_EnterActiveMode();
+}
+
+/**
+ * @brief LED Traffic Light!
+ */
+void TrafficLight()
+{
+	LED_Red();
+	delay_ms(1000);
+	LED_Yellow();
+	delay_ms(1000);
+	LED_Green();
+	delay_ms(1000);
+}
+
+/**
+ * @brief LED Double Flash!
+ */
+void DoubleFlash()
+{
+	LED_White();
+	delay_ms(50);
+	LED_Off();
+	delay_ms(50);
+	LED_White();
+	delay_ms(50);
+	LED_Off();	
 }
 
 int main(void)
@@ -99,7 +127,9 @@ int main(void)
 	
 	/* initialize the RGB led */
 	LED_Init();
-	LED_Yellow();
+	/* fun fun fun */
+	TrafficLight();
+	DoubleFlash();
 	
 	/* initlialize the I2C bus */
 	I2C_Init();
@@ -121,6 +151,13 @@ int main(void)
 	PORTC->PCR[8] = PORT_PCR_MUX(2) | ((1 << PORT_PCR_PE_SHIFT) | PORT_PCR_PE_MASK); /* SCL: alternative 2 with pull-up enabled */
 	PORTC->PCR[9] = PORT_PCR_MUX(2) | ((1 << PORT_PCR_PE_SHIFT) | PORT_PCR_PE_MASK); /* SDA_ alternative 2 with pull-up enabled */
 	
+	/* setting PTC1 to debug MMA8451Q irq */
+	PORTC->PCR[1] = PORT_PCR_MUX(1);
+	PORTC->PCR[2] = PORT_PCR_MUX(1);
+	PORTB->PCR[3] = PORT_PCR_MUX(1);
+	GPIOC->PDDR |= GPIO_PDDR_PDD(1<<1) | GPIO_PDDR_PDD(1<<2);
+	GPIOB->PDDR |= GPIO_PDDR_PDD(1<<3);
+	
 	/* initialize the MMA8451Q accelerometer */
 	IO_SendZString("MMA8451Q init ...\r\n");
 	InitMMA8451Q();
@@ -132,6 +169,7 @@ int main(void)
 
 	for(;;) 
 	{
+		GPIOB->PSOR  = 1<<3;
 		__WFI();
 		
 		/* as long as there is data in the buffer */
@@ -146,10 +184,14 @@ int main(void)
 			/* echo to output */
 			IO_SendByte(data);
 		}
+		GPIOB->PCOR  = 1<<3;
 		
 		/* read accelerometer */
 		if (poll_mma8451q)
 		{
+			GPIOC->PCOR  = 1<<1;
+			GPIOC->PSOR  = 1<<2;
+			
 			/*
 			 * An interesting observation about this approach is that as soon
 			 * as the accelerometer is a position where Z points straight up or
@@ -160,13 +202,13 @@ int main(void)
 			 * Because it is not polled, it's interrupt bit is not getting
 			 * cleared and as a result the poll flag will never be set again.
 			 * 
-			 * The problem is with the current protocol, as
-			 * 800 Hz * (12 Data Byte + 5 Byte protocol) = 134.400 bit,
-			 * yet only 115.200 kbaud are configured for the wire.
+			 * Even with 800 Hz the buffer should not run full:
+			 * 800 Hz * (6 Data Byte + 5 Byte protocol) = 70.400 bit,
 			 * 
-			 * After fixing this issue it turns out that this was only half 
-			 * the truth. It seems that no matter what, as soon as an axis
-			 * is close to zero g the device stops sending interrupts.
+			 * In the end, the problem was caused by the _WFI instruction in this
+			 * loop when it went to sleep, shortly after the IRQ handler signaled
+			 * poll_mma8451q. Speeding up the system tick timer by 4 (0.25ms)
+			 * helped reduce the problem.
 			 */
 			
 			poll_mma8451q = 0;
@@ -176,6 +218,7 @@ int main(void)
 			{
 				P2PPE_Transmission((uint8_t*)acc.xyz, 3*sizeof(acc.xyz[0]), IO_SendByte);
 			}
+			GPIOC->PCOR  = 1<<2;
 		}
 	}
 	

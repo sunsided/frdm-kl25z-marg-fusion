@@ -12,7 +12,7 @@
 * @brief Defines for the system tick behaviour
 */
 
-#define SYSTICK_FREQUENCY		(1000u) /* Hz */
+#define SYSTICK_FREQUENCY		(4000u) /* Hz */
 
 /**
 * @brief Function to initialize the SysTick interrupt 
