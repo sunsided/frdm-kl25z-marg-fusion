@@ -13,6 +13,7 @@
 #include "comm/uart.h"
 #include "comm/buffer.h"
 #include "comm/io.h"
+#include "comm/p2pprotocol.h"
 
 #include "i2c/i2c.h"
 #include "inertial/mma8451q.h"
@@ -121,7 +122,7 @@ int main(void)
 	IO_SendZString("MMA8451Q init ...\r\n");
 	InitMMA8451Q();
 	IO_SendZString("done\r\n");
-
+	
 	/* initialize the MMA8451Q data structure for accelerometer data fetching */
 	mma8451q_acc_t acc;
 	MMA8451Q_InitializeData(&acc);
@@ -153,12 +154,7 @@ int main(void)
 			MMA8451Q_ReadAcceleration14bitNoFifo(&acc);
 			if (acc.status != 0) 
 			{
-				IO_Send2p14AsString(acc.x);
-				IO_SendByteUncommited(',');
-				IO_Send2p14AsString(acc.y);
-				IO_SendByteUncommited(',');
-				IO_Send2p14AsString(acc.z);
-				IO_SendZString("\r\n");
+				P2PPE_Transmission((uint8_t*)acc.xyz, 3*sizeof(acc.xyz[0]), IO_SendByte);
 			}
 		}
 	}
