@@ -16,6 +16,10 @@ to life without using Processor Expert, so just bare metal here. No CMSIS though
 
 - UART0 on pins PTA1/PTA2 with 115.2 kbaud
 - interrupt-decoupled UART0 using custom ring buffers
+- simple IO layer for data output over UART
+  - binary single and bulk transfer
+  - integer-to-string, basically itoa() without arrays
+  - Q2.12 fixed point to string (nice for the MMA8451Q 14bit mode)
 - simple escaping protocol encoder with preamble and length header
 - I2C driver for I2C0 (currently hardcoded, but easy to change)
 
