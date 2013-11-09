@@ -122,7 +122,6 @@ function serial_test
     
     % Reading the data
     bulkSize = 80;
-    byteIndices = 1:bulkSize;
     lastByte = 0;
     while true
         % Read bytes; A profiler run showed that fread(s, count) is
@@ -132,6 +131,7 @@ function serial_test
         out = fread(sjobject, bulkSize, 0, 0); % 0, 0 meaning unsigned int 8
         bytes = typecast(out(1), 'uint8');     % unfortunately it is not unsigned
         
+        byteIndices = 1:numel(bytes);
         for b=byteIndices
             byte = bytes(b);
             
