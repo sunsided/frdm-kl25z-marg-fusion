@@ -17,8 +17,12 @@
 #define CTRL_REG1_LNOISE_MASK 	(0x4u)
 #define CTRL_REG1_LNOISE_SHIFT 	(0x2u)
 
-#define CTRL_REG2_MODS_MASK 	(0x38u)
-#define CTRL_REG2_MODS_SHIFT 	(0x3u)
+#define CTRL_REG2_MODS_MASK 	(0x3u)
+#define CTRL_REG2_MODS_SHIFT 	(0x0u)
+#define CTRL_REG2_SMODS_MASK 	(0x18u)
+#define CTRL_REG2_SMODS_SHIFT 	(0x3u)
+#define CTRL_REG2_SLPE_MASK 	(0x4u)
+#define CTRL_REG2_SLPE_SHIFT 	(0x2u)
 
 #define CTRL_REG3_IPOL_MASK 	(0x2u)
 #define CTRL_REG3_IPOL_SHIFT 	(0x1u)
@@ -111,6 +115,25 @@ void MMA8451Q_SetOversampling(mma8451q_confreg_t *const configuration, mma8451q_
 	{
 		configuration->CTRL_REG2 &= ~(CTRL_REG2_MODS_MASK);
 		configuration->CTRL_REG2 |= (oversampling << CTRL_REG2_MODS_SHIFT) & CTRL_REG2_MODS_MASK;
+	}
+}
+
+/**
+ * @brief Configures the oversampling modes in sleep mode
+ * @param[in] oversampling The oversampling mode
+ */
+void MMA8451Q_SetSleepOversampling(mma8451q_confreg_t *const configuration, mma8451q_oversampling_t oversampling)
+{
+	if (MMA8451Q_CONFIGURE_DIRECT == configuration)
+	{
+		const register uint8_t value = (oversampling << CTRL_REG2_SMODS_SHIFT) & CTRL_REG2_SMODS_MASK;
+		const register uint8_t mask = (uint8_t)~(CTRL_REG2_SMODS_MASK);
+		I2C_ModifyRegister(MMA8451Q_I2CADDR, MMA8451Q_REG_CTRL_REG2, mask, value);
+	}
+	else
+	{
+		configuration->CTRL_REG2 &= ~(CTRL_REG2_SMODS_MASK);
+		configuration->CTRL_REG2 |= (oversampling << CTRL_REG2_SMODS_SHIFT) & CTRL_REG2_SMODS_MASK;
 	}
 }
 
