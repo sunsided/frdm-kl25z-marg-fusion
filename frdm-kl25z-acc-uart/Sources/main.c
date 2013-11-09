@@ -48,7 +48,6 @@ void PORTA_IRQHandler()
 	{
 		poll_mma8451q = 1;
 		LED_RedOn();
-		GPIOC->PSOR  = 1<<1;
 		
 		/* clear interrupts using BME decorated logical OR store 
 		 * PORTA->ISFR |= (1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN); 
@@ -92,33 +91,6 @@ void InitMMA8451Q()
 	MMA8451Q_EnterActiveMode();
 }
 
-/**
- * @brief LED Traffic Light!
- */
-void TrafficLight()
-{
-	LED_Red();
-	delay_ms(1000);
-	LED_Yellow();
-	delay_ms(1000);
-	LED_Green();
-	delay_ms(1000);
-}
-
-/**
- * @brief LED Double Flash!
- */
-void DoubleFlash()
-{
-	LED_White();
-	delay_ms(50);
-	LED_Off();
-	delay_ms(50);
-	LED_White();
-	delay_ms(50);
-	LED_Off();	
-}
-
 int main(void)
 {
 	/* initialize the core clock and the systick timer */
@@ -151,13 +123,6 @@ int main(void)
 	PORTC->PCR[8] = PORT_PCR_MUX(2) | ((1 << PORT_PCR_PE_SHIFT) | PORT_PCR_PE_MASK); /* SCL: alternative 2 with pull-up enabled */
 	PORTC->PCR[9] = PORT_PCR_MUX(2) | ((1 << PORT_PCR_PE_SHIFT) | PORT_PCR_PE_MASK); /* SDA_ alternative 2 with pull-up enabled */
 	
-	/* setting PTC1 to debug MMA8451Q irq */
-	PORTC->PCR[1] = PORT_PCR_MUX(1);
-	PORTC->PCR[2] = PORT_PCR_MUX(1);
-	PORTB->PCR[3] = PORT_PCR_MUX(1);
-	GPIOC->PDDR |= GPIO_PDDR_PDD(1<<1) | GPIO_PDDR_PDD(1<<2);
-	GPIOB->PDDR |= GPIO_PDDR_PDD(1<<3);
-	
 	/* initialize the MMA8451Q accelerometer */
 	IO_SendZString("MMA8451Q init ...\r\n");
 	InitMMA8451Q();
@@ -169,7 +134,17 @@ int main(void)
 
 	for(;;) 
 	{
-		GPIOB->PSOR  = 1<<3;
+		/*
+		 * Care must be taken with this instruction here, as it can lead
+		 * to a condition where after being woken up (e.g. by the SysTick)
+		 * and looping through, immediately before entering WFI again
+		 * an interrupt would yield a true condition for the branches below.
+		 * In this case this loop would be blocked until the next IRQ,
+		 * which, in case of a 1ms SysTick timer, could be too late.
+		 * 
+		 * To counter this behaviour, SysTick has been speed up by factor
+		 * four (0.25ms).
+		 */
 		__WFI();
 		
 		/* as long as there is data in the buffer */
@@ -184,33 +159,10 @@ int main(void)
 			/* echo to output */
 			IO_SendByte(data);
 		}
-		GPIOB->PCOR  = 1<<3;
 		
 		/* read accelerometer */
 		if (poll_mma8451q)
-		{
-			GPIOC->PCOR  = 1<<1;
-			GPIOC->PSOR  = 1<<2;
-			
-			/*
-			 * An interesting observation about this approach is that as soon
-			 * as the accelerometer is a position where Z points straight up or
-			 * down, the UART TX buffer will run into an "full" block. When this
-			 * happens, the system ends up in a state where the poll_mma8451q 
-			 * flag is not set although the IRQ handler should have set it.
-			 * Since the flag is not set, the MMA8451Q is not getting polled.
-			 * Because it is not polled, it's interrupt bit is not getting
-			 * cleared and as a result the poll flag will never be set again.
-			 * 
-			 * Even with 800 Hz the buffer should not run full:
-			 * 800 Hz * (6 Data Byte + 5 Byte protocol) = 70.400 bit,
-			 * 
-			 * In the end, the problem was caused by the _WFI instruction in this
-			 * loop when it went to sleep, shortly after the IRQ handler signaled
-			 * poll_mma8451q. Speeding up the system tick timer by 4 (0.25ms)
-			 * helped reduce the problem.
-			 */
-			
+		{		
 			poll_mma8451q = 0;
 			LED_RedOff();
 			MMA8451Q_ReadAcceleration14bitNoFifo(&acc);
@@ -218,7 +170,6 @@ int main(void)
 			{
 				P2PPE_Transmission((uint8_t*)acc.xyz, 3*sizeof(acc.xyz[0]), IO_SendByte);
 			}
-			GPIOC->PCOR  = 1<<2;
 		}
 	}
 	
