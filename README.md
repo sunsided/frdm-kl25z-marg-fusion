@@ -36,3 +36,4 @@ to life without using Processor Expert, so just bare metal here. No CMSIS though
 - MATLAB interfacing at 800 Hz over serial port
   - serial protocol decoder
   - visual representation of the measured accelerations at 60 FPS
+    (see https://www.youtube.com/watch?v=RunpaR2PdHQ)
