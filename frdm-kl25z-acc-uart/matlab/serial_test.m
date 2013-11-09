@@ -102,10 +102,9 @@ function serial_test
     % 0 = searching for preamble --> 0
     % 1 = preamble found, expecting SOH --> 1
     % 2 = SOH found, expecting length --> 2
-    % 3 = length found, expecting STX --> 3
-    % 4 = reading bytes --> 4
-    % 5 = bytes read, expecting ETX --> 5
-    % 6 = ETX found, expecting EOT --> 0
+    % 3 = length found, expecting data --> 4
+    % 4 = reading bytes --> 5
+    % 5 = expecting EOT --> 0
     state = 0;
     
     % Decoding variables
@@ -219,21 +218,12 @@ function serial_test
                     data = zeros(dataLength, 1, 'uint8');
                 end
                 state = 3;
-                
-            % Await SOH
-            case 3
-                if byte == STX
-                    state = 4;
-                else
-                    state = 0;
-                    disp('protocol error in state 3');
-                end
-                
+                                
             % Read data bytes
-            case 4
+            case 3
                 if byte == ESC
                     escapeDetected = true;
-                    %state = 4;
+                    %state = 3;
                 else
                     if escapeDetected
                         byte = xor(byte, ESC_XOR);
@@ -244,23 +234,14 @@ function serial_test
                     data(dataBytesRead) = byte;
                     
                     if dataBytesRead == dataLength
-                        state = 5;
+                        state = 4;
                     else
-                        %state = 4;
+                        %state = 3;
                     end
                 end
-                
-            % Await ETX
-            case 5
-                if byte == ETX
-                    state = 6;
-                else
-                    state = 0;
-                    disp('protocol error in state 5');
-                end
-                
+                                
             % Await EOT
-            case 6
+            case 4
                 if byte == EOT
                     state = 0;
                     dataReady = true;

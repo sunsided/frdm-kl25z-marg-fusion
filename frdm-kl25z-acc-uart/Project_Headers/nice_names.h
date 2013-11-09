@@ -34,8 +34,8 @@
  * @brief Assertion
  */
 #ifndef assert
-#define assert(condition) if (!(condition)) { while(1) {} }
-#define assert_not_null(pointer) if ((void*)0 == (void*)(pointer)) { while(1) {} }
+#define assert(condition) if (!(condition)) { __asm("bkpt"); }
+#define assert_not_null(pointer) if ((void*)0 == (void*)(pointer)) { __asm("bkpt"); }
 #endif
 
 #define SIM 	SIM_BASE_PTR

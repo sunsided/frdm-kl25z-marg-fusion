@@ -60,6 +60,7 @@ __STATIC_INLINE void RingBuffer_Write(buffer_t *buffer, const uint8_t data)
 __STATIC_INLINE const uint8_t RingBuffer_Read(buffer_t *const buffer)
 {
 	const uint8_t data = buffer->data[buffer->mask & (buffer->readIndex++)];
+	assert(buffer->readIndex <= buffer->writeIndex);
 	__DMB();
 	return data;
 }
@@ -108,6 +109,8 @@ __STATIC_INLINE void RingBuffer_BlockWhileEmpty(const buffer_t *const buffer)
 	{
 		__WFI();
 	}
+	
+	assert(buffer->readIndex <= buffer->writeIndex);
 }
 
 /**
@@ -122,6 +125,8 @@ __STATIC_INLINE void RingBuffer_BlockWhileFull(const buffer_t *const buffer)
 		__WFI();
 	}
 	LED_GreenOff();
+	
+	assert(buffer->readIndex <= buffer->writeIndex);
 }
 
 #endif /* BUFFER_H_ */

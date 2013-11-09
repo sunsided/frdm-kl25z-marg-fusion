@@ -45,7 +45,9 @@ void P2PPE_Transmission(register const uint8_t*const data, register uint8_t data
 	sendHandler(dataCount);
 	
 	/* send the data frame */
+#if 0
 	sendHandler(STX);
+#endif
 	for (int i=0; i<dataCount; ++i)
 	{
 		register uint8_t byte = data[i];
@@ -54,9 +56,9 @@ void P2PPE_Transmission(register const uint8_t*const data, register uint8_t data
 		if (
 #if 0
 				SOH == byte || /* SOF is foudn rather often, so it's removed */
+				ETX == byte ||
 #endif
-				ETX == byte
-			|| EOT == byte
+			   EOT == byte
 			|| ESC == byte)
 		{
 			sendHandler(ESC);
@@ -67,6 +69,8 @@ void P2PPE_Transmission(register const uint8_t*const data, register uint8_t data
 	}
 	
 	/* send data frame end */
+#if 0
 	sendHandler(ETX);
+#endif
 	sendHandler(EOT);
 }
