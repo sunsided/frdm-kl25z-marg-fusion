@@ -51,8 +51,11 @@ void P2PPE_Transmission(register const uint8_t*const data, register uint8_t data
 		register uint8_t byte = data[i];
 		
 		/* encode special characters */
-		if (SOH == byte
-			|| ETX == byte
+		if (
+#if 0
+				SOH == byte || /* SOF is foudn rather often, so it's removed */
+#endif
+				ETX == byte
 			|| EOT == byte
 			|| ESC == byte)
 		{

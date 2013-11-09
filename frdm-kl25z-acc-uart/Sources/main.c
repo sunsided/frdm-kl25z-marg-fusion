@@ -23,7 +23,7 @@
 
 
 #define UART_RX_BUFFER_SIZE	(32)				/*< Size of the UART RX buffer in byte*/
-#define UART_TX_BUFFER_SIZE	(32)				/*< Size of the UART TX buffer in byte */
+#define UART_TX_BUFFER_SIZE	(128)				/*< Size of the UART TX buffer in byte */
 uint8_t uartInputData[UART_RX_BUFFER_SIZE], 	/*< The UART RX buffer */
 		uartOutputData[UART_TX_BUFFER_SIZE];	/*< The UART TX buffer */
 buffer_t uartInputFifo, 						/*< The UART RX buffer driver */
@@ -36,7 +36,7 @@ buffer_t uartInputFifo, 						/*< The UART RX buffer driver */
 /**
  * @brief Indicates that polling the MMA8451Q is required
  */
-static volatile uint8_t poll_mma8451q = 0;
+static volatile uint8_t poll_mma8451q = 1;
 
 /**
  * @brief Handler for interrupts on port A
@@ -47,6 +47,7 @@ void PORTA_IRQHandler()
 	if (fromMMA8451Q)
 	{
 		poll_mma8451q = 1;
+		LED_RedOn();
 		
 		/* clear interrupts using BME decorated logical OR store 
 		 * PORTA->ISFR |= (1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN); 
@@ -60,6 +61,8 @@ void PORTA_IRQHandler()
  */
 void InitMMA8451Q()
 {
+	mma8451q_confreg_t configuration;
+	
 	/* configure interrupts for accelerometer */
 	/* INT1_ACCEL is on PTA14, INT2_ACCEL is on PTA15 */
 	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTA_SHIFT) & SIM_SCGC5_PORTA_SHIFT; /* power to the masses */
@@ -73,8 +76,6 @@ void InitMMA8451Q()
 	
 	/* configure accelerometer */
 	MMA8451Q_EnterPassiveMode();
-
-	mma8451q_confreg_t configuration;
 	MMA8451Q_FetchConfiguration(&configuration);
 	
 	MMA8451Q_SetSensitivity(&configuration, MMA8451Q_SENSITIVITY_2G, MMA8451Q_HPO_DISABLED);
@@ -129,8 +130,6 @@ int main(void)
 
 	for(;;) 
 	{
-		/* lights partially  */
-		LED_Green();
 		__WFI();
 		
 		/* as long as there is data in the buffer */
@@ -149,8 +148,23 @@ int main(void)
 		/* read accelerometer */
 		if (poll_mma8451q)
 		{
-			LED_White();
+			/*
+			 * An interesting observation about this approach is that as soon
+			 * as the accelerometer is a position where Z points straight up or
+			 * down, the UART TX buffer will run into an "full" block. When this
+			 * happens, the system ends up in a state where the poll_mma8451q 
+			 * flag is not set although the IRQ handler should have set it.
+			 * Since the flag is not set, the MMA8451Q is not getting polled.
+			 * Because it is not polled, it's interrupt bit is not getting
+			 * cleared and as a result the poll flag will never be set again.
+			 * 
+			 * The problem is with the current protocol, as
+			 * 800 Hz * (12 Data Byte + 5 Byte protocol) = 134.400 bit,
+			 * yet only 115.200 kbaud are configured for the wire. 
+			 */
+			
 			poll_mma8451q = 0;
+			LED_RedOff();
 			MMA8451Q_ReadAcceleration14bitNoFifo(&acc);
 			if (acc.status != 0)
 			{

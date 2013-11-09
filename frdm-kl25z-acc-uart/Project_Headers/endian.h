@@ -13,7 +13,7 @@
 /**
  * @brief Swaps high- and low-byte of a 16bit integer
  */
-#define ENDIANSWAP_16(x)		( (((x) >> 8) & 0x00FF) | ((x) << 8) )
+#define ENDIANSWAP_16(x)		( (((x) >> 8) & 0x00FF) | (((x)& 0x00FF) << 8) )
 
 /**
  * @brief Endian-Swaps bytes of a 32bit integer

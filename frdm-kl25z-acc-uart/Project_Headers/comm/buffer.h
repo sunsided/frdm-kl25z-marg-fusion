@@ -10,6 +10,7 @@
 
 #include "ARMCM0plus.h"
 #include "derivative.h"
+#include "led/led.h"
 
 /**
  * @brief Ring buffer type
@@ -117,8 +118,10 @@ __STATIC_INLINE void RingBuffer_BlockWhileFull(const buffer_t *const buffer)
 {
 	while(RingBuffer_Full(buffer)) 
 	{
+		LED_GreenOn();
 		__WFI();
 	}
+	LED_GreenOff();
 }
 
 #endif /* BUFFER_H_ */
