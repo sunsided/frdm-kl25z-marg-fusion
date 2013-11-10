@@ -118,6 +118,8 @@ void InitMMA8451Q()
  */
 void InitMPU6050()
 {
+	mpu6050_confreg_t configuration;
+	
 	IO_SendZString("MPU6050: initializing ...\r\n");
 	
 	I2CArbiter_Select(MPU6050_I2CADDR);
@@ -126,6 +128,9 @@ void InitMPU6050()
 	uint8_t value = MPU6050_WhoAmI();
 	assert(value == 0x68);
 	IO_SendZString("MPU6050: device found.\r\n");
+	
+	/* read configuration and modify */
+	MPU6050_FetchConfiguration(&configuration);
 	
 	/* TODO: Further configuration */
 	
