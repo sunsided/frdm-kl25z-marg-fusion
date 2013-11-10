@@ -7,6 +7,7 @@
 
 #include "imu/hmc5883l.h"
 #include "endian.h"
+#include "i2c/i2c.h"
 
 /**
  * @brief Reads the Identification registers from the HMC5883L.

@@ -16,6 +16,7 @@
 #include "comm/p2pprotocol.h"
 
 #include "i2c/i2c.h"
+#include "i2c/i2carbiter.h"
 #include "imu/mma8451q.h"
 #include "imu/mpu6050.h"
 #include "imu/hmc5883l.h"
@@ -34,6 +35,9 @@ buffer_t uartInputFifo, 						/*< The UART RX buffer driver */
 #define MMA8451Q_INT_PORT	PORTA				/*< Port at which the MMA8451Q INT1 and INT2 pins are attached */
 #define MMA8451Q_INT1_PIN	14					/*< Pin at which the MMA8451Q INT1 is attached */
 #define MMA8451Q_INT2_PIN	15					/*< Pin at which the MMA8451Q INT1 is attached */
+
+#define I2CARBITER_COUNT 	(3)					/*< Number of I2C devices we're talking to */
+i2carbiter_entry_t i2carbiter_entries[I2CARBITER_COUNT]; /*< Structure for the pin enabling/disabling manager */
 
 /**
  * @brief Indicates that polling the MMA8451Q is required
@@ -105,6 +109,19 @@ int main(void)
 	TrafficLight();
 	DoubleFlash();
 	
+	/* prior to configuring the I2C arbiter, enable the clocks required for
+	 * the used pins
+	 */
+	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTE_MASK;
+	
+	/* configure I2C arbiter 
+	 * The arbiter takes care of pin selection 
+	 */
+	I2CArbiter_PrepareEntry(&i2carbiter_entries[0], MMA8451Q_I2CADDR, PORTE, 24, 5, 25, 5);
+	I2CArbiter_PrepareEntry(&i2carbiter_entries[1],  MPU6050_I2CADDR, PORTB,  0, 2,  1, 2);
+	I2CArbiter_PrepareEntry(&i2carbiter_entries[2], HMC5883L_I2CADDR, PORTB,  0, 2,  1, 2);
+	I2CArbiter_Configure(i2carbiter_entries, I2CARBITER_COUNT);
+	
 	/* initlialize the I2C bus */
 	I2C_Init();
 	I2C_ResetBus();
@@ -119,31 +136,22 @@ int main(void)
 	/* initialize UART0 interrupts */
 	Uart0_InitializeIrq(&uartInputFifo, &uartOutputFifo);
 	Uart0_EnableReceiveIrq();
-
-	/* setting PTC8/9 to I2C0 for wire sniffing */
-	/*
-	 * NOTE: This will only work if the SDA of pin PTE25 is disabled
-	 * 		 during reads of the I2C bus. Otherwise the pull-ups will
-	 * 		 result in 0xFF reads although the data is transmitted
-	 * 		 correctly.
-	 * 
-	 */
-	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK; /* clock to gate B */
-	PORTB->PCR[0] = PORT_PCR_MUX(2); /* SCL: alternative 2 using external pull-ups */
-	PORTB->PCR[1] = PORT_PCR_MUX(2); /* SDA: alternative 2 using external pull-ups */
 	
 	/* initialize the MMA8451Q accelerometer */
 	IO_SendZString("MMA8451Q init ...\r\n");
+	I2CArbiter_Select(MMA8451Q_I2CADDR);
 	InitMMA8451Q();
 	uint8_t id = MMA8451Q_WhoAmI();
 	IO_SendZString("done\r\n");
 	
 	IO_SendZString("MPU6050 init ...\r\n");
+	I2CArbiter_Select(MPU6050_I2CADDR);
 	uint8_t value = MPU6050_WhoAmI();
 	assert(value == 0x68);
 	IO_SendZString("done\r\n");
 	
 	IO_SendZString("HMC5883L init ...\r\n");
+	I2CArbiter_Select(HMC5883L_I2CADDR);
 	uint32_t ident = HMC5883L_Identification();
 	IO_SendZString("done\r\n");
 	
@@ -184,6 +192,8 @@ int main(void)
 		{		
 			poll_mma8451q = 0;
 			LED_RedOff();
+			
+			I2CArbiter_Select(MMA8451Q_I2CADDR);
 			MMA8451Q_ReadAcceleration14bitNoFifo(&acc);
 			if (acc.status != 0)
 			{
