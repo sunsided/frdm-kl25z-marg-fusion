@@ -129,7 +129,7 @@ int main(void)
 	I2CArbiter_Select(MMA8451Q_I2CADDR);
 	
 	/* setting PTC8/9 to I2C0 for wire sniffing */
-	SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK; /* clock to gate C */
+	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK; /* clock to gate B */
 	PORTB->PCR[0] = PORT_PCR_MUX(2); /* SCL: alternative 2 using external pull-ups */
 	PORTB->PCR[1] = PORT_PCR_MUX(2); /* SDA_ alternative 2 using external pull-ups */
 	
