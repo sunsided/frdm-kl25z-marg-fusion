@@ -120,8 +120,8 @@ int main(void)
 
 	/* setting PTC8/9 to I2C0 for wire sniffing */
 	SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK; /* clock to gate C */
-	PORTC->PCR[8] = PORT_PCR_MUX(2) | ((1 << PORT_PCR_PE_SHIFT) | PORT_PCR_PE_MASK); /* SCL: alternative 2 with pull-up enabled */
-	PORTC->PCR[9] = PORT_PCR_MUX(2) | ((1 << PORT_PCR_PE_SHIFT) | PORT_PCR_PE_MASK); /* SDA_ alternative 2 with pull-up enabled */
+	PORTB->PCR[0] = PORT_PCR_MUX(2); /* SCL: alternative 2 using external pull-ups */
+	PORTB->PCR[1] = PORT_PCR_MUX(2); /* SDA_ alternative 2 using external pull-ups */
 	
 	/* initialize the MMA8451Q accelerometer */
 	IO_SendZString("MMA8451Q init ...\r\n");
