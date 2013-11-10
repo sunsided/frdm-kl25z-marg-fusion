@@ -68,6 +68,8 @@ void PORTA_IRQHandler()
 void InitMMA8451Q()
 {
 	mma8451q_confreg_t configuration;
+
+	IO_SendZString("MMA8451Q: initializing ...\r\n");
 	
 	/* configure interrupts for accelerometer */
 	/* INT1_ACCEL is on PTA14, INT2_ACCEL is on PTA15 */
@@ -86,6 +88,7 @@ void InitMMA8451Q()
 	/* perform identity check */
 	uint8_t id = MMA8451Q_WhoAmI();
 	assert(id = 0x1A);
+	IO_SendZString("MMA8451Q: device found.\r\n");
 	
 	/* configure accelerometer */
 	MMA8451Q_EnterPassiveMode();
@@ -106,6 +109,8 @@ void InitMMA8451Q()
 	
 	MMA8451Q_StoreConfiguration(&configuration);
 	MMA8451Q_EnterActiveMode();
+	
+	IO_SendZString("MMA8451Q: configuration done.\r\n");
 }
 
 /**
@@ -113,13 +118,35 @@ void InitMMA8451Q()
  */
 void InitMPU6050()
 {
+	IO_SendZString("MPU6050: initializing ...\r\n");
+	
 	I2CArbiter_Select(MPU6050_I2CADDR);
 	
 	/* perform identity check */
 	uint8_t value = MPU6050_WhoAmI();
 	assert(value == 0x68);
+	IO_SendZString("MPU6050: device found.\r\n");
 	
 	/* TODO: Further configuration */
+	
+	IO_SendZString("MPU6050: configuration done.\r\n");
+}
+
+/**
+ * @brief Sets up the HMC5883L communication
+ */
+void InitHMC5883L()
+{
+	IO_SendZString("HMC5883L: initializing ...\r\n");
+	
+	I2CArbiter_Select(HMC5883L_I2CADDR);
+	uint32_t ident = HMC5883L_Identification();
+	assert(ident == 0x00483433);
+	IO_SendZString("HMC5883L: device found.\r\n");
+	
+	/* TODO: Further configuration */
+	
+	IO_SendZString("HMC5883L: configuration done.\r\n");
 }
 
 int main(void)
@@ -162,19 +189,10 @@ int main(void)
 	Uart0_InitializeIrq(&uartInputFifo, &uartOutputFifo);
 	Uart0_EnableReceiveIrq();
 	
-	/* initialize the MMA8451Q accelerometer */
-	IO_SendZString("MMA8451Q init ...\r\n");
+	/* initialize the IMUs */
 	InitMMA8451Q();
-	IO_SendZString("done\r\n");
-	
-	IO_SendZString("MPU6050 init ...\r\n");
-	InitMPU6050;
-	IO_SendZString("done\r\n");
-	
-	IO_SendZString("HMC5883L init ...\r\n");
-	I2CArbiter_Select(HMC5883L_I2CADDR);
-	uint32_t ident = HMC5883L_Identification();
-	IO_SendZString("done\r\n");
+	InitMPU6050();
+	InitHMC5883L();
 	
 	/* initialize the MMA8451Q data structure for accelerometer data fetching */
 	mma8451q_acc_t acc;
