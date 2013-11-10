@@ -5,6 +5,8 @@
  *      Author: Markus
  */
 
+#include "derivative.h"
+#include "bme.h"
 #include "i2c/i2carbiter.h"
 
 /**
@@ -50,6 +52,11 @@ void I2CArbiter_Configure(i2carbiter_entry_t *entries, uint8_t entryCount)
 	configuration.lastSelectedSlave = 0;
 	configuration.entries = entries;
 	*(uint32_t*)&configuration.entryCount = entryCount;
+	
+	/* assume the first slave will be used first */ 
+	I2CArbiter_Select(entries[0].slaveAddress);
+	
+	/* TODO: This would be a good place to reset the I2C bus on ALL pins */
 }
 
 /**
@@ -82,12 +89,16 @@ uint8_t I2CArbiter_Select(uint8_t slaveAddress)
 				entry->port->PCR[entry->sdaPin] &= ~PORT_PCR_MUX_MASK;
 				entry->port->PCR[entry->sclPin] &= ~PORT_PCR_MUX_MASK;
 			}
+
+			/* TODO: candidate for BME */
 			
 			/* enable new slave */
 			token->port->PCR[token->sdaPin] &= ~PORT_PCR_MUX_MASK;
 			token->port->PCR[token->sdaPin] |= PORT_PCR_MUX(token->sdaMux);
 			token->port->PCR[token->sclPin] &= ~PORT_PCR_MUX_MASK;
 			token->port->PCR[token->sclPin] |= PORT_PCR_MUX(token->sclMux);
+			
+			/* TODO: use BME here */
 			
 			/* set up lookup */
 			configuration.lastSelectedSlave = slaveAddress;

@@ -35,6 +35,9 @@ buffer_t uartInputFifo, 						/*< The UART RX buffer driver */
 #define MMA8451Q_INT1_PIN	14					/*< Pin at which the MMA8451Q INT1 is attached */
 #define MMA8451Q_INT2_PIN	15					/*< Pin at which the MMA8451Q INT1 is attached */
 
+#define I2CARBITER_COUNT 	(2)					/*< Number of I2C devices we're talking to */
+i2carbiter_entry_t i2carbiter_entries[I2CARBITER_COUNT]; /*< Structure for the pin enabling/disabling manager */
+
 /**
  * @brief Indicates that polling the MMA8451Q is required
  */
@@ -93,9 +96,6 @@ void InitMMA8451Q()
 	MMA8451Q_EnterActiveMode();
 }
 
-#define I2CARBITER_COUNT 	(2)
-i2carbiter_entry_t i2carbiter_entries[I2CARBITER_COUNT];
-
 int main(void)
 {
 	/* initialize the core clock and the systick timer */
@@ -107,6 +107,16 @@ int main(void)
 	/* fun fun fun */
 	TrafficLight();
 	DoubleFlash();
+	
+	/* prior to configuring the I2C arbiter, enable the clocks required for
+	 * the used pins
+	 */
+	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTE_MASK;
+	
+	/* configure I2C arbiter */
+	I2CArbiter_PrepareEntry(&i2carbiter_entries[0], MMA8451Q_I2CADDR, PORTE, 24, 5, 25, 5);
+	I2CArbiter_PrepareEntry(&i2carbiter_entries[1],  MPU6050_I2CADDR, PORTB,  0, 2,  1, 2);
+	I2CArbiter_Configure(i2carbiter_entries, I2CARBITER_COUNT);
 	
 	/* initlialize the I2C bus */
 	I2C_Init();
@@ -122,27 +132,15 @@ int main(void)
 	/* initialize UART0 interrupts */
 	Uart0_InitializeIrq(&uartInputFifo, &uartOutputFifo);
 	Uart0_EnableReceiveIrq();
-
-	/* prior to configuring the I2C arbiter, enable the clocks required for
-	 * the used pins
-	 */
-	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTE_MASK;
-	
-	/* configure I2C arbiter */
-	I2CArbiter_PrepareEntry(&i2carbiter_entries[0], MMA8451Q_I2CADDR, PORTE, 24, 2, 25, 2);
-	I2CArbiter_PrepareEntry(&i2carbiter_entries[1], MPU6050_I2CADDR, PORTB,  0, 2,  1, 2);
-	I2CArbiter_Configure(i2carbiter_entries, I2CARBITER_COUNT);
-	I2CArbiter_Select(MMA8451Q_I2CADDR);
-	I2CArbiter_Select(MMA8451Q_I2CADDR);
-	I2CArbiter_Select(MPU6050_I2CADDR);
-	I2CArbiter_Select(MMA8451Q_I2CADDR);
 	
 	/* initialize the MMA8451Q accelerometer */
 	IO_SendZString("MMA8451Q init ...\r\n");
+	I2CArbiter_Select(MMA8451Q_I2CADDR);
 	InitMMA8451Q();
 	IO_SendZString("done\r\n");
 	
 	IO_SendZString("MPU6050 init ...\r\n");
+	I2CArbiter_Select(MPU6050_I2CADDR);
 	uint8_t value = MPU6050_WhoAmI();
 	IO_SendZString("done\r\n");
 	
@@ -183,6 +181,8 @@ int main(void)
 		{		
 			poll_mma8451q = 0;
 			LED_RedOff();
+			
+			I2CArbiter_Select(MMA8451Q_I2CADDR);
 			MMA8451Q_ReadAcceleration14bitNoFifo(&acc);
 			if (acc.status != 0)
 			{

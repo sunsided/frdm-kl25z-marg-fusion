@@ -19,6 +19,8 @@ void I2C_Init()
 	BME_OR_W(&SIM->SCGC4, (1 << SIM_SCGC4_I2C0_SHIFT) & SIM_SCGC4_I2C0_MASK);
 #endif
 	
+#if 0 /* in ancient times this was hardcoded */
+	
 	/* enable the clock gate to port E */
 #if !I2C_USE_BME
 	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTE_SHIFT) & SIM_SCGC5_PORTE_MASK;
@@ -29,6 +31,8 @@ void I2C_Init()
 	/* configure port E pins to I2C operation */
 	PORTE->PCR[24] = PORT_PCR_MUX(5); /* SCL */
 	PORTE->PCR[25] = PORT_PCR_MUX(5); /* SDA */
+	
+#endif
 	
 	/* configure the I2C clock */
 	/* 
