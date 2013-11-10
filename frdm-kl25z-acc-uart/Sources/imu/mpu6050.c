@@ -7,6 +7,20 @@
 
 #include "imu/mpu6050.h"
 #include "i2c/i2c.h"
+#include "nice_names.h"
+
+/**
+ * @brief Helper macro to set bits in configuration->REGISTER_NAME
+ * @param[in] reg The register name
+ * @param[in] bits The name of the bit to set
+ * @param[in] value The value to set 
+ * 
+ * Requires the macros MPU6050_regname_bitname_MASK and
+ * MPU6050_regname_bitname_SHIFT to be set at expansion time. 
+ */
+#define MPU6050_CONFIG_SET(reg, bits, value) \
+	configuration->reg &= (uint8_t)~(MPU6050_ ## reg ## _ ## bits ## _MASK); \
+	configuration->reg |= (value << MPU6050_## reg ## _ ## bits ## _SHIFT) & MPU6050_ ## reg ## _ ## bits ## _MASK
 
 /**
  * @brief Reads the WHO_AM_I register from the MPU6050.
@@ -92,4 +106,42 @@ void MPU6050_FetchConfiguration(mpu6050_confreg_t *const configuration)
 void MPU6050_StoreConfiguration(const mpu6050_confreg_t *const configuration)
 {
 	assert(0);
+}
+
+#define MPU6050_SMPLRT_DIV_SMPLRT_DIV_MASK 		(0b11111111)
+#define MPU6050_SMPLRT_DIV_SMPLRT_DIV_SHIFT		(0)
+
+/**
+ * @brief Configures the gyro sample rate divider
+ * @param[inout] configuration The configuration structure or {@see MMA8451Q_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] divider The divider in a range of 1..255. If zero is given, a value of 1 will be used.
+ *
+ * Sample Rate = Gyroscope Output Rate / divider
+ */
+void MPU6050_SetGyroscopeSampleRateDivider(mpu6050_confreg_t *const configuration, uint8_t divider)
+{
+	assert_not_null(configuration);
+	
+	/* adjust values */
+	if (divider == 0) divider = 1;
+	--divider;
+	
+	/* set value */
+	MPU6050_CONFIG_SET(SMPLRT_DIV, SMPLRT_DIV, divider);
+}
+
+#define MPU6050_GYRO_CONFIG_FS_SEL_MASK		(0b00011000)
+#define MPU6050_GYRO_CONFIG_FS_SEL_SHIFT	(3)
+
+/**
+ * @brief Configures the gyro full scale range
+ * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] fullScale The full scale
+ *
+ * Sample Rate = Gyroscope Output Rate / divider
+ */
+void MPU6050_SetGyroscopeFullScale(mpu6050_confreg_t *const configuration, mpu6050_gyro_fs_t fullScale)
+{
+	assert_not_null(configuration);	
+	MPU6050_CONFIG_SET(GYRO_CONFIG, FS_SEL, fullScale);
 }

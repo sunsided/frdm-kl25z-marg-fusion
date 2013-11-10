@@ -119,9 +119,9 @@ void InitMMA8451Q()
 void InitMPU6050()
 {
 	mpu6050_confreg_t configuration;
-	
 	IO_SendZString("MPU6050: initializing ...\r\n");
 	
+	/* switch to the correct port */
 	I2CArbiter_Select(MPU6050_I2CADDR);
 	
 	/* perform identity check */

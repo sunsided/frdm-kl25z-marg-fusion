@@ -313,4 +313,29 @@ void MPU6050_FetchConfiguration(mpu6050_confreg_t *const configuration);
  */
 void MPU6050_StoreConfiguration(const mpu6050_confreg_t *const configuration);
 
+/**
+ * @brief Configures the gyro sample rate divider
+ * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] divider The divider in a range of 1..255. If zero is given, a value of 1 will be used.
+ *
+ * Sample Rate = Gyroscope Output Rate / divider
+ */
+void MPU6050_SetGyroscopeSampleRateDivider(mpu6050_confreg_t *const configuration, uint8_t divider);
+
+typedef enum {
+	MPU6050_GYRO_250  = (0b00),	/*< +/-  250 °/s */
+	MPU6050_GYRO_500  = (0b00),	/*< +/-  500 °/s */
+	MPU6050_GYRO_1000 = (0b00),	/*< +/- 1000 °/s */
+	MPU6050_GYRO_2000 = (0b00)	/*< +/- 2000 °/s */
+} mpu6050_gyro_fs_t;
+
+/**
+ * @brief Configures the gyro full scale range
+ * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] fullScale The full scale
+ *
+ * Sample Rate = Gyroscope Output Rate / divider
+ */
+void MPU6050_SetGyroscopeFullScale(mpu6050_confreg_t *const configuration, mpu6050_gyro_fs_t fullScale);
+
 #endif /* MPU6050_H_ */
