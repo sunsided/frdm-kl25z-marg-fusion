@@ -18,6 +18,7 @@
 #include "i2c/i2c.h"
 #include "imu/mma8451q.h"
 #include "imu/mpu6050.h"
+#include "imu/hmc5883l.h"
 #include "led/led.h"
 
 #include "nice_names.h"
@@ -131,6 +132,11 @@ int main(void)
 	
 	IO_SendZString("MPU6050 init ...\r\n");
 	uint8_t value = MPU6050_WhoAmI();
+	assert(value == 0x68);
+	IO_SendZString("done\r\n");
+	
+	IO_SendZString("HMC5883L init ...\r\n");
+	uint32_t ident = HMC5883L_Identification();
 	IO_SendZString("done\r\n");
 	
 	/* initialize the MMA8451Q data structure for accelerometer data fetching */
