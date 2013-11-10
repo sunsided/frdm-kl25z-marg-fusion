@@ -44,12 +44,29 @@ static inline uint8_t endianCorrectionRequired(const register endian_t sourceEnd
  * @param[in] value The value to convert
  * @param[in] sourcEndianness The endianness of the value
  */
-static inline uint16_t endianCorrect(register uint16_t value, const register endian_t sourceEndianness) 
+static inline uint16_t endianCorrect16(register uint16_t value, const register endian_t sourceEndianness) 
 {
 	/* if in little endian mode */
 	if (sourceEndianness != (SCB_AIRCR & SCB_AIRCR_ENDIANNESS_MASK)) 
 	{
 		return ENDIANSWAP_16(value);
+	}
+	
+	/* finally or if in big endian mode */
+	return value;
+}
+
+/**
+ * @brief Converts from a given endianness to machine endianness
+ * @param[in] value The value to convert
+ * @param[in] sourcEndianness The endianness of the value
+ */
+static inline uint32_t endianCorrect32(register uint32_t value, const register endian_t sourceEndianness) 
+{
+	/* if in little endian mode */
+	if (sourceEndianness != (SCB_AIRCR & SCB_AIRCR_ENDIANNESS_MASK)) 
+	{
+		return ENDIANSWAP_32(value);
 	}
 	
 	/* finally or if in big endian mode */

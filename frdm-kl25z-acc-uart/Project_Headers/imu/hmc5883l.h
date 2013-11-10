@@ -8,6 +8,8 @@
 #ifndef HMC5883L_H_
 #define HMC5883L_H_
 
+#include "derivative.h"
+
 /**
  * @brief I2C slave address of the HMC5883L magnetometer
  */
@@ -44,19 +46,8 @@
 
 /**
  * @brief Reads the Identification registers from the HMC5883L.
- * @return Device identification code; Should be 0x00483433('\0H43')
+ * @return Device identification code; Should be 0x00483433 ('\0H43' sequential Memory!)
  */
-static inline uint32_t HMC5883L_Identification()
-{
-	uint32_t result = 0;
-	uint8_t* ptr = (uint8_t*)&result;
-	I2C_ReadRegisters(HMC5883L_I2CADDR, HMC5883L_REG_IRA, 3, ptr);
-	
-	result = I2C_ReadRegister(HMC5883L_I2CADDR, HMC5883L_REG_IRA);
-	result = I2C_ReadRegister(HMC5883L_I2CADDR, HMC5883L_REG_IRB);
-	result = I2C_ReadRegister(HMC5883L_I2CADDR, HMC5883L_REG_IRC);
-	
-	return result;
-}
+uint32_t HMC5883L_Identification();
 
 #endif /* HMC5883L_H_ */

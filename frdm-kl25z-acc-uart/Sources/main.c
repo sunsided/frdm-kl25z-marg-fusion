@@ -121,13 +121,21 @@ int main(void)
 	Uart0_EnableReceiveIrq();
 
 	/* setting PTC8/9 to I2C0 for wire sniffing */
-	SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK; /* clock to gate C */
+	/*
+	 * NOTE: This will only work if the SDA of pin PTE25 is disabled
+	 * 		 during reads of the I2C bus. Otherwise the pull-ups will
+	 * 		 result in 0xFF reads although the data is transmitted
+	 * 		 correctly.
+	 * 
+	 */
+	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK; /* clock to gate B */
 	PORTB->PCR[0] = PORT_PCR_MUX(2); /* SCL: alternative 2 using external pull-ups */
-	PORTB->PCR[1] = PORT_PCR_MUX(2); /* SDA_ alternative 2 using external pull-ups */
+	PORTB->PCR[1] = PORT_PCR_MUX(2); /* SDA: alternative 2 using external pull-ups */
 	
 	/* initialize the MMA8451Q accelerometer */
 	IO_SendZString("MMA8451Q init ...\r\n");
 	InitMMA8451Q();
+	uint8_t id = MMA8451Q_WhoAmI();
 	IO_SendZString("done\r\n");
 	
 	IO_SendZString("MPU6050 init ...\r\n");
