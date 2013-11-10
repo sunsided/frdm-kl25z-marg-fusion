@@ -36,6 +36,9 @@ buffer_t uartInputFifo, 						/*< The UART RX buffer driver */
 #define MMA8451Q_INT1_PIN	14					/*< Pin at which the MMA8451Q INT1 is attached */
 #define MMA8451Q_INT2_PIN	15					/*< Pin at which the MMA8451Q INT1 is attached */
 
+#define MPU6050_INT_PORT	PORTA				/*< Port at which the MPU6050 INT pin is attached */
+#define MPU6050_INT_PIN		1					/*< Pin at which the MPU6050 INT is attached */
+
 #define I2CARBITER_COUNT 	(3)					/*< Number of I2C devices we're talking to */
 i2carbiter_entry_t i2carbiter_entries[I2CARBITER_COUNT]; /*< Structure for the pin enabling/disabling manager */
 
@@ -45,11 +48,20 @@ i2carbiter_entry_t i2carbiter_entries[I2CARBITER_COUNT]; /*< Structure for the p
 static volatile uint8_t poll_mma8451q = 1;
 
 /**
+ * @brief Indicates that polling the MPU6050 is required
+ */
+static volatile uint8_t poll_mpu6050 = 1;
+
+/**
  * @brief Handler for interrupts on port A
  */
 void PORTA_IRQHandler()
 {
-	register uint32_t fromMMA8451Q = (MMA8451Q_INT_PORT->ISFR & ((1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN)));
+	register uint32_t isfr = MMA8451Q_INT_PORT->ISFR;
+	register uint32_t fromMMA8451Q 	= (isfr & ((1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN)));
+	register uint32_t fromMPU6050	= (isfr & (1 << MPU6050_INT_PIN));
+	
+	/* check MMA8451Q */
 	if (fromMMA8451Q)
 	{
 		poll_mma8451q = 1;
@@ -59,6 +71,18 @@ void PORTA_IRQHandler()
 		 * PORTA->ISFR |= (1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN); 
 		 */
 		BME_OR_W(&MMA8451Q_INT_PORT->ISFR, (1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN));
+	}
+	
+	/* check MPU6050 */
+	if (fromMPU6050)
+	{
+		poll_mpu6050 = 1;
+		LED_BlueOn();
+		
+		/* clear interrupts using BME decorated logical OR store 
+		 * PORTA->ISFR |= (1 << MPU6050_INT_PIN); 
+		 */
+		BME_OR_W(&MMA8451Q_INT_PORT->ISFR, (1 << MPU6050_INT_PIN));
 	}
 }
 
@@ -131,6 +155,12 @@ void InitMPU6050()
 	
 	/* read configuration and modify */
 	MPU6050_FetchConfiguration(&configuration);
+	MPU6050_SetGyroscopeFullScale(&configuration, MPU6050_GYRO_FS_250);
+	MPU6050_SetAccelerometerFullScale(&configuration, MPU6050_ACC_FS_2);
+	MPU6050_ConfigureInterrupts(&configuration, MPU6050_INTLEVEL_ACTIVELOW, MPU6050_INTOPEN_OPENDRAIN, MPU6050_INTLATCH_LATCHED, MPU6050_INTRDCLEAR_READSTATUS);
+	MPU6050_EnableInterrupts(&configuration, MPU6050_INT_DISABLED, MPU6050_INT_DISABLED, MPU6050_INT_ENABLED); /* enable data ready interrupt */
+	MPU6050_SelectClockSource(&configuration, MPU6050_CLOCK_8MHZOSC); /* TODO: change that to gyro PLL! */
+	MPU6050_SetSleepMode(&configuration, MPU6050_SLEEP_DISABLED);
 	
 	/* TODO: Further configuration */
 	
