@@ -93,7 +93,7 @@ void InitMMA8451Q()
 	MMA8451Q_EnterActiveMode();
 }
 
-#define I2CARBITER_COUNT 	(1)
+#define I2CARBITER_COUNT 	(2)
 i2carbiter_entry_t i2carbiter_entries[I2CARBITER_COUNT];
 
 int main(void)
@@ -123,15 +123,19 @@ int main(void)
 	Uart0_InitializeIrq(&uartInputFifo, &uartOutputFifo);
 	Uart0_EnableReceiveIrq();
 
+	/* prior to configuring the I2C arbiter, enable the clocks required for
+	 * the used pins
+	 */
+	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTE_MASK;
+	
 	/* configure I2C arbiter */
 	I2CArbiter_PrepareEntry(&i2carbiter_entries[0], MMA8451Q_I2CADDR, PORTE, 24, 2, 25, 2);
+	I2CArbiter_PrepareEntry(&i2carbiter_entries[1], MPU6050_I2CADDR, PORTB,  0, 2,  1, 2);
 	I2CArbiter_Configure(i2carbiter_entries, I2CARBITER_COUNT);
 	I2CArbiter_Select(MMA8451Q_I2CADDR);
-	
-	/* setting PTC8/9 to I2C0 for wire sniffing */
-	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK; /* clock to gate B */
-	PORTB->PCR[0] = PORT_PCR_MUX(2); /* SCL: alternative 2 using external pull-ups */
-	PORTB->PCR[1] = PORT_PCR_MUX(2); /* SDA_ alternative 2 using external pull-ups */
+	I2CArbiter_Select(MMA8451Q_I2CADDR);
+	I2CArbiter_Select(MPU6050_I2CADDR);
+	I2CArbiter_Select(MMA8451Q_I2CADDR);
 	
 	/* initialize the MMA8451Q accelerometer */
 	IO_SendZString("MMA8451Q init ...\r\n");
