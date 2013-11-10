@@ -80,10 +80,21 @@ void InitMMA8451Q()
 	NVIC_ICPR |= 1 << 30;	/* clear pending flag */
 	NVIC_ISER |= 1 << 30;	/* enable interrupt */
 	
+	/* switch to the correct port */
+	I2CArbiter_Select(MMA8451Q_I2CADDR);
+	
+	/* perform identity check */
+	uint8_t id = MMA8451Q_WhoAmI();
+	assert(id = 0x1A);
+	
 	/* configure accelerometer */
 	MMA8451Q_EnterPassiveMode();
 	MMA8451Q_Reset();
 	delay_ms(20);
+	
+	/* TODO: Initiate self-test */
+	
+	/* read configuration and modify */
 	MMA8451Q_FetchConfiguration(&configuration);
 	
 	MMA8451Q_SetSensitivity(&configuration, MMA8451Q_SENSITIVITY_2G, MMA8451Q_HPO_DISABLED);
@@ -139,9 +150,7 @@ int main(void)
 	
 	/* initialize the MMA8451Q accelerometer */
 	IO_SendZString("MMA8451Q init ...\r\n");
-	I2CArbiter_Select(MMA8451Q_I2CADDR);
 	InitMMA8451Q();
-	uint8_t id = MMA8451Q_WhoAmI();
 	IO_SendZString("done\r\n");
 	
 	IO_SendZString("MPU6050 init ...\r\n");

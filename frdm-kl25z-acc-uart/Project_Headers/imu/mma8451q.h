@@ -282,7 +282,7 @@ void MMA8451Q_SetDataRate(mma8451q_confreg_t *const configuration, register mma8
 
 /**
  * @brief Reads the WHO_AM_I register from the MMA8451Q.
- * @return Device identification code; Should be 0b00011010. 
+ * @return Device identification code; Should be 0b00011010 (0x1A). 
  */
 static inline uint8_t MMA8451Q_WhoAmI()
 {
