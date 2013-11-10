@@ -17,7 +17,7 @@
 
 #include "i2c/i2c.h"
 #include "i2c/i2carbiter.h"
-#include "inertial/mma8451q.h"
+#include "imu/mma8451q.h"
 #include "led/led.h"
 
 #include "nice_names.h"
