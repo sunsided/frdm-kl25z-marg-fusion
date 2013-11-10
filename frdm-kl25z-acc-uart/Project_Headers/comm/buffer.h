@@ -114,6 +114,20 @@ __STATIC_INLINE void RingBuffer_BlockWhileEmpty(const buffer_t *const buffer)
 }
 
 /**
+ * @brief Blocks until the ring buffer contains no more data 
+ * @param[in] buffer The ring buffer instance
+  */
+__STATIC_INLINE void RingBuffer_BlockWhileNotEmpty(const buffer_t *const buffer)
+{
+	while(!RingBuffer_Empty(buffer)) 
+	{
+		__WFI();
+	}
+	
+	assert(buffer->readIndex <= buffer->writeIndex);
+}
+
+/**
  * @brief Blocks while the ring buffer is full 
  * @param[in] buffer The ring buffer instance
   */
