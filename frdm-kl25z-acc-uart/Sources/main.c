@@ -108,6 +108,20 @@ void InitMMA8451Q()
 	MMA8451Q_EnterActiveMode();
 }
 
+/**
+ * @brief Sets up the MPU6050 communication
+ */
+void InitMPU6050()
+{
+	I2CArbiter_Select(MPU6050_I2CADDR);
+	
+	/* perform identity check */
+	uint8_t value = MPU6050_WhoAmI();
+	assert(value == 0x68);
+	
+	/* TODO: Further configuration */
+}
+
 int main(void)
 {
 	/* initialize the core clock and the systick timer */
@@ -154,9 +168,7 @@ int main(void)
 	IO_SendZString("done\r\n");
 	
 	IO_SendZString("MPU6050 init ...\r\n");
-	I2CArbiter_Select(MPU6050_I2CADDR);
-	uint8_t value = MPU6050_WhoAmI();
-	assert(value == 0x68);
+	InitMPU6050;
 	IO_SendZString("done\r\n");
 	
 	IO_SendZString("HMC5883L init ...\r\n");
