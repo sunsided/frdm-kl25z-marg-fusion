@@ -137,11 +137,99 @@ void MPU6050_SetGyroscopeSampleRateDivider(mpu6050_confreg_t *const configuratio
  * @brief Configures the gyro full scale range
  * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
  * @param[in] fullScale The full scale
- *
- * Sample Rate = Gyroscope Output Rate / divider
  */
 void MPU6050_SetGyroscopeFullScale(mpu6050_confreg_t *const configuration, mpu6050_gyro_fs_t fullScale)
 {
 	assert_not_null(configuration);	
 	MPU6050_CONFIG_SET(GYRO_CONFIG, FS_SEL, fullScale);
+}
+
+#define MPU6050_ACCEL_CONFIG_AFS_SEL_MASK	(0b00011000)
+#define MPU6050_ACCEL_CONFIG_AFS_SEL_SHIFT	(3)
+
+/**
+ * @brief Configures the accelerometer full scale range
+ * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] fullScale The full scale
+ */
+void MPU6050_SetAccelerometerFullScale(mpu6050_confreg_t *const configuration, mpu6050_acc_fs_t fullScale)
+{
+	assert_not_null(configuration);	
+	MPU6050_CONFIG_SET(ACCEL_CONFIG, AFS_SEL, fullScale);
+}
+
+#define MPU6050_INT_PIN_CFG_INT_LEVEL_MASK 		(0b10000000)
+#define MPU6050_INT_PIN_CFG_INT_LEVEL_SHIFT 	(7)
+#define MPU6050_INT_PIN_CFG_INT_OPEN_MASK 		(0b01000000)
+#define MPU6050_INT_PIN_CFG_INT_OPEN_SHIFT  	(6)
+#define MPU6050_INT_PIN_CFG_LATCH_INT_EN_MASK 	(0b00100000)
+#define MPU6050_INT_PIN_CFG_LATCH_INT_EN_SHIFT  (5)
+#define MPU6050_INT_PIN_CFG_INT_RD_CLEAR_MASK 	(0b00010000)
+#define MPU6050_INT_PIN_CFG_INT_RD_CLEAR_SHIFT  (4)
+
+/**
+ * @brief Configures the accelerometer full scale range
+ * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] level The interrupt level
+ * @param[in] type The interrupt type
+ * @param[in] type The interrupt latch type
+ * @param[in] clear The interrupt clear configuration
+ */
+void MPU6050_ConfigureInterrupts(mpu6050_confreg_t *const configuration, mpu6050_intlevel_t level, mpu6050_intopen_t type, mpu6050_intlatch_t latch, mpu6050_intrdclear_t clear)
+{
+	assert_not_null(configuration);	
+	MPU6050_CONFIG_SET(INT_PIN_CFG, INT_LEVEL, level);
+	MPU6050_CONFIG_SET(INT_PIN_CFG, INT_OPEN, type);
+	MPU6050_CONFIG_SET(INT_PIN_CFG, LATCH_INT_EN, latch);
+	MPU6050_CONFIG_SET(INT_PIN_CFG, INT_RD_CLEAR, clear);
+}
+
+#define MPU6050_INT_ENABLE_FIFO_OFLOW_EN_MASK	(0b00010000)
+#define MPU6050_INT_ENABLE_FIFO_OFLOW_EN_SHIFT	(4)
+#define MPU6050_INT_ENABLE_I2CMST_INT_EN_MASK	(0b00001000)
+#define MPU6050_INT_ENABLE_I2CMST_INT_EN_SHIFT	(3)
+#define MPU6050_INT_ENABLE_DATA_RDY_EN_MASK		(0b00000001)
+#define MPU6050_INT_ENABLE_DATA_RDY_EN_SHIFT	(0)
+
+/**
+ * @brief Configures the accelerometer full scale range
+ * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] fifoOverflow Interrupts from FIFO overflows
+ * @param[in] i2cMaster Interrupts from I2C master activity
+ * @param[in] dataReady Interrupts from data ready events
+ */
+void MPU6050_EnableInterrupts(mpu6050_confreg_t *const configuration, mpu6050_inten_t fifoOverflow, mpu6050_inten_t i2cMaster, mpu6050_inten_t dataReady)
+{
+	assert_not_null(configuration);	
+	MPU6050_CONFIG_SET(INT_ENABLE, FIFO_OFLOW_EN, fifoOverflow);
+	MPU6050_CONFIG_SET(INT_ENABLE, I2CMST_INT_EN, i2cMaster);
+	MPU6050_CONFIG_SET(INT_ENABLE, DATA_RDY_EN, dataReady);
+}
+
+#define MPU6050_PWR_MGMT_1_CLKSEL_MASK	(0b00000111)
+#define MPU6050_PWR_MGMT_1_CLKSEL_SHIFT	(0)
+
+/**
+ * @brief Configures the internal clock source
+ * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] source The clock source
+ */
+void MPU6050_SelectClockSource(mpu6050_confreg_t *const configuration, mpu6050_clock_t source)
+{
+	assert_not_null(configuration);	
+	MPU6050_CONFIG_SET(PWR_MGMT_1, CLKSEL, source);
+}
+
+#define MPU6050_PWR_MGMT_1_SLEEP_MASK	(0b010000000)
+#define MPU6050_PWR_MGMT_1_SLEEP_SHIFT	(7)
+
+/**
+ * @brief Configures the internal clock source
+ * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] mode The sleep mode
+ */
+void MPU6050_SetSleepMode(mpu6050_confreg_t *const configuration, mpu6050_sleep_t mode)
+{
+	assert_not_null(configuration);	
+	MPU6050_CONFIG_SET(PWR_MGMT_1, SLEEP, mode);
 }

@@ -322,20 +322,132 @@ void MPU6050_StoreConfiguration(const mpu6050_confreg_t *const configuration);
  */
 void MPU6050_SetGyroscopeSampleRateDivider(mpu6050_confreg_t *const configuration, uint8_t divider);
 
+/**
+ * @brief Scale configuration for the gyroscope
+ */
 typedef enum {
-	MPU6050_GYRO_250  = (0b00),	/*< +/-  250 °/s */
-	MPU6050_GYRO_500  = (0b00),	/*< +/-  500 °/s */
-	MPU6050_GYRO_1000 = (0b00),	/*< +/- 1000 °/s */
-	MPU6050_GYRO_2000 = (0b00)	/*< +/- 2000 °/s */
+	MPU6050_GYRO_FS_250  = (0b00),	/*! +/-  250 °/s */
+	MPU6050_GYRO_FS_500  = (0b01),	/*! +/-  500 °/s */
+	MPU6050_GYRO_FS_1000 = (0b10),	/*! +/- 1000 °/s */
+	MPU6050_GYRO_FS_2000 = (0b11)	/*! +/- 2000 °/s */
 } mpu6050_gyro_fs_t;
 
 /**
- * @brief Configures the gyro full scale range
+ * @brief Configures the gyroscope full scale range
  * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
  * @param[in] fullScale The full scale
- *
- * Sample Rate = Gyroscope Output Rate / divider
  */
 void MPU6050_SetGyroscopeFullScale(mpu6050_confreg_t *const configuration, mpu6050_gyro_fs_t fullScale);
+
+/**
+ * @brief Scale configuration for the accelerometer
+ */
+typedef enum {
+	MPU6050_ACC_FS_2  = (0b00),	/*! +/-  2g */
+	MPU6050_ACC_FS_4  = (0b01),	/*! +/-  4g */
+	MPU6050_ACC_FS_8  = (0b10),	/*! +/-  8g */
+	MPU6050_ACC_FS_16 = (0b11)	/*! +/- 16g */
+} mpu6050_acc_fs_t;
+
+/**
+ * @brief Configures the accelerometer full scale range
+ * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] fullScale The full scale
+ */
+void MPU6050_SetAccelerometerFullScale(mpu6050_confreg_t *const configuration, mpu6050_acc_fs_t fullScale);
+
+/**
+ * @brief Interrupt level configuration
+ */
+typedef enum {
+	MPU6050_INTLEVEL_ACTIVEHIGH = (0b0),	/*! Interrupts are active high */
+	MPU6050_INTLEVEL_ACTIVELOW  = (0b1),	/*! Interrupts are active low */
+} mpu6050_intlevel_t;
+
+/**
+ * @brief Interrupt wire mode configuration
+ */
+typedef enum {
+	MPU6050_INTOPEN_PUSHPULL 	= (0b0),	/*! Interrupts are push-pull */
+	MPU6050_INTOPEN_OPENDRAIN  	= (0b1),	/*! Interrupts are open drain */
+} mpu6050_intopen_t;
+
+/**
+ * @brief Interrupt latch configuration
+ */
+typedef enum {
+	MPU6050_INTLATCH_PULSE 		= (0b0),	/*! Interrupt pin emits pulses of 50us duration */
+	MPU6050_INTLATCH_LATCHED  	= (0b1),	/*! Interrupt pin is held high until interrupt is cleared */
+} mpu6050_intlatch_t;
+
+/**
+ * @brief Interrupt clear configuration
+ */
+typedef enum {
+	MPU6050_INTRDCLEAR_READANY  	= (0b0),	/*! Interrupts are cleared by any read */
+	MPU6050_INTRDCLEAR_READSTATUS 	= (0b1),	/*! Interrupts are cleared by a read to the status register */
+} mpu6050_intrdclear_t;
+
+/**
+ * @brief Configures the interrupts
+ * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] level The interrupt level
+ * @param[in] type The interrupt type
+ * @param[in] type The interrupt latch type
+ * @param[in] clear The interrupt clear configuration
+ */
+void MPU6050_ConfigureInterrupts(mpu6050_confreg_t *const configuration, mpu6050_intlevel_t level, mpu6050_intopen_t type, mpu6050_intlatch_t latch, mpu6050_intrdclear_t clear);
+
+/**
+ * @brief Interrupt source configuration
+ */
+typedef enum {
+	MPU6050_INT_DISABLED = (0b0),	/*! Interrupt source is disabled */
+	MPU6050_INT_ENABLED = (0b1)		/*! Interrupt source is enabled */
+} mpu6050_inten_t;
+
+/**
+ * @brief Configures the interrupt source
+ * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] fifoOverflow Interrupts from FIFO overflows
+ * @param[in] i2cMaster Interrupts from I2C master activity
+ * @param[in] dataReady Interrupts from data ready events
+ */
+void MPU6050_EnableInterrupts(mpu6050_confreg_t *const configuration, mpu6050_inten_t fifoOverflow, mpu6050_inten_t i2cMaster, mpu6050_inten_t dataReady);
+
+/**
+ * @brief Clock source configuration
+ */
+typedef enum {
+	MPU6050_CLOCK_8MHZOSC		= (0b000), /*! Uses the internal 8MHz oscillator */ 
+	MPU6050_CLOCK_XGYROPLL		= (0b001), /*! PLL with X axis gyroscope reference */
+	MPU6050_CLOCK_YGYROPLL		= (0b010), /*! PLL with Y axis gyroscope reference */
+	MPU6050_CLOCK_ZGYROPLL		= (0b011), /*! PLL with Z axis gyroscope reference */
+	MPU6050_CLOCK_EXT32KHZPLL	= (0b100), /*! PLL with external 32.768kHz reference */
+	MPU6050_CLOCK_EXT19MHZPLL	= (0b101), /*! PLL with external 19.2MHz reference */
+	MPU6050_CLOCK_STOPPED		= (0b111), /*! Stops the clock and keeps the timing generator in reset */
+} mpu6050_clock_t;
+
+/**
+ * @brief Configures the internal clock source
+ * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] source The clock source
+ */
+void MPU6050_SelectClockSource(mpu6050_confreg_t *const configuration, mpu6050_clock_t source);
+
+/**
+ * @brief Sleep mode configuration
+ */
+typedef enum {
+	MPU6050_SLEEP_DISABLED		= (0b0),
+	MPU6050_SLEEP_ENABLED		= (0b1),
+} mpu6050_sleep_t;
+
+/**
+ * @brief Configures the internal clock source
+ * @param[inout] configuration The configuration structure or {@see MPU6050_CONFIGURE_DIRECT} if changes should be sent directly over the wire.
+ * @param[in] mode The sleep mode
+ */
+void MPU6050_SetSleepMode(mpu6050_confreg_t *const configuration, mpu6050_sleep_t mode);
 
 #endif /* MPU6050_H_ */
