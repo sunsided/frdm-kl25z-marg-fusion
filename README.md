@@ -22,6 +22,7 @@ to life without using Processor Expert, so just bare metal here. No CMSIS though
   - Q2.12 fixed point to string (nice for the MMA8451Q 14bit mode)
 - simple escaping protocol encoder with preamble and length header
 - I2C driver for I2C0 (currently hardcoded, but easy to change)
+  - arbiter that sets pin configurations on demand per requested device (e.g. when I2C0 is used from different ports)
 
 ### LED ###
 
