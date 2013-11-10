@@ -286,3 +286,21 @@ void I2C_ResetBus()
 	BME_OR_B(&I2C0->S, ((1 << I2C_S_IICIF_SHIFT) << I2C_S_IICIF_MASK));
 #endif	
 }
+
+/**
+ * @brief Initiates a register read after the module was brought into TX mode.
+ * @param[in] slaveId The slave id
+ * @param[in] registerAddress the register to read from 
+ */
+void I2C_InitiateRegisterReadAt(const register uint8_t slaveId, const register uint8_t registerAddress)
+{
+	/* send register id */
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(slaveId));
+	I2C_SendBlocking(registerAddress);
+	
+	/* enter read mode */
+	I2C_SendRepeatedStart();
+	I2C_SendBlocking(I2C_READ_ADDRESS(slaveId));
+	I2C_EnterReceiveModeWithAck();
+	I2C_ReceiverModeDriveClock();	
+}

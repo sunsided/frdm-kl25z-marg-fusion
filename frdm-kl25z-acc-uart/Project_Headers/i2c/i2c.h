@@ -358,4 +358,11 @@ __STATIC_INLINE void I2C_ReceiverModeDriveClock()
 	I2C_Wait();
 }
 
+/**
+ * @brief Initiates a register read after the module was brought into TX mode.
+ * @param[in] slaveId The slave id
+ * @param[in] registerAddress the register to read from 
+ */
+void I2C_InitiateRegisterReadAt(const register uint8_t slaveId, const register uint8_t registerAddress);
+
 #endif /* I2C_H_ */
