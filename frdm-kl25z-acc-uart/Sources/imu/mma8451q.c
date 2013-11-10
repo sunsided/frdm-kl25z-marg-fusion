@@ -8,7 +8,7 @@
 #include "ARMCM0plus.h"
 #include "endian.h"
 #include "nice_names.h"
-#include "inertial/mma8451q.h"
+#include "imu/mma8451q.h"
 
 #define CTRL_REG1_ACTIVE_SHIFT 	(0x00U)
 #define CTRL_REG1_ACTIVE_MASK 	(0x01U)

@@ -16,7 +16,7 @@
 #include "comm/p2pprotocol.h"
 
 #include "i2c/i2c.h"
-#include "inertial/mma8451q.h"
+#include "imu/mma8451q.h"
 #include "led/led.h"
 
 #include "nice_names.h"
