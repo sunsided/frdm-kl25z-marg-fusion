@@ -48,10 +48,10 @@
 #define MPU6050_REG_ZA_OFFS_H 			(0x0A) not_in_RM_rev43 /* R/W, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
 #define MPU6050_REG_ZA_OFFS_L_TC 		(0x0B) not_in_RM_rev43 /* R/W, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
 
-#define MPU6050_REG_SELF_TEST_X			(0x0D) /* R/W */
-#define MPU6050_REG_SELF_TEST_Y			(0x0E) /* R/W */
-#define MPU6050_REG_SELF_TEST_Z			(0x0F) /* R/W */
-#define MPU6050_REG_SELF_TEST_A			(0x10) /* R/W */
+#define MPU6050_REG_SELF_TEST_X			(0x0D) /* R/W, reset 0x00 */
+#define MPU6050_REG_SELF_TEST_Y			(0x0E) /* R/W, reset 0x00 */
+#define MPU6050_REG_SELF_TEST_Z			(0x0F) /* R/W, reset 0x00 */
+#define MPU6050_REG_SELF_TEST_A			(0x10) /* R/W, reset 0x00 */
 
 #define MPU6050_REG_XG_OFFS_USRH 		(0x13) not_in_RM_rev43 /* R/W, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
 #define MPU6050_REG_XG_OFFS_USRL 		(0x14) not_in_RM_rev43 /* R/W, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
@@ -60,10 +60,10 @@
 #define MPU6050_REG_ZG_OFFS_USRH 		(0x17) not_in_RM_rev43 /* R/W, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
 #define MPU6050_REG_ZG_OFFS_USRL 		(0x18) not_in_RM_rev43 /* R/W, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
 
-#define MPU6050_REG_SMPLRT_DIV 			(0x19) /* R/W */
-#define MPU6050_REG_CONFIG 				(0x1A) /* R/W */
-#define MPU6050_REG_GYRO_CONFIG 		(0x1B) /* R/W */
-#define MPU6050_REG_ACCEL_CONFIG 		(0x1C) /* R/W */
+#define MPU6050_REG_SMPLRT_DIV 			(0x19) /* R/W, reset 0x00 */
+#define MPU6050_REG_CONFIG 				(0x1A) /* R/W, reset 0x00 */
+#define MPU6050_REG_GYRO_CONFIG 		(0x1B) /* R/W, reset 0x00 */
+#define MPU6050_REG_ACCEL_CONFIG 		(0x1C) /* R/W, reset 0x00 */
 
 #define MPU6050_REG_FF_THR 				(0x1D) not_in_RM_rev43 /* R/W, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
 #define MPU6050_REG_FF_DUR 				(0x1E) not_in_RM_rev43 /* R/W, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
@@ -72,28 +72,28 @@
 #define MPU6050_REG_ZRMOT_THR 			(0x21) not_in_RM_rev43 /* R/W, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
 #define MPU6050_REG_ZRMOT_DUR 			(0x22) not_in_RM_rev43 /* R/W, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
 
-#define MPU6050_REG_FIFO_EN 			(0x23) /* R/W */
-#define MPU6050_REG_I2C_MST_CTRL 		(0x24) /* R/W */
-#define MPU6050_REG_I2C_SLV0_ADDR 		(0x25) /* R/W */
-#define MPU6050_REG_I2C_SLV0_REG 		(0x26) /* R/W */
-#define MPU6050_REG_I2C_SLV0_CTRL 		(0x27) /* R/W */
-#define MPU6050_REG_I2C_SLV1_ADDR 		(0x28) /* R/W */
-#define MPU6050_REG_I2C_SLV1_REG 		(0x29) /* R/W */
-#define MPU6050_REG_I2C_SLV1_CTRL 		(0x2A) /* R/W */
-#define MPU6050_REG_I2C_SLV2_ADDR 		(0x2B) /* R/W */
-#define MPU6050_REG_I2C_SLV2_REG 		(0x2C) /* R/W */
-#define MPU6050_REG_I2C_SLV2_CTRL 		(0x2D) /* R/W */
-#define MPU6050_REG_I2C_SLV3_ADDR 		(0x2E) /* R/W */
-#define MPU6050_REG_I2C_SLV3_REG 		(0x2F) /* R/W */
-#define MPU6050_REG_I2C_SLV3_CTRL 		(0x30) /* R/W */
-#define MPU6050_REG_I2C_SLV4_ADDR 		(0x31) /* R/W */
-#define MPU6050_REG_I2C_SLV4_REG 		(0x32) /* R/W */
-#define MPU6050_REG_I2C_SLV4_DO 		(0x33) /* R/W */
-#define MPU6050_REG_I2C_SLV4_CTRL 		(0x34) /* R/W */
-#define MPU6050_REG_I2C_SLV4_DI 		(0x35) /* R */
-#define MPU6050_REG_I2C_MST_STATUS	 	(0x36) /* R */
-#define MPU6050_REG_INT_PIN_CFG 		(0x37) /* R/W */
-#define MPU6050_REG_INT_ENABLE 			(0x38) /* R/W */
+#define MPU6050_REG_FIFO_EN 			(0x23) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_MST_CTRL 		(0x24) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV0_ADDR 		(0x25) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV0_REG 		(0x26) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV0_CTRL 		(0x27) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV1_ADDR 		(0x28) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV1_REG 		(0x29) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV1_CTRL 		(0x2A) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV2_ADDR 		(0x2B) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV2_REG 		(0x2C) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV2_CTRL 		(0x2D) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV3_ADDR 		(0x2E) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV3_REG 		(0x2F) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV3_CTRL 		(0x30) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV4_ADDR 		(0x31) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV4_REG 		(0x32) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV4_DO 		(0x33) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV4_CTRL 		(0x34) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV4_DI 		(0x35) /* R,   reset 0x00 */
+#define MPU6050_REG_I2C_MST_STATUS	 	(0x36) /* R,   reset 0x00 */
+#define MPU6050_REG_INT_PIN_CFG 		(0x37) /* R/W, reset 0x00 */
+#define MPU6050_REG_INT_ENABLE 			(0x38) /* R/W, reset 0x00 */
 
 #define MPU6050_REG_DMP_INT_STATUS 		(0x39) not_in_RM_rev43 /* R, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
 
@@ -139,16 +139,16 @@
 
 #define MPU6050_REG_MOT_DETECT_STATUS	(0x61) not_in_RM_rev43 /* R, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
 
-#define MPU6050_REG_I2C_SLV0_DO 		(0x63) /* R/W */
-#define MPU6050_REG_I2C_SLV1_DO 		(0x64) /* R/W */
-#define MPU6050_REG_I2C_SLV2_DO 		(0x65) /* R/W */
-#define MPU6050_REG_I2C_SLV3_DO 		(0x66) /* R/W */
-#define MPU6050_REG_I2C_MST_DELAY_CTRL 	(0x67) /* R/W */
-#define MPU6050_REG_SIGNAL_PATH_RESET 	(0x68) /* R/W */
-#define MPU6050_REG_MOT_DETECT_CTRL 	(0x69) /* R/W */
-#define MPU6050_REG_USER_CTRL 			(0x6A) /* R/W */
-#define MPU6050_REG_PWR_MGMT_1 			(0x6B) /* R/W */
-#define MPU6050_REG_PWR_MGMT_2 			(0x6C) /* R/W */
+#define MPU6050_REG_I2C_SLV0_DO 		(0x63) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV1_DO 		(0x64) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV2_DO 		(0x65) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_SLV3_DO 		(0x66) /* R/W, reset 0x00 */
+#define MPU6050_REG_I2C_MST_DELAY_CTRL 	(0x67) /* R/W, reset 0x00 */
+#define MPU6050_REG_SIGNAL_PATH_RESET 	(0x68) /* R/W, reset 0x00 */
+#define MPU6050_REG_MOT_DETECT_CTRL 	(0x69) /* R/W, reset 0x00 */
+#define MPU6050_REG_USER_CTRL 			(0x6A) /* R/W, reset 0x00 */
+#define MPU6050_REG_PWR_MGMT_1 			(0x6B) /* R/W, reset 0x40 */
+#define MPU6050_REG_PWR_MGMT_2 			(0x6C) /* R/W, reset 0x00 */
 
 #define MPU6050_REG_BANK_SEL 			(0x6D) not_in_RM_rev43 /* R/W, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
 #define MPU6050_REG_MEM_START_ADDR	 	(0x6E) not_in_RM_rev43 /* R/W, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
@@ -156,12 +156,22 @@
 #define MPU6050_REG_DMP_CFG_1 			(0x70) not_in_RM_rev43 /* R/W, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
 #define MPU6050_REG_DMP_CFG_2 			(0x71) not_in_RM_rev43 /* R/W, according to http://www.i2cdevlib.com/devices/mpu6050#registers */
 
-#define MPU6050_REG_FIFO_COUNTH 		(0x72) /* R/W */
-#define MPU6050_REG_FIFO_COUNTL 		(0x73) /* R/W */
-#define MPU6050_REG_FIFO_R_W 			(0x74) /* R/W */
-#define MPU6050_REG_WHO_AM_I 			(0x75) /* R */
+#define MPU6050_REG_FIFO_COUNTH 		(0x72) /* R/W, reset 0x00 */
+#define MPU6050_REG_FIFO_COUNTL 		(0x73) /* R/W, reset 0x00 */
+#define MPU6050_REG_FIFO_R_W 			(0x74) /* R/W, reset 0x00 */
+#define MPU6050_REG_WHO_AM_I 			(0x75) /* R,   reset 0x68 */
 
 #undef not_in_RM_rev43
+
+/**
+ * MPU6050 selftest data registers
+ */
+typedef struct {
+	const uint8_t SELF_TEST_X;		/* 0x0D */
+	const uint8_t SELF_TEST_Y;		/* 0x0E */
+	const int8_t SELF_TEST_Z;		/* 0x0F */
+	uint8_t SELF_TEST_A;		/* 0x10 */
+} mpu6050_selftest_t;
 
 /**
  * @brief The MPU6050 configuration registers
@@ -169,10 +179,7 @@
 typedef struct {
 	/* skipping registers 0x00 .. 0x0C */
 	
-	uint8_t SELF_TEST_X;		/* 0x0D */
-	uint8_t SELF_TEST_Y;		/* 0x0E */
-	uint8_t SELF_TEST_Z;		/* 0x0F */
-	uint8_t SELF_TEST_A;		/* 0x10 */
+	/* skipping self-test registers 0x0D .. 0x10 */
 	
 	/* skipping registers 0x11 .. 0x18 */
 	
@@ -284,9 +291,26 @@ typedef struct {
 } mpu6050_fulldatareg_t;
 
 /**
+ * @brief Macro for usage in configuration commands that executes configuration changes directly.
+ */
+#define MPU6050_CONFIGURE_DIRECT ((mpu6050_confreg_t*)0x0)
+
+/**
  * @brief Reads the WHO_AM_I register from the MPU6050.
  * @return Device identification code; Should be 0b0110100 (0x68)
  */
 uint8_t MPU6050_WhoAmI();
+
+/**
+ * @brief Fetches the configuration into a {@see mpu6050_confreg_t} data structure
+ * @param[inout] The configuration data data; Must not be null.
+ */
+void MPU6050_FetchConfiguration(mpu6050_confreg_t *const configuration);
+
+/**
+ * @brief Stores the configuration from a {@see mpu6050_confreg_t} data structure
+ * @param[in] The configuration data data; Must not be null.
+ */
+void MPU6050_StoreConfiguration(const mpu6050_confreg_t *const configuration);
 
 #endif /* MPU6050_H_ */
