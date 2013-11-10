@@ -16,6 +16,7 @@
 #include "comm/p2pprotocol.h"
 
 #include "i2c/i2c.h"
+#include "i2c/i2carbiter.h"
 #include "inertial/mma8451q.h"
 #include "led/led.h"
 
@@ -91,6 +92,9 @@ void InitMMA8451Q()
 	MMA8451Q_EnterActiveMode();
 }
 
+#define I2CARBITER_COUNT 	(1)
+i2carbiter_entry_t i2carbiter_entries[I2CARBITER_COUNT];
+
 int main(void)
 {
 	/* initialize the core clock and the systick timer */
@@ -118,6 +122,11 @@ int main(void)
 	Uart0_InitializeIrq(&uartInputFifo, &uartOutputFifo);
 	Uart0_EnableReceiveIrq();
 
+	/* configure I2C arbiter */
+	I2CArbiter_PrepareEntry(&i2carbiter_entries[0], MMA8451Q_I2CADDR, PORTE, 24, 2, 25, 2);
+	I2CArbiter_Configure(i2carbiter_entries, I2CARBITER_COUNT);
+	I2CArbiter_Select(MMA8451Q_I2CADDR);
+	
 	/* setting PTC8/9 to I2C0 for wire sniffing */
 	SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK; /* clock to gate C */
 	PORTC->PCR[8] = PORT_PCR_MUX(2) | ((1 << PORT_PCR_PE_SHIFT) | PORT_PCR_PE_MASK); /* SCL: alternative 2 with pull-up enabled */
