@@ -194,24 +194,16 @@ int main(void)
 	InitMPU6050();
 	InitHMC5883L();
 	
+	/* Wait for the config messages to get flushed */
+	RingBuffer_BlockWhileNotEmpty(&uartOutputFifo);
+	
 	/* initialize the MMA8451Q data structure for accelerometer data fetching */
 	mma8451q_acc_t acc;
 	MMA8451Q_InitializeData(&acc);
 
 	for(;;) 
-	{
-		/*
-		 * Care must be taken with this instruction here, as it can lead
-		 * to a condition where after being woken up (e.g. by the SysTick)
-		 * and looping through, immediately before entering WFI again
-		 * an interrupt would yield a true condition for the branches below.
-		 * In this case this loop would be blocked until the next IRQ,
-		 * which, in case of a 1ms SysTick timer, could be too late.
-		 * 
-		 * To counter this behaviour, SysTick has been speed up by factor
-		 * four (0.25ms).
-		 */
-		__WFI();
+	{	
+		int eventsProcessed = 0;
 		
 		/* as long as there is data in the buffer */
 		while(!RingBuffer_Empty(&uartInputFifo))
@@ -224,10 +216,13 @@ int main(void)
 			
 			/* echo to output */
 			IO_SendByte(data);
+			
+			/* mark event as detected */
+			eventsProcessed = 1;
 		}
 		
 		/* read accelerometer */
-		if (poll_mma8451q)
+		while (poll_mma8451q)
 		{		
 			poll_mma8451q = 0;
 			LED_RedOff();
@@ -238,6 +233,26 @@ int main(void)
 			{
 				P2PPE_Transmission((uint8_t*)acc.xyz, 3*sizeof(acc.xyz[0]), IO_SendByte);
 			}
+			
+			/* mark event as detected */
+			eventsProcessed = 1;
+		}
+
+		/* in case of no events, allow a sleep */
+		if (!eventsProcessed)
+		{
+			/*
+			 * Care must be taken with this instruction here, as it can lead
+			 * to a condition where after being woken up (e.g. by the SysTick)
+			 * and looping through, immediately before entering WFI again
+			 * an interrupt would yield a true condition for the branches below.
+			 * In this case this loop would be blocked until the next IRQ,
+			 * which, in case of a 1ms SysTick timer, could be too late.
+			 * 
+			 * To counter this behaviour, SysTick has been speed up by factor
+			 * four (0.25ms).
+			 */
+			__WFI();
 		}
 	}
 	
