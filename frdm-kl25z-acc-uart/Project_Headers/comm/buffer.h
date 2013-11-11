@@ -128,7 +128,7 @@ __STATIC_INLINE void RingBuffer_BlockWhileNotEmpty(const buffer_t *const buffer)
 {
 	while(!RingBuffer_Empty(buffer)) 
 	{
-#if RINGBUFFER_ENABLE_WFI_ON_BLOCK
+#if RINGBUFFER_ENABLE_WFI_ON_BLOCK || 1
 		__WFI();
 #endif
 	}

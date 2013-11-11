@@ -10,11 +10,12 @@
 
 #define UART_115200 115200 /*! UART in 115.2 kbaud mode */
 #define UART_230400 230400 /*! UART in 230.4 kbaud mode */
+#define UART_DEV 0x0815 
 
 /**
  * @brief Configures the UART speed
  */
-#define UART_SPEED_MODE UART_230400
+#define UART_SPEED_MODE UART_115200
 
 /**
  * @brief Default UART speed mode selection
@@ -57,6 +58,9 @@ void InitUart0()
 	/* 230400 baud: sbr 7, osr 15 */
 	static const uint16_t sbr = 7U;
 	static const uint8_t osr  = 15U;
+#elif UART_SPEED_MODE == UART_DEV
+	static const uint16_t sbr = 15U;
+	static const uint8_t osr  = 3U;
 #else
 #error No UART speed configured
 #endif
@@ -82,6 +86,9 @@ void InitUart0()
 	SIM->SOPT2 &= ~(SIM_SOPT2_UART0SRC_MASK | SIM_SOPT2_PLLFLLSEL_MASK); 
 	SIM->SOPT2 |= SIM_SOPT2_UART0SRC(0b01U) | SIM_SOPT2_PLLFLLSEL_MASK;
 #elif UART_SPEED_MODE == UART_230400
+	SIM->SOPT2 &= ~(SIM_SOPT2_UART0SRC_MASK | SIM_SOPT2_PLLFLLSEL_MASK); 
+	SIM->SOPT2 |= SIM_SOPT2_UART0SRC(0b01U) | SIM_SOPT2_PLLFLLSEL_MASK;
+#elif UART_SPEED_MODE == UART_DEV
 	SIM->SOPT2 &= ~(SIM_SOPT2_UART0SRC_MASK | SIM_SOPT2_PLLFLLSEL_MASK); 
 	SIM->SOPT2 |= SIM_SOPT2_UART0SRC(0b01U) | SIM_SOPT2_PLLFLLSEL_MASK;
 #else
@@ -112,6 +119,8 @@ void InitUart0()
 #if UART_SPEED_MODE == UART_115200
 	UART0->C5 = 0;
 #elif UART_SPEED_MODE == UART_230400
+	UART0->C5 = 0;
+#elif UART_SPEED_MODE == UART_DEV
 	UART0->C5 = 0;
 #else
 	if (osr >= 3 && osr <= 7)

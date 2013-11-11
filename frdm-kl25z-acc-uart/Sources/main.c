@@ -133,7 +133,7 @@ void InitMMA8451Q()
 	MMA8451Q_FetchConfiguration(&configuration);
 	
 	MMA8451Q_SetSensitivity(&configuration, MMA8451Q_SENSITIVITY_2G, MMA8451Q_HPO_DISABLED);
-	MMA8451Q_SetDataRate(&configuration, MMA8451Q_DATARATE_200Hz, MMA8451Q_LOWNOISE_ENABLED);
+	MMA8451Q_SetDataRate(&configuration, MMA8451Q_DATARATE_100Hz, MMA8451Q_LOWNOISE_ENABLED);
 	MMA8451Q_SetOversampling(&configuration, MMA8451Q_OVERSAMPLING_HIGHRESOLUTION);
 	MMA8451Q_ClearInterruptConfiguration(&configuration);
 	MMA8451Q_SetInterruptMode(&configuration, MMA8451Q_INTMODE_OPENDRAIN, MMA8451Q_INTPOL_ACTIVELOW);
@@ -163,7 +163,7 @@ void InitMPU6050()
 	
 	/* read configuration and modify */
 	MPU6050_FetchConfiguration(&configuration);
-	MPU6050_SetGyroscopeSampleRateDivider(&configuration, 40); /* the gyro samples at 8kHz, so divide by 40 to get to 200Hz */
+	MPU6050_SetGyroscopeSampleRateDivider(&configuration, 80); /* the gyro samples at 8kHz, so division by 40 --> 200Hz */
 	MPU6050_SetGyroscopeFullScale(&configuration, MPU6050_GYRO_FS_250);
 	MPU6050_SetAccelerometerFullScale(&configuration, MPU6050_ACC_FS_4);
 	MPU6050_ConfigureInterrupts(&configuration, 
@@ -207,6 +207,7 @@ int main(void)
 	
 	/* initialize the RGB led */
 	LED_Init();
+	
 	/* fun fun fun */
 	TrafficLight();
 	DoubleFlash();
@@ -254,15 +255,19 @@ int main(void)
 	/* initialize the MPU6050 data structure */
 	mpu6050_sensor_t accgyrotemp;
 	MPU6050_InitializeData(&accgyrotemp);
+		
+	/**
+	 * BUG:
+	 * There seems to be the problem that after power-up the buffers run full immediately
+	 * because too much data is fetched from the sensors.
+	 * After reset, however, everything works fine.
+	 * WORKAROUND:
+	 * Power up, wait for some seconds, then reset. 
+	 */
 	
-	/* configure pins for debugging */
-	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTC_SHIFT) & SIM_SCGC5_PORTC_MASK; /* power to the masses */
-	PORTC->PCR[7] = PORT_PCR_MUX(0x1);
-	GPIOC->PDDR |= GPIO_PDDR_PDD(1<<7);
 	
 	for(;;) 
 	{
-		GPIOC->PCOR = 1<<7;
 		int eventsProcessed = 0;
 		int readMMA, readMPU;
 		
@@ -293,10 +298,6 @@ int main(void)
 			
 			I2CArbiter_Select(MPU6050_I2CADDR);
 			MPU6050_ReadData(&accgyrotemp);
-			if (accgyrotemp.accel.z > 16000)
-			{
-				GPIOC->PSOR = 1<<7;
-			}
 			
 			/* mark event as detected */
 			eventsProcessed = 1;
@@ -321,8 +322,6 @@ int main(void)
 			uint8_t type = 0x02;
 			P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)accgyrotemp.data, sizeof(accgyrotemp.data), IO_SendByte);
 		}
-
-		GPIOC->PCOR = 1<<7;
 		
 #if 0
 		/* as long as there is data in the buffer */
