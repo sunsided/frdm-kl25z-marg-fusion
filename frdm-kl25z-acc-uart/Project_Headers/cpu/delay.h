@@ -17,7 +17,17 @@
 extern const volatile uint32_t SystemMilliseconds;
 
 /**
- * @brief The system tick counter
+ * @brief Returns the current system time in milliseconds
+ * @return The time.
+ */
+static inline uint32_t systemTime() 
+{
+	return SystemMilliseconds;
+}
+
+
+/**
+ * @brief Delays using the system tick counter
  * @param[in] ms The delay time in milliseconds
  * @return none.
  */

@@ -24,22 +24,23 @@
 
 #include "nice_names.h"
 
+#define ENABLE_MMA8451Q 0						/*! Used to enable or disable MMA8451Q fetching */
 
-#define UART_RX_BUFFER_SIZE	(32)				/*< Size of the UART RX buffer in byte*/
-#define UART_TX_BUFFER_SIZE	(128)				/*< Size of the UART TX buffer in byte */
-uint8_t uartInputData[UART_RX_BUFFER_SIZE], 	/*< The UART RX buffer */
-		uartOutputData[UART_TX_BUFFER_SIZE];	/*< The UART TX buffer */
-buffer_t uartInputFifo, 						/*< The UART RX buffer driver */
-		uartOutputFifo;							/*< The UART TX buffer driver */
+#define UART_RX_BUFFER_SIZE	(32)				/*! Size of the UART RX buffer in byte*/
+#define UART_TX_BUFFER_SIZE	(128)				/*! Size of the UART TX buffer in byte */
+uint8_t uartInputData[UART_RX_BUFFER_SIZE], 	/*! The UART RX buffer */
+		uartOutputData[UART_TX_BUFFER_SIZE];	/*! The UART TX buffer */
+buffer_t uartInputFifo, 						/*! The UART RX buffer driver */
+		uartOutputFifo;							/*! The UART TX buffer driver */
 
-#define MMA8451Q_INT_PORT	PORTA				/*< Port at which the MMA8451Q INT1 and INT2 pins are attached */
-#define MMA8451Q_INT_GPIO	GPIOA				/*< Port at which the MMA8451Q INT1 and INT2 pins are attached */
-#define MMA8451Q_INT1_PIN	14					/*< Pin at which the MMA8451Q INT1 is attached */
-#define MMA8451Q_INT2_PIN	15					/*< Pin at which the MMA8451Q INT2 is attached */
+#define MMA8451Q_INT_PORT	PORTA				/*! Port at which the MMA8451Q INT1 and INT2 pins are attached */
+#define MMA8451Q_INT_GPIO	GPIOA				/*! Port at which the MMA8451Q INT1 and INT2 pins are attached */
+#define MMA8451Q_INT1_PIN	14					/*! Pin at which the MMA8451Q INT1 is attached */
+#define MMA8451Q_INT2_PIN	15					/*! Pin at which the MMA8451Q INT2 is attached */
 
-#define MPU6050_INT_PORT	PORTA				/*< Port at which the MPU6050 INT pin is attached */
-#define MPU6050_INT_GPIO	GPIOA				/*< Port at which the MPU6050 INT pin is attached */
-#define MPU6050_INT_PIN		13					/*< Pin at which the MPU6050 INT is attached */
+#define MPU6050_INT_PORT	PORTA				/*! Port at which the MPU6050 INT pin is attached */
+#define MPU6050_INT_GPIO	GPIOA				/*! Port at which the MPU6050 INT pin is attached */
+#define MPU6050_INT_PIN		13					/*! Pin at which the MPU6050 INT is attached */
 
 #define I2CARBITER_COUNT 	(3)					/*< Number of I2C devices we're talking to */
 i2carbiter_entry_t i2carbiter_entries[I2CARBITER_COUNT]; /*< Structure for the pin enabling/disabling manager */
@@ -60,10 +61,10 @@ static volatile uint8_t poll_mpu6050 = 1;
 void PORTA_IRQHandler()
 {
 	register uint32_t isfr = MMA8451Q_INT_PORT->ISFR;
-	register uint32_t fromMMA8451Q 	= (isfr & ((1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN)));
-	register uint32_t fromMPU6050	= (isfr & (1 << MPU6050_INT_PIN));
 	
+#if ENABLE_MMA8451Q	
 	/* check MMA8451Q */
+	register uint32_t fromMMA8451Q 	= (isfr & ((1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN)));
 	if (fromMMA8451Q || fromMPU6050)
 	{
 		poll_mma8451q = 1;
@@ -74,8 +75,10 @@ void PORTA_IRQHandler()
 		 */
 		BME_OR_W(&MMA8451Q_INT_PORT->ISFR, (1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN));
 	}
+#endif
 	
 	/* check MPU6050 */
+	register uint32_t fromMPU6050	= (isfr & (1 << MPU6050_INT_PIN));
 	if (fromMPU6050)
 	{
 		poll_mpu6050 = 1;
@@ -93,6 +96,7 @@ void PORTA_IRQHandler()
  */
 void InitMMA8451Q()
 {
+#if ENABLE_MMA8451Q
 	mma8451q_confreg_t configuration;
 
 	IO_SendZString("MMA8451Q: initializing ...\r\n");
@@ -123,12 +127,6 @@ void InitMMA8451Q()
 	
 	/* TODO: Initiate self-test */
 	
-	/* configure interrupts for */
-	/* INT is on PTA1 */
-	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTA_SHIFT) & SIM_SCGC5_PORTA_MASK; /* power to the masses */
-	MPU6050_INT_PORT->PCR[MPU6050_INT_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
-	MPU6050_INT_GPIO->PDDR &= ~(GPIO_PDDR_PDD(1<<MPU6050_INT_PIN));
-	
 	/* read configuration and modify */
 	MMA8451Q_FetchConfiguration(&configuration);
 	
@@ -143,6 +141,7 @@ void InitMMA8451Q()
 	MMA8451Q_EnterActiveMode();
 	
 	IO_SendZString("MMA8451Q: configuration done.\r\n");
+#endif
 }
 
 /**
@@ -153,9 +152,16 @@ void InitMPU6050()
 	mpu6050_confreg_t configuration;
 	IO_SendZString("MPU6050: initializing ...\r\n");
 	
+	/**
+	 * BUG: see also note in main()
+	 * After power-up the interrupt line toggles
+	 * WORKAROUND:
+	 * Power up, wait for some seconds, then reset. 
+	 */
+	
 	/* switch to the correct port */
 	I2CArbiter_Select(MPU6050_I2CADDR);
-	
+		
 	/* perform identity check */
 	uint8_t value = MPU6050_WhoAmI();
 	assert(value == 0x68);
@@ -179,6 +185,16 @@ void InitMPU6050()
 	MPU6050_SetSleepMode(&configuration, MPU6050_SLEEP_DISABLED);
 	MPU6050_StoreConfiguration(&configuration);
 	
+	/* configure interrupts for MPU6050 */
+	/* INT is on PTA13 */
+	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTA_SHIFT) & SIM_SCGC5_PORTA_MASK; /* power to the masses */
+	MPU6050_INT_PORT->PCR[MPU6050_INT_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
+	MPU6050_INT_GPIO->PDDR &= ~(GPIO_PDDR_PDD(1<<MPU6050_INT_PIN));
+	
+	/* prepare interrupts for pin change / PORTA */
+	NVIC_ICPR |= 1 << 30;	/* clear pending flag */
+	NVIC_ISER |= 1 << 30;	/* enable interrupt */	
+	
 	IO_SendZString("MPU6050: configuration done.\r\n");
 }
 
@@ -187,6 +203,7 @@ void InitMPU6050()
  */
 void InitHMC5883L()
 {
+	hmc5883l_confreg_t configuration;
 	IO_SendZString("HMC5883L: initializing ...\r\n");
 	
 	I2CArbiter_Select(HMC5883L_I2CADDR);
@@ -194,7 +211,14 @@ void InitHMC5883L()
 	assert(ident == 0x00483433);
 	IO_SendZString("HMC5883L: device found.\r\n");
 	
-	/* TODO: Further configuration */
+	/* read configuration and modify */
+	HMC5883L_FetchConfiguration(&configuration);
+	HMC5883L_SetAveraging(&configuration, HMC5883L_MA_1);
+	HMC5883L_SetOutputRate(&configuration, HMC5883L_DO_75Hz);
+	HMC5883L_SetMeasurementMode(&configuration, HMC5883L_MS_NORMAL);
+	HMC5883L_SetGain(&configuration, HMC5883L_GN_1090_1p3Ga);
+	HMC5883L_SetOperatingMode(&configuration, HMC5883L_MD_CONT);
+	HMC5883L_StoreConfiguration(&configuration);
 	
 	IO_SendZString("HMC5883L: configuration done.\r\n");
 }
@@ -227,7 +251,6 @@ int main(void)
 	
 	/* initlialize the I2C bus */
 	I2C_Init();
-	I2C_ResetBus();
 	
 	/* Initialize UART0 */
 	InitUart0();
@@ -241,9 +264,9 @@ int main(void)
 	Uart0_EnableReceiveIrq();
 	
 	/* initialize the IMUs */
-	InitMMA8451Q();
 	InitMPU6050();
 	InitHMC5883L();
+	InitMMA8451Q();
 	
 	/* Wait for the config messages to get flushed */
 	RingBuffer_BlockWhileNotEmpty(&uartOutputFifo);
@@ -255,7 +278,12 @@ int main(void)
 	/* initialize the MPU6050 data structure */
 	mpu6050_sensor_t accgyrotemp;
 	MPU6050_InitializeData(&accgyrotemp);
-		
+	
+	/* initialize the HMC5883L data structure */
+	uint32_t lastHMCRead = 0;
+	const uint32_t readHMCEvery = 500/75; /* at 75Hz, data come every (1000/75Hz) ms. Read twice as often. */
+	hmc5883l_data_t compass;
+	
 	/**
 	 * BUG:
 	 * There seems to be the problem that after power-up the buffers run full immediately
@@ -265,30 +293,29 @@ int main(void)
 	 * Power up, wait for some seconds, then reset. 
 	 */
 	
-	
 	for(;;) 
 	{
 		int eventsProcessed = 0;
-		int readMMA, readMPU;
+		int readMMA, readMPU, readHMC;
 		
 		/* atomic detection of fresh data */
-		__disable_irq();
+		__disable_irq();	
 		readMMA = poll_mma8451q;
 		readMPU = poll_mpu6050;
 		poll_mma8451q = 0;
-		poll_mpu6050 = 0; 
+		poll_mpu6050 = 0;
 		__enable_irq();
-				
-		/* read accelerometer */
-		if (readMMA)
+		
+		/* detection of HMC read */
+		/*
+		 * TODO: read synchronized with MPU
+		 */
+		readHMC = 0;
+		uint32_t time = systemTime(); 
+		if ((time - lastHMCRead) >= readHMCEvery)
 		{
-			LED_RedOff();
-			
-			I2CArbiter_Select(MMA8451Q_I2CADDR);
-			MMA8451Q_ReadAcceleration14bitNoFifo(&acc);
-			
-			/* mark event as detected */
-			eventsProcessed = 1;
+			readHMC = 1;
+			lastHMCRead = time;
 		}
 
 		/* read accelerometer/gyro */
@@ -303,12 +330,29 @@ int main(void)
 			eventsProcessed = 1;
 		}
 		
-		/* data availability + sanity check */
-		if (readMMA && acc.status != 0) 
+		/* read compass data */
+		if (readHMC)
 		{
-			uint8_t type = 0x01;
-			P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)acc.xyz, sizeof(acc.xyz), IO_SendByte);
+			I2CArbiter_Select(HMC5883L_I2CADDR);
+			HMC5883L_ReadData(&compass);
+			
+			/* mark event as detected */
+			eventsProcessed = 1;
 		}
+		
+#if ENABLE_MMA8451Q		
+		/* read accelerometer */
+		if (readMMA)
+		{
+			LED_RedOff();
+			
+			I2CArbiter_Select(MMA8451Q_I2CADDR);
+			MMA8451Q_ReadAcceleration14bitNoFifo(&acc);
+			
+			/* mark event as detected */
+			eventsProcessed = 1;
+		}
+#endif
 		
 		/* data availability + sanity check 
 		 * This sent me on a long bug hunt: Sometimes the interrupt would be raised
@@ -322,6 +366,22 @@ int main(void)
 			uint8_t type = 0x02;
 			P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)accgyrotemp.data, sizeof(accgyrotemp.data), IO_SendByte);
 		}
+		
+		/* data availability + sanity check */
+		if (readHMC && compass.status != 0) /* TODO: check if not in lock state */
+		{
+			uint8_t type = 0x03;
+			P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)compass.xyz, sizeof(compass.xyz), IO_SendByte);
+		}
+		
+#if ENABLE_MMA8451Q
+		/* data availability + sanity check */
+		if (readMMA && acc.status != 0) 
+		{
+			uint8_t type = 0x01;
+			P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)acc.xyz, sizeof(acc.xyz), IO_SendByte);
+		}
+#endif
 		
 #if 0
 		/* as long as there is data in the buffer */

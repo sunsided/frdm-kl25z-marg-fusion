@@ -6,6 +6,7 @@
  */
 
 #include "i2c/i2c.h"
+#include "cpu/delay.h"
 
 /**
  * @brief Initialises the I2C interface
@@ -268,17 +269,28 @@ void I2C_ResetBus()
 	BME_OR_B(&I2C0->S, ((1 << I2C_S_IICIF_SHIFT) << I2C_S_IICIF_MASK));
 #endif	
 	
-	if (I2C0->S & I2C_S_BUSY_MASK)
+#if 0
+	while (I2C0->S & I2C_S_BUSY_MASK)
 	{
+		/**
+		 * TODO: This is obviously not working. 
+		 * The proposed solution is to switch the SCL pin to GPIO mode
+		 * and toggle it a few times.
+		 */
+		
 		I2C_SendStart();
-		
-		I2C_SendBlocking(0xAA);
-		I2C_SendBlocking(0xAA);
-		I2C_SendBlocking(0xAA);
-		I2C_SendBlocking(0xAA);
-		
+		delay_ms(2);
+		I2C0->D = 0xAA;
+		delay_ms(2);
+		I2C0->D = 0x05;
+		delay_ms(2);
+		I2C0->D = 0x50;
+		delay_ms(2);
+		I2C0->D = 0xAA;
+		delay_ms(2);
 		I2C_SendStop();
 	}
+#endif
 	
 #if !I2C_USE_BME
 	I2C0->S |= I2C_S_IICIF_MASK; /* clear interrupt flag */

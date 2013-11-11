@@ -165,29 +165,42 @@ function serial_test
                 
                 % Attach NaN byte to circular buffer to aid debugging
                 %byteCircBuf = [byteCircBuf(2:end), NaN];
-
-                % prepare scaling factor
-                scaling = 4096;
                 
                 % Skip everything that is not from the MMA8451Q
                 type = data(1);
                 if type == 1
                     % Decode MMA8451Q data
+                    scaling = 4096;
+                    
                     accXYZ = [
                         double(typecast(data(2:3), 'int16'));
                         double(typecast(data(4:5), 'int16'));
                         double(typecast(data(6:7), 'int16'));
-                        ] / 4096;
+                        ] / scaling;
                     continue;
                 elseif type == 2
                     % Decode MPU6050 data
+                    scaling = 8192; %16384 for 2g mode
+                    
                     % Swapping components due to orientation on my board
-                    scaling = 8192;
                     accXYZ = [
                         -double(typecast(data(4:5), 'int16'));
                          double(typecast(data(2:3), 'int16'));
                          double(typecast(data(6:7), 'int16'));
-                        ] / scaling; %16384 for 2g mode
+                        ] / scaling;
+                elseif type == 3
+                    % Decode MPU6050 data
+                    scaling = 1090;
+                    
+                    accXYZ = [
+                         double(typecast(data(2:3), 'int16'));
+                         double(typecast(data(4:5), 'int16'));
+                         double(typecast(data(6:7), 'int16'));
+                        ] / scaling;
+                    
+                    msg = sprintf('compass: x: %+1.5f  y: %+1.5f  z: %+1.5f', accXYZ(1), accXYZ(2), accXYZ(3));
+                    disp(msg);
+                    continue;
                 else
                     disp('unknown sensor type');
                     continue;

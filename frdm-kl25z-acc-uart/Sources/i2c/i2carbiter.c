@@ -67,8 +67,6 @@ void I2CArbiter_Configure(i2carbiter_entry_t *entries, uint8_t entryCount)
 	
 	/* assume the first slave will be used first */ 
 	I2CArbiter_Select(entries[0].slaveAddress);
-	
-	/* TODO: This would be a good place to reset the I2C bus on ALL pins */
 }
 
 /**
