@@ -33,11 +33,11 @@ void InitUart0()
 #define USE_KNOWN_115200 0
 	
 #if USE_KNOWN_115200
-	/* is known to work */
+	/* 115200 baud: sbr 13, osr 15 is known to work */
 	static const uint16_t sbr = 13U;
 	static const uint8_t osr = 15U;
 #else
-	/* 230400 baud */
+	/* 230400 baud: sbr 7, osr 15 */
 	static const uint16_t sbr = 7U;
 	static const uint8_t osr  = 15U;
 #endif
@@ -91,7 +91,7 @@ void InitUart0()
 #if USE_KNOWN_115200
 	UART0->C5 = 0;
 #else
-	if (osr >= 4 && osr <= 7)
+	if (osr >= 3 && osr <= 7)
 	{
 		UART0->C5 = UART0_C5_BOTHEDGE_MASK;
 	}
