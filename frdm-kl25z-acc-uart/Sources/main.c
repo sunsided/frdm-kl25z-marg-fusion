@@ -97,7 +97,7 @@ void InitMMA8451Q()
 	
 	/* configure interrupts for accelerometer */
 	/* INT1_ACCEL is on PTA14, INT2_ACCEL is on PTA15 */
-	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTA_SHIFT) & SIM_SCGC5_PORTA_SHIFT; /* power to the masses */
+	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTA_SHIFT) & SIM_SCGC5_PORTA_MASK; /* power to the masses */
 	MMA8451Q_INT_PORT->PCR[MMA8451Q_INT1_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
 	MMA8451Q_INT_PORT->PCR[MMA8451Q_INT2_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
 	GPIOA->PDDR &= ~(GPIO_PDDR_PDD(1<<MMA8451Q_INT1_PIN) | GPIO_PDDR_PDD(1<<MMA8451Q_INT2_PIN));
@@ -123,7 +123,7 @@ void InitMMA8451Q()
 	
 	/* configure interrupts for */
 	/* INT is on PTA1 */
-	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTA_SHIFT) & SIM_SCGC5_PORTA_SHIFT; /* power to the masses */
+	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTA_SHIFT) & SIM_SCGC5_PORTA_MASK; /* power to the masses */
 	MPU6050_INT_PORT->PCR[MPU6050_INT_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
 	GPIOA->PDDR &= ~(GPIO_PDDR_PDD(1<<MPU6050_INT_PIN));
 	
@@ -163,10 +163,10 @@ void InitMPU6050()
 	MPU6050_FetchConfiguration(&configuration);
 	MPU6050_SetGyroscopeSampleRateDivider(&configuration, 20); /* the gyro samples at 8kHz, so divide by 10 to get to 400Hz */
 	MPU6050_SetGyroscopeFullScale(&configuration, MPU6050_GYRO_FS_250);
-	MPU6050_SetAccelerometerFullScale(&configuration, MPU6050_ACC_FS_2);
-	MPU6050_ConfigureInterrupts(&configuration, MPU6050_INTLEVEL_ACTIVELOW, MPU6050_INTOPEN_OPENDRAIN, MPU6050_INTLATCH_PULSE, MPU6050_INTRDCLEAR_READSTATUS);
+	MPU6050_SetAccelerometerFullScale(&configuration, MPU6050_ACC_FS_4);
+	MPU6050_ConfigureInterrupts(&configuration, MPU6050_INTLEVEL_ACTIVELOW, MPU6050_INTOPEN_OPENDRAIN, MPU6050_INTLATCH_LATCHED, MPU6050_INTRDCLEAR_READSTATUS);
 	MPU6050_EnableInterrupts(&configuration, MPU6050_INT_DISABLED, MPU6050_INT_DISABLED, MPU6050_INT_ENABLED); /* enable data ready interrupt */
-	MPU6050_SelectClockSource(&configuration, MPU6050_CLOCK_8MHZOSC); /* TODO: change that to gyro PLL! */
+	MPU6050_SelectClockSource(&configuration, MPU6050_CLOCK_XGYROPLL);
 	MPU6050_SetSleepMode(&configuration, MPU6050_SLEEP_DISABLED);
 	MPU6050_StoreConfiguration(&configuration);
 	
@@ -260,13 +260,13 @@ int main(void)
 		__enable_irq();
 				
 		/* read accelerometer */
-		if (readMMA)
+		if (readMMA && 0)
 		{
 			LED_RedOff();
 			
 			I2CArbiter_Select(MMA8451Q_I2CADDR);
 			MMA8451Q_ReadAcceleration14bitNoFifo(&acc);
-		
+			
 			/* mark event as detected */
 			eventsProcessed = 1;
 		}
@@ -278,21 +278,27 @@ int main(void)
 			
 			I2CArbiter_Select(MPU6050_I2CADDR);
 			MPU6050_ReadData(&accgyrotemp);
-
+			
 			/* mark event as detected */
 			eventsProcessed = 1;
 		}
 		
-		/* write data */
-		if (readMMA) 
+		/* data availability + sanity check */
+		if (readMMA && acc.status != 0) 
 		{
 			uint8_t type = 0x01;
 			P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)acc.xyz, sizeof(acc.xyz), IO_SendByte);
 		}
 		
-		/* write data */
-		if (readMPU)
+		/* data availability + sanity check 
+		 * This sent me on a long bug hunt: Sometimes the interrupt would be raised
+		 * even if not all data registers were written. This always resulted in a
+		 * z data register not being fully written which, in turn, resulted in
+		 * extremely jumpy measurements. 
+		 */
+		if (readMPU && accgyrotemp.status != 0)
 		{
+			/* write data */
 			uint8_t type = 0x02;
 			P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)accgyrotemp.data, sizeof(accgyrotemp.data), IO_SendByte);
 		}
@@ -329,7 +335,7 @@ int main(void)
 			 * To counter this behaviour, SysTick has been speed up by factor
 			 * four (0.25ms).
 			 */
-#if 1
+#if 0
 			__WFI();
 #endif
 		}

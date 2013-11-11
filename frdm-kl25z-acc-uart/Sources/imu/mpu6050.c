@@ -8,6 +8,7 @@
 #include "imu/mpu6050.h"
 #include "i2c/i2c.h"
 #include "nice_names.h"
+#include "led/led.h"
 
 /**
  * @brief Helper macro to set bits in configuration->REGISTER_NAME
@@ -300,6 +301,9 @@ void MPU6050_SetSleepMode(mpu6050_confreg_t *const configuration, mpu6050_sleep_
 	MPU6050_CONFIG_SET(PWR_MGMT_1, SLEEP, mode);
 }
 
+#define MPU6050_INT_STATUS_DATA_RDY_INT_MASK 	(0b00000001)
+#define MPU6050_INT_STATUS_DATA_RDY_INT_SHIFT 	(0)
+
 /**
  * @brief Reads accelerometer, gyro and temperature data from the MPU6050
  * @param[inout] data The data 
@@ -313,6 +317,19 @@ void MPU6050_ReadData(mpu6050_sensor_t *data)
 	I2C_SendStart();
 	I2C_InitiateRegisterReadAt(MPU6050_I2CADDR, MPU6050_REG_INT_STATUS);
 	buffer.INT_STATUS = I2C_ReceiveDriving();
+	
+	/* early exit */
+	int dataReady = (buffer.INT_STATUS & MPU6050_INT_STATUS_DATA_RDY_INT_MASK) >> MPU6050_INT_STATUS_DATA_RDY_INT_SHIFT; 
+	if (!dataReady)
+	{
+		I2C_DisableAck();
+		I2C_ReceiverModeDriveClock();
+		I2C_SendStop();
+		data->status = 0;
+		return;
+	}
+	
+	/* read the registers */
 	buffer.ACCEL_XOUT_H = I2C_ReceiveDriving();
 	buffer.ACCEL_XOUT_L = I2C_ReceiveDriving();
 	buffer.ACCEL_YOUT_H = I2C_ReceiveDriving();
@@ -330,13 +347,13 @@ void MPU6050_ReadData(mpu6050_sensor_t *data)
 	
 	/* assign the data */
 	data->status = buffer.INT_STATUS;
-	data->accel.x = ((buffer.ACCEL_XOUT_H << 8) & 0xFF00) | buffer.ACCEL_XOUT_L;
-	data->accel.y = ((buffer.ACCEL_YOUT_H << 8) & 0xFF00) | buffer.ACCEL_YOUT_L;
-	data->accel.z = ((buffer.ACCEL_ZOUT_H << 8) & 0xFF00) | buffer.ACCEL_ZOUT_L;
-	data->gyro.x  = ((buffer.GYRO_XOUT_H << 8) & 0xFF00) | buffer.GYRO_XOUT_L;
-	data->gyro.y  = ((buffer.GYRO_YOUT_H << 8) & 0xFF00) | buffer.GYRO_YOUT_L;
-	data->gyro.z  = ((buffer.GYRO_ZOUT_H << 8) & 0xFF00) | buffer.GYRO_ZOUT_L;
+	data->accel.x = (int16_t)((((uint16_t)buffer.ACCEL_XOUT_H << 8) & 0xFF00) | (((uint16_t)buffer.ACCEL_XOUT_L) & 0x00FF));
+	data->accel.y = (int16_t)((((uint16_t)buffer.ACCEL_YOUT_H << 8) & 0xFF00) | (((uint16_t)buffer.ACCEL_YOUT_L) & 0x00FF));
+	data->accel.z = (int16_t)((((uint16_t)buffer.ACCEL_ZOUT_H << 8) & 0xFF00) | (((uint16_t)buffer.ACCEL_ZOUT_L) & 0x00FF));
+	data->gyro.x  = (int16_t)((((uint16_t)buffer.GYRO_XOUT_H << 8) & 0xFF00)  | (((uint16_t)buffer.GYRO_XOUT_L) & 0x00FF));
+	data->gyro.y  = (int16_t)((((uint16_t)buffer.GYRO_YOUT_H << 8) & 0xFF00)  | (((uint16_t)buffer.GYRO_YOUT_L) & 0x00FF));
+	data->gyro.z  = (int16_t)((((uint16_t)buffer.GYRO_ZOUT_H << 8) & 0xFF00)  | (((uint16_t)buffer.GYRO_ZOUT_L) & 0x00FF));
 	
 	/* Temperature in degrees C = (TEMP_OUT Register Value as a signed quantity)/340 + 36.53 */
-	data->temperature  = ((buffer.TEMP_OUT_H << 8) & 0xFF00) | buffer.TEMP_OUT_L;
+	data->temperature  = (((int16_t)buffer.TEMP_OUT_H << 8) & 0xFF00)  | (((int16_t)buffer.TEMP_OUT_L) & 0x00FF);
 }

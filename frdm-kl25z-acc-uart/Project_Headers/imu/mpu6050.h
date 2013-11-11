@@ -250,19 +250,19 @@ typedef struct __attribute__ ((__packed__))
 typedef struct __attribute__ ((__packed__))
 {
 	uint8_t INT_STATUS; 		/* 0x3A */
-	uint8_t ACCEL_XOUT_H; 		/* 0x3B */
+	 int8_t ACCEL_XOUT_H; 		/* 0x3B */
 	uint8_t ACCEL_XOUT_L; 		/* 0x3C */
-	uint8_t ACCEL_YOUT_H; 		/* 0x3D */
+	 int8_t ACCEL_YOUT_H; 		/* 0x3D */
 	uint8_t ACCEL_YOUT_L; 		/* 0x3E */
-	uint8_t ACCEL_ZOUT_H; 		/* 0x3F */
+	 int8_t ACCEL_ZOUT_H; 		/* 0x3F */
 	uint8_t ACCEL_ZOUT_L; 		/* 0x40 */
-	uint8_t TEMP_OUT_H; 		/* 0x41 */
+	 int8_t TEMP_OUT_H; 		/* 0x41 */
 	uint8_t TEMP_OUT_L; 		/* 0x42 */
-	uint8_t GYRO_XOUT_H; 		/* 0x43 */
+	 int8_t GYRO_XOUT_H; 		/* 0x43 */
 	uint8_t GYRO_XOUT_L; 		/* 0x44 */
-	uint8_t GYRO_YOUT_H; 		/* 0x45 */
+	 int8_t GYRO_YOUT_H; 		/* 0x45 */
 	uint8_t GYRO_YOUT_L; 		/* 0x46 */
-	uint8_t GYRO_ZOUT_H; 		/* 0x47 */
+	 int8_t GYRO_ZOUT_H; 		/* 0x47 */
 	uint8_t GYRO_ZOUT_L; 		/* 0x48 */
 } mpu6050_intdatareg_t;
 
@@ -393,8 +393,8 @@ typedef enum {
  * @brief Interrupt clear configuration
  */
 typedef enum {
-	MPU6050_INTRDCLEAR_READANY  	= (0b0),	/*! Interrupts are cleared by any read */
-	MPU6050_INTRDCLEAR_READSTATUS 	= (0b1),	/*! Interrupts are cleared by a read to the status register */
+	MPU6050_INTRDCLEAR_READSTATUS 	= (0b0),	/*! Interrupts are cleared by a read to the status register */
+	MPU6050_INTRDCLEAR_READANY  	= (0b1),	/*! Interrupts are cleared by any read */
 } mpu6050_intrdclear_t;
 
 /**

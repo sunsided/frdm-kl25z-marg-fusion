@@ -165,42 +165,53 @@ function serial_test
                 
                 % Attach NaN byte to circular buffer to aid debugging
                 %byteCircBuf = [byteCircBuf(2:end), NaN];
+
+                % prepare scaling factor
+                scaling = 4096;
                 
                 % Skip everything that is not from the MMA8451Q
                 type = data(1);
-                if type ~= 1
-                    
-                    xyz = [
+                if type == 1
+                    % Decode MMA8451Q data
+                    accXYZ = [
                         double(typecast(data(2:3), 'int16'));
                         double(typecast(data(4:5), 'int16'));
                         double(typecast(data(6:7), 'int16'));
-                    ] / 16384;
+                        ] / 4096;
+                    continue;
+                elseif type == 2
+                    % Decode MPU6050 data
+                    % Swapping components due to orientation on my board
+                    scaling = 8192;
+                    accXYZ = [
+                        -double(typecast(data(4:5), 'int16'));
+                         double(typecast(data(2:3), 'int16'));
+                         double(typecast(data(6:7), 'int16'));
+                        ] / scaling; %16384 for 2g mode
                     
-                    continue
+                    a = data(6:7)
+                    b = typecast(data(6:7), 'int16')
+                else
+                    disp('unknown sensor type');
+                    continue;
                 end
                 
-                % Decode MMA8451Q data
-                xyz = [
-                    double(typecast(data(2:3), 'int16'));
-                    double(typecast(data(4:5), 'int16'));
-                    double(typecast(data(6:7), 'int16'));
-                    ] / 4096;
+                rp = rollpitch(accXYZ);
                 
-                rp = rollpitch(xyz);
-                
-                %msg = sprintf('x: %+1.5f  y: %+1.5f  z: %+1.5f', xyz(1), xyz(2), xyz(3));
+                %msg = sprintf('x: %+1.5f  y: %+1.5f  z: %+1.5f', accXYZ(1), accXYZ(2), accXYZ(3));
+                %msg = sprintf('x: %+1.5f  y: %+1.5f  z: %+1.5f', accXYZ(1)*scaling, accXYZ(2)*scaling, accXYZ(3)*scaling);
                 %disp(msg);
                     
                 % Render with 30 Hz
                 duration = toc;
                 if duration > 1/30
                     % Prepare the track
-                    xtrack = [xtrack(2:end) xyz(1)];
-                    ytrack = [ytrack(2:end) xyz(2)];
-                    ztrack = [ztrack(2:end) xyz(3)];
+                    xtrack = [xtrack(2:end) accXYZ(1)];
+                    ytrack = [ytrack(2:end) accXYZ(2)];
+                    ztrack = [ztrack(2:end) accXYZ(3)];
                     
                     % Set the plot data
-                    set(plotHandle, 'XData', xyz(1), 'YData', xyz(2), 'ZData', xyz(3));
+                    set(plotHandle, 'XData', accXYZ(1), 'YData', accXYZ(2), 'ZData', accXYZ(3));
                     set(trackHandle, 'XData', xtrack, 'YData', ytrack, 'ZData', ztrack);
 
                     % Set the title
@@ -209,12 +220,13 @@ function serial_test
                     set(titleHandle, 'String', msg);
                     
                     % Set the axis labels
-                    xlabel(['x: ' num2str(xyz(1))]);
-                    ylabel(['y: ' num2str(xyz(2))]);
-                    zlabel(['z: ' num2str(xyz(3))]);
+                    subplot(axesHandle);
+                    xlabel(['x: ' num2str(accXYZ(1))]);
+                    ylabel(['y: ' num2str(accXYZ(2))]);
+                    zlabel(['z: ' num2str(accXYZ(3))]);
                     
                     % Update the virtual horizon
-                    subplot(horizonHandle),
+                    subplot(horizonHandle);
                     virtualHorizonPlot(rp);
                     
                     drawnow;

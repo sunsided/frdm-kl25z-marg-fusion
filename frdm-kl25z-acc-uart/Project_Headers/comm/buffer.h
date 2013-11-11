@@ -15,7 +15,7 @@
 /**
  * @brief Enables WFI instruction on blocking operations.
  */
-#define RINGBUFFER_ENABLE_WFI_ON_BLOCK 1
+#define RINGBUFFER_ENABLE_WFI_ON_BLOCK 0
 
 /**
  * @brief Ring buffer type
