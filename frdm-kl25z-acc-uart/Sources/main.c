@@ -246,8 +246,14 @@ int main(void)
 	mpu6050_sensor_t accgyrotemp;
 	MPU6050_InitializeData(&accgyrotemp);
 	
+	/* configure pins for debugging */
+	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTC_SHIFT) & SIM_SCGC5_PORTC_MASK; /* power to the masses */
+	PORTC->PCR[7] = PORT_PCR_MUX(0x1);
+	GPIOC->PDDR |= GPIO_PDDR_PDD(1<<7);
+	
 	for(;;) 
-	{	
+	{
+		GPIOC->PCOR = 1<<7;
 		int eventsProcessed = 0;
 		int readMMA, readMPU;
 		
@@ -278,6 +284,10 @@ int main(void)
 			
 			I2CArbiter_Select(MPU6050_I2CADDR);
 			MPU6050_ReadData(&accgyrotemp);
+			if (accgyrotemp.accel.z > 16000)
+			{
+				GPIOC->PSOR = 1<<7;
+			}
 			
 			/* mark event as detected */
 			eventsProcessed = 1;
@@ -303,6 +313,8 @@ int main(void)
 			P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)accgyrotemp.data, sizeof(accgyrotemp.data), IO_SendByte);
 		}
 
+		GPIOC->PCOR = 1<<7;
+		
 #if 0
 		/* as long as there is data in the buffer */
 		while(!RingBuffer_Empty(&uartInputFifo))

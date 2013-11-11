@@ -132,7 +132,7 @@ function serial_test
     dataReady = false;
     
     % Debugging
-    %byteCircBuf = NaN(1, 24);
+    byteCircBuf = NaN(1, 64);
     
     % Start timing for the graphics loop
     tic;
@@ -153,7 +153,7 @@ function serial_test
             byte = bytes(b);
             
             % Attach byte to circular buffer
-            %byteCircBuf = [byteCircBuf(2:end), double(byte)];
+            byteCircBuf = [byteCircBuf(2:end), double(byte)];
 
             % Decode the protocol
             protocolDecode(byte);
@@ -164,7 +164,7 @@ function serial_test
                 dataReady = false;
                 
                 % Attach NaN byte to circular buffer to aid debugging
-                %byteCircBuf = [byteCircBuf(2:end), NaN];
+                byteCircBuf = [byteCircBuf(2:end), NaN];
 
                 % prepare scaling factor
                 scaling = 4096;
@@ -191,6 +191,11 @@ function serial_test
                     
                     a = data(6:7)
                     b = typecast(data(6:7), 'int16')
+                    
+                    if b > 20000
+                        disp('gah!');
+                    end
+                    
                 else
                     disp('unknown sensor type');
                     continue;
