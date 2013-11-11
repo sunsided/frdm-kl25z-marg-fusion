@@ -131,7 +131,7 @@ void InitMMA8451Q()
 	MMA8451Q_FetchConfiguration(&configuration);
 	
 	MMA8451Q_SetSensitivity(&configuration, MMA8451Q_SENSITIVITY_2G, MMA8451Q_HPO_DISABLED);
-	MMA8451Q_SetDataRate(&configuration, MMA8451Q_DATARATE_200Hz, MMA8451Q_LOWNOISE_ENABLED);
+	MMA8451Q_SetDataRate(&configuration, MMA8451Q_DATARATE_100Hz, MMA8451Q_LOWNOISE_ENABLED);
 	MMA8451Q_SetOversampling(&configuration, MMA8451Q_OVERSAMPLING_HIGHRESOLUTION);
 	MMA8451Q_ClearInterruptConfiguration(&configuration);
 	MMA8451Q_SetInterruptMode(&configuration, MMA8451Q_INTMODE_OPENDRAIN, MMA8451Q_INTPOL_ACTIVELOW);
@@ -161,10 +161,10 @@ void InitMPU6050()
 	
 	/* read configuration and modify */
 	MPU6050_FetchConfiguration(&configuration);
-	MPU6050_SetGyroscopeSampleRateDivider(&configuration, 40); /* the gyro samples at 8kHz, so divide by 40 to get to 200Hz */
+	MPU6050_SetGyroscopeSampleRateDivider(&configuration, 80); /* the gyro samples at 8kHz, so divide by 40 to get to 200Hz */
 	MPU6050_SetGyroscopeFullScale(&configuration, MPU6050_GYRO_FS_250);
 	MPU6050_SetAccelerometerFullScale(&configuration, MPU6050_ACC_FS_4);
-	MPU6050_ConfigureInterrupts(&configuration, MPU6050_INTLEVEL_ACTIVELOW, MPU6050_INTOPEN_OPENDRAIN, MPU6050_INTLATCH_LATCHED, MPU6050_INTRDCLEAR_READSTATUS);
+	MPU6050_ConfigureInterrupts(&configuration, MPU6050_INTLEVEL_ACTIVELOW, MPU6050_INTOPEN_OPENDRAIN, MPU6050_INTLATCH_PULSE, MPU6050_INTRDCLEAR_READSTATUS);
 	MPU6050_EnableInterrupts(&configuration, MPU6050_INT_DISABLED, MPU6050_INT_DISABLED, MPU6050_INT_ENABLED); /* enable data ready interrupt */
 	MPU6050_SelectClockSource(&configuration, MPU6050_CLOCK_XGYROPLL);
 	MPU6050_SetSleepMode(&configuration, MPU6050_SLEEP_DISABLED);
