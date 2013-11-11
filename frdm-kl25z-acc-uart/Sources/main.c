@@ -33,11 +33,13 @@ buffer_t uartInputFifo, 						/*< The UART RX buffer driver */
 		uartOutputFifo;							/*< The UART TX buffer driver */
 
 #define MMA8451Q_INT_PORT	PORTA				/*< Port at which the MMA8451Q INT1 and INT2 pins are attached */
+#define MMA8451Q_INT_GPIO	GPIOA				/*< Port at which the MMA8451Q INT1 and INT2 pins are attached */
 #define MMA8451Q_INT1_PIN	14					/*< Pin at which the MMA8451Q INT1 is attached */
-#define MMA8451Q_INT2_PIN	15					/*< Pin at which the MMA8451Q INT1 is attached */
+#define MMA8451Q_INT2_PIN	15					/*< Pin at which the MMA8451Q INT2 is attached */
 
 #define MPU6050_INT_PORT	PORTA				/*< Port at which the MPU6050 INT pin is attached */
-#define MPU6050_INT_PIN		1					/*< Pin at which the MPU6050 INT is attached */
+#define MPU6050_INT_GPIO	GPIOA				/*< Port at which the MPU6050 INT pin is attached */
+#define MPU6050_INT_PIN		13					/*< Pin at which the MPU6050 INT is attached */
 
 #define I2CARBITER_COUNT 	(3)					/*< Number of I2C devices we're talking to */
 i2carbiter_entry_t i2carbiter_entries[I2CARBITER_COUNT]; /*< Structure for the pin enabling/disabling manager */
@@ -97,10 +99,10 @@ void InitMMA8451Q()
 	
 	/* configure interrupts for accelerometer */
 	/* INT1_ACCEL is on PTA14, INT2_ACCEL is on PTA15 */
-	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTA_SHIFT) & SIM_SCGC5_PORTA_MASK; /* power to the masses */
+	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTC_SHIFT) & SIM_SCGC5_PORTC_MASK; /* power to the masses */
 	MMA8451Q_INT_PORT->PCR[MMA8451Q_INT1_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
 	MMA8451Q_INT_PORT->PCR[MMA8451Q_INT2_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
-	GPIOA->PDDR &= ~(GPIO_PDDR_PDD(1<<MMA8451Q_INT1_PIN) | GPIO_PDDR_PDD(1<<MMA8451Q_INT2_PIN));
+	MMA8451Q_INT_GPIO->PDDR &= ~(GPIO_PDDR_PDD(1<<MMA8451Q_INT1_PIN) | GPIO_PDDR_PDD(1<<MMA8451Q_INT2_PIN));
 	
 	/* prepare interrupts for pin change / PORTA */
 	NVIC_ICPR |= 1 << 30;	/* clear pending flag */
@@ -125,13 +127,13 @@ void InitMMA8451Q()
 	/* INT is on PTA1 */
 	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTA_SHIFT) & SIM_SCGC5_PORTA_MASK; /* power to the masses */
 	MPU6050_INT_PORT->PCR[MPU6050_INT_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
-	GPIOA->PDDR &= ~(GPIO_PDDR_PDD(1<<MPU6050_INT_PIN));
+	MPU6050_INT_GPIO->PDDR &= ~(GPIO_PDDR_PDD(1<<MPU6050_INT_PIN));
 	
 	/* read configuration and modify */
 	MMA8451Q_FetchConfiguration(&configuration);
 	
 	MMA8451Q_SetSensitivity(&configuration, MMA8451Q_SENSITIVITY_2G, MMA8451Q_HPO_DISABLED);
-	MMA8451Q_SetDataRate(&configuration, MMA8451Q_DATARATE_100Hz, MMA8451Q_LOWNOISE_ENABLED);
+	MMA8451Q_SetDataRate(&configuration, MMA8451Q_DATARATE_200Hz, MMA8451Q_LOWNOISE_ENABLED);
 	MMA8451Q_SetOversampling(&configuration, MMA8451Q_OVERSAMPLING_HIGHRESOLUTION);
 	MMA8451Q_ClearInterruptConfiguration(&configuration);
 	MMA8451Q_SetInterruptMode(&configuration, MMA8451Q_INTMODE_OPENDRAIN, MMA8451Q_INTPOL_ACTIVELOW);
@@ -161,11 +163,18 @@ void InitMPU6050()
 	
 	/* read configuration and modify */
 	MPU6050_FetchConfiguration(&configuration);
-	MPU6050_SetGyroscopeSampleRateDivider(&configuration, 80); /* the gyro samples at 8kHz, so divide by 40 to get to 200Hz */
+	MPU6050_SetGyroscopeSampleRateDivider(&configuration, 40); /* the gyro samples at 8kHz, so divide by 40 to get to 200Hz */
 	MPU6050_SetGyroscopeFullScale(&configuration, MPU6050_GYRO_FS_250);
 	MPU6050_SetAccelerometerFullScale(&configuration, MPU6050_ACC_FS_4);
-	MPU6050_ConfigureInterrupts(&configuration, MPU6050_INTLEVEL_ACTIVELOW, MPU6050_INTOPEN_OPENDRAIN, MPU6050_INTLATCH_PULSE, MPU6050_INTRDCLEAR_READSTATUS);
-	MPU6050_EnableInterrupts(&configuration, MPU6050_INT_DISABLED, MPU6050_INT_DISABLED, MPU6050_INT_ENABLED); /* enable data ready interrupt */
+	MPU6050_ConfigureInterrupts(&configuration, 
+			MPU6050_INTLEVEL_ACTIVELOW, 
+			MPU6050_INTOPEN_OPENDRAIN, 
+			MPU6050_INTLATCH_LATCHED, /* if configured to PULSE the line goes postal */ 
+			MPU6050_INTRDCLEAR_READSTATUS);
+	MPU6050_EnableInterrupts(&configuration, 
+			MPU6050_INT_DISABLED, 
+			MPU6050_INT_DISABLED, 
+			MPU6050_INT_ENABLED); /* enable data ready interrupt */
 	MPU6050_SelectClockSource(&configuration, MPU6050_CLOCK_XGYROPLL);
 	MPU6050_SetSleepMode(&configuration, MPU6050_SLEEP_DISABLED);
 	MPU6050_StoreConfiguration(&configuration);
