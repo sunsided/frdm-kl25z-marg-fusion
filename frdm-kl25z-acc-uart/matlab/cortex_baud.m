@@ -5,8 +5,8 @@ function [br, osr, baud_error] = cortex_baud(clock, baudrate)
     % for FRDM-KL25Z (Cortex-M0+)
 
     if ~exist('clock', 'var')
-        disp('using default clock');
-        clock = 8000000;
+        disp('using default clock of PLL/2');
+        clock = 24000000;
     end
 
     if ~exist('baudrate', 'var')
@@ -15,7 +15,7 @@ function [br, osr, baud_error] = cortex_baud(clock, baudrate)
     end
     
     br = 1:8192;
-    osr = 1:31;
+    osr = 2:31;
 
     found_br = 0;
     found_osr = 0;
@@ -32,7 +32,7 @@ function [br, osr, baud_error] = cortex_baud(clock, baudrate)
         
         % loop BR
         for br_value = br
-            rate = floor(clock/br_value*(osr_value+1));
+            rate = floor(clock/(br_value*(osr_value+1)));
             if rate < 9600 
                 continue 
             end

@@ -29,8 +29,16 @@ void InitUart0()
 	static const uint32_t uartclk_hz = CORE_CLOCK/2;
 	static const uint32_t baud_rate = 115200U;
 	*/
+	
+#if 0
+	/* is known to work */
 	static const uint32_t osr = 15U;
 	static const uint16_t sbr = 13U;
+#else
+	static const uint32_t osr = 3U;
+	static const uint16_t sbr = 52U;
+#endif
+	
 	/*
 	uint32_t calculated_baud = uartclk_hz / ((osr+1)*sbr);
 	int32_t difference = (calculated_baud - baud_rate);
@@ -70,9 +78,13 @@ void InitUart0()
 	UART0->C4 &= ~UART0_C4_OSR_MASK;
 	UART0->C4 |= UART0_C4_OSR(osr);
 	
-	/* set oversampling ratio since oversampling is between 4 and 7 
-	 * and is optional for higher oversampling ratios */
-	UART0->C5 = 0; // UART0_C5_BOTHEDGE_MASK;
+	/* set oversampling ratio when oversampling is between 4 and 7 
+	 * (it is optional for higher oversampling ratios) */
+#if 0
+	UART0->C5 = UART0_C5_BOTHEDGE_MASK;
+#else
+	UART0->C5 = 0;
+#endif
 	
 	/* keep default settings for parity and loopback */
 	UART0->C1 = 0;

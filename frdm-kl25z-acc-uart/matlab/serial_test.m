@@ -276,9 +276,9 @@ function serial_test
                 oldDataLength = dataLength;
                 dataLength = byte;
                 dataBytesRead = 0;
-                if oldDataLength ~= dataLength
+                %if oldDataLength ~= dataLength
                     data = zeros(dataLength, 1, 'uint8');
-                end
+                %end
                 state = 3;
                                 
             % Read data bytes
