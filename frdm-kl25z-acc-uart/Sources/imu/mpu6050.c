@@ -329,4 +329,14 @@ void MPU6050_ReadData(mpu6050_sensor_t *data)
 	buffer.GYRO_ZOUT_L = I2C_ReceiveAndStop();
 	
 	/* assign the data */
+	data->status = buffer.INT_STATUS;
+	data->accel.x = ((buffer.ACCEL_XOUT_H << 8) & 0xFF00) | buffer.ACCEL_XOUT_L;
+	data->accel.y = ((buffer.ACCEL_YOUT_H << 8) & 0xFF00) | buffer.ACCEL_YOUT_L;
+	data->accel.z = ((buffer.ACCEL_ZOUT_H << 8) & 0xFF00) | buffer.ACCEL_ZOUT_L;
+	data->gyro.x  = ((buffer.GYRO_XOUT_H << 8) & 0xFF00) | buffer.GYRO_XOUT_L;
+	data->gyro.y  = ((buffer.GYRO_YOUT_H << 8) & 0xFF00) | buffer.GYRO_YOUT_L;
+	data->gyro.z  = ((buffer.GYRO_ZOUT_H << 8) & 0xFF00) | buffer.GYRO_ZOUT_L;
+	
+	/* Temperature in degrees C = (TEMP_OUT Register Value as a signed quantity)/340 + 36.53 */
+	data->temperature  = ((buffer.TEMP_OUT_H << 8) & 0xFF00) | buffer.TEMP_OUT_L;
 }
