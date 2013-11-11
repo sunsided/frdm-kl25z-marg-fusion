@@ -8,6 +8,21 @@
 #ifndef UART_C_
 #define UART_C_
 
+#define UART_115200 115200 /*! UART in 115.2 kbaud mode */
+#define UART_230400 230400 /*! UART in 230.4 kbaud mode */
+
+/**
+ * @brief Configures the UART speed
+ */
+#define UART_SPEED_MODE UART_230400
+
+/**
+ * @brief Default UART speed mode selection
+ */
+#ifndef UART_SPEED_MODE
+#define UART_SPEED_MODE UART_115200
+#endif
+
 #include "ARMCM0plus.h"
 #include "derivative.h" /* include peripheral declarations */
 #include "bme.h"
@@ -30,16 +45,20 @@ void InitUart0()
 	static const uint32_t baud_rate = 115200U;
 	*/
 	
-#define USE_KNOWN_115200 0
+#if UART_SPEED_MODE == UART_115200
+#pragma message "Configuring UART0 in 115.200 baud mode."
 	
-#if USE_KNOWN_115200
 	/* 115200 baud: sbr 13, osr 15 is known to work */
 	static const uint16_t sbr = 13U;
 	static const uint8_t osr = 15U;
-#else
+#elif UART_SPEED_MODE == UART_230400
+#pragma message "Configuring UART0 in 230.400 baud mode."
+	
 	/* 230400 baud: sbr 7, osr 15 */
 	static const uint16_t sbr = 7U;
 	static const uint8_t osr  = 15U;
+#else
+#error No UART speed configured
 #endif
 	
 	/*
@@ -59,12 +78,14 @@ void InitUart0()
 	UART0->C2 &= ~UART0_C2_TE_MASK & ~UART0_C2_RE_MASK;
 	
 	/* set uart clock to PLL/2 clock */
-#if USE_KNOWN_115200
+#if UART_SPEED_MODE == UART_115200
+	SIM->SOPT2 &= ~(SIM_SOPT2_UART0SRC_MASK | SIM_SOPT2_PLLFLLSEL_MASK); 
+	SIM->SOPT2 |= SIM_SOPT2_UART0SRC(0b01U) | SIM_SOPT2_PLLFLLSEL_MASK;
+#elif UART_SPEED_MODE == UART_230400
 	SIM->SOPT2 &= ~(SIM_SOPT2_UART0SRC_MASK | SIM_SOPT2_PLLFLLSEL_MASK); 
 	SIM->SOPT2 |= SIM_SOPT2_UART0SRC(0b01U) | SIM_SOPT2_PLLFLLSEL_MASK;
 #else
-	SIM->SOPT2 &= ~(SIM_SOPT2_UART0SRC_MASK | SIM_SOPT2_PLLFLLSEL_MASK); 
-	SIM->SOPT2 |= SIM_SOPT2_UART0SRC(0b01U) | SIM_SOPT2_PLLFLLSEL_MASK;
+#error No UART speed configured
 #endif
 	
 	/* enable clock gating to port A */
@@ -88,7 +109,9 @@ void InitUart0()
 	
 	/* set oversampling ratio when oversampling is between 4 and 7 
 	 * (it is optional for higher oversampling ratios) */
-#if USE_KNOWN_115200
+#if UART_SPEED_MODE == UART_115200
+	UART0->C5 = 0;
+#elif UART_SPEED_MODE == UART_230400
 	UART0->C5 = 0;
 #else
 	if (osr >= 3 && osr <= 7)
