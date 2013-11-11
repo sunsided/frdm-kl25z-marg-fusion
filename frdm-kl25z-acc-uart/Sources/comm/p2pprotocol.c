@@ -30,9 +30,44 @@ static const uint8_t default_preamble[DEFAULT_PREAMBLE_LENGTH] = {0xDA, 0x7A};
  * @param[in] data The data to send
  * @param[in] dataCount The number of data bytes
  * @param[in] sendHandler The actual send function
-
  */
 void P2PPE_Transmission(register const uint8_t*const data, register uint8_t dataCount, register void (*sendHandler)(uint8_t dataByte))
+{
+	P2PPE_TransmissionPrefixed((uint8_t*)0, 0, data, dataCount, sendHandler); 
+}
+
+/**
+ * @brief Encodes and sends a byte
+ * @param[in] byte The byte to send
+ * @param[in] sendHandler The actual send function
+ */
+static inline void encodeAndSend(register uint8_t byte, register void (*sendHandler)(uint8_t dataByte))
+{
+	/* encode special characters */
+	if (
+#if 0
+			SOH == byte || /* SOF is found rather often, so it's removed */
+			ETX == byte ||
+#endif
+		   EOT == byte
+		|| ESC == byte)
+	{
+		sendHandler(ESC);
+		byte ^= ESC_XOR;
+	}
+	
+	sendHandler(byte);	
+}
+
+/**
+ * @brief Begins a P2PPE Transmission with a prefix
+ * @param[in] data The prefix data to send
+ * @param[in] dataCount The number of prefix data bytes
+ * @param[in] data The data to send
+ * @param[in] dataCount The number of data bytes
+ * @param[in] sendHandler The actual send function
+ */
+void P2PPE_TransmissionPrefixed(register const uint8_t*const prefix, register uint8_t prefixCount, register const uint8_t*const data, register uint8_t dataCount, register void (*sendHandler)(uint8_t dataByte))
 {
 	/* send the preamble */
 	for (int i=0; i<DEFAULT_PREAMBLE_LENGTH; ++i)
@@ -42,30 +77,25 @@ void P2PPE_Transmission(register const uint8_t*const data, register uint8_t data
 	
 	/* send the header */
 	sendHandler(SOH);
-	sendHandler(dataCount);
+	sendHandler(dataCount + prefixCount);
 	
 	/* send the data frame */
 #if 0
 	sendHandler(STX);
 #endif
+	
+	/* send prefix */
+	for (int i=0; i<prefixCount; ++i)
+	{
+		register uint8_t byte = prefix[i];
+		encodeAndSend(byte, sendHandler);
+	}
+	
+	/* send data */
 	for (int i=0; i<dataCount; ++i)
 	{
-		register uint8_t byte = data[i];
-		
-		/* encode special characters */
-		if (
-#if 0
-				SOH == byte || /* SOF is foudn rather often, so it's removed */
-				ETX == byte ||
-#endif
-			   EOT == byte
-			|| ESC == byte)
-		{
-			sendHandler(ESC);
-			byte ^= ESC_XOR;
-		}
-		
-		sendHandler(byte);
+		register uint8_t byte = data[i];	
+		encodeAndSend(byte, sendHandler);
 	}
 	
 	/* send data frame end */

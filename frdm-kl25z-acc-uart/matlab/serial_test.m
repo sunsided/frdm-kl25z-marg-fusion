@@ -160,13 +160,30 @@ function serial_test
 
             % Decode data buffer
             if dataReady
+                % Thanks, got it.
+                dataReady = false;
+                
                 % Attach NaN byte to circular buffer to aid debugging
                 %byteCircBuf = [byteCircBuf(2:end), NaN];
                 
+                % Skip everything that is not from the MMA8451Q
+                type = data(1);
+                if type ~= 1
+                    
+                    xyz = [
+                        double(typecast(data(2:3), 'int16'));
+                        double(typecast(data(4:5), 'int16'));
+                        double(typecast(data(6:7), 'int16'));
+                    ] / 16384;
+                    
+                    continue
+                end
+                
+                % Decode MMA8451Q data
                 xyz = [
-                    double(typecast(data(1:2), 'int16'));
-                    double(typecast(data(3:4), 'int16'));
-                    double(typecast(data(5:6), 'int16'));
+                    double(typecast(data(2:3), 'int16'));
+                    double(typecast(data(4:5), 'int16'));
+                    double(typecast(data(6:7), 'int16'));
                     ] / 4096;
                 
                 rp = rollpitch(xyz);
@@ -203,9 +220,6 @@ function serial_test
                     drawnow;
                     tic;
                 end;
-                
-                % Thanks, but no.
-                dataReady = false;
             end
             
         end

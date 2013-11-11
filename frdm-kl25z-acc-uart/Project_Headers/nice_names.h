@@ -31,6 +31,13 @@
 #endif
 
 /**
+ * @brief Finds the maximum of two numbers
+ */
+#ifndef MAX
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+
+/**
  * @brief Assertion
  */
 #ifndef assert

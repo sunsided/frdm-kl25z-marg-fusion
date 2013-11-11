@@ -62,7 +62,7 @@ void PORTA_IRQHandler()
 	register uint32_t fromMPU6050	= (isfr & (1 << MPU6050_INT_PIN));
 	
 	/* check MMA8451Q */
-	if (fromMMA8451Q)
+	if (fromMMA8451Q || fromMPU6050)
 	{
 		poll_mma8451q = 1;
 		LED_RedOn();
@@ -131,7 +131,7 @@ void InitMMA8451Q()
 	MMA8451Q_FetchConfiguration(&configuration);
 	
 	MMA8451Q_SetSensitivity(&configuration, MMA8451Q_SENSITIVITY_2G, MMA8451Q_HPO_DISABLED);
-	MMA8451Q_SetDataRate(&configuration, MMA8451Q_DATARATE_800Hz, MMA8451Q_LOWNOISE_ENABLED);
+	MMA8451Q_SetDataRate(&configuration, MMA8451Q_DATARATE_400Hz, MMA8451Q_LOWNOISE_ENABLED);
 	MMA8451Q_SetOversampling(&configuration, MMA8451Q_OVERSAMPLING_HIGHRESOLUTION);
 	MMA8451Q_ClearInterruptConfiguration(&configuration);
 	MMA8451Q_SetInterruptMode(&configuration, MMA8451Q_INTMODE_OPENDRAIN, MMA8451Q_INTPOL_ACTIVELOW);
@@ -161,9 +161,10 @@ void InitMPU6050()
 	
 	/* read configuration and modify */
 	MPU6050_FetchConfiguration(&configuration);
+	MPU6050_SetGyroscopeSampleRateDivider(&configuration, 20); /* the gyro samples at 8kHz, so divide by 10 to get to 400Hz */
 	MPU6050_SetGyroscopeFullScale(&configuration, MPU6050_GYRO_FS_250);
 	MPU6050_SetAccelerometerFullScale(&configuration, MPU6050_ACC_FS_2);
-	MPU6050_ConfigureInterrupts(&configuration, MPU6050_INTLEVEL_ACTIVELOW, MPU6050_INTOPEN_OPENDRAIN, MPU6050_INTLATCH_LATCHED, MPU6050_INTRDCLEAR_READSTATUS);
+	MPU6050_ConfigureInterrupts(&configuration, MPU6050_INTLEVEL_ACTIVELOW, MPU6050_INTOPEN_OPENDRAIN, MPU6050_INTLATCH_PULSE, MPU6050_INTRDCLEAR_READSTATUS);
 	MPU6050_EnableInterrupts(&configuration, MPU6050_INT_DISABLED, MPU6050_INT_DISABLED, MPU6050_INT_ENABLED); /* enable data ready interrupt */
 	MPU6050_SelectClockSource(&configuration, MPU6050_CLOCK_8MHZOSC); /* TODO: change that to gyro PLL! */
 	MPU6050_SetSleepMode(&configuration, MPU6050_SLEEP_DISABLED);
@@ -236,26 +237,67 @@ int main(void)
 	
 	/* Wait for the config messages to get flushed */
 	RingBuffer_BlockWhileNotEmpty(&uartOutputFifo);
-	
+
 	/* initialize the MMA8451Q data structure for accelerometer data fetching */
 	mma8451q_acc_t acc;
 	MMA8451Q_InitializeData(&acc);
 
 	/* initialize the MPU6050 data structure */
 	mpu6050_sensor_t accgyrotemp;
-	accgyrotemp.status = 0;
-	accgyrotemp.accel.x = 0;
-	accgyrotemp.accel.y = 0;
-	accgyrotemp.accel.z = 0;
-	accgyrotemp.gyro.x = 0;
-	accgyrotemp.gyro.y = 0;
-	accgyrotemp.gyro.z = 0;
-	accgyrotemp.temperature = 0;
+	MPU6050_InitializeData(&accgyrotemp);
 	
 	for(;;) 
 	{	
 		int eventsProcessed = 0;
+		int readMMA, readMPU;
 		
+		/* atomic detection of fresh data */
+		__disable_irq();
+		readMMA = poll_mma8451q;
+		readMPU = poll_mpu6050;
+		poll_mma8451q = 0;
+		poll_mpu6050 = 0; 
+		__enable_irq();
+				
+		/* read accelerometer */
+		if (readMMA)
+		{
+			LED_RedOff();
+			
+			I2CArbiter_Select(MMA8451Q_I2CADDR);
+			MMA8451Q_ReadAcceleration14bitNoFifo(&acc);
+		
+			/* mark event as detected */
+			eventsProcessed = 1;
+		}
+
+		/* read accelerometer/gyro */
+		if (readMPU)
+		{
+			LED_BlueOff();
+			
+			I2CArbiter_Select(MPU6050_I2CADDR);
+			MPU6050_ReadData(&accgyrotemp);
+
+			/* mark event as detected */
+			eventsProcessed = 1;
+		}
+		
+		/* write data */
+		if (readMMA) 
+		{
+			uint8_t type = 0x01;
+			P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)acc.xyz, sizeof(acc.xyz), IO_SendByte);
+		}
+		
+		/* write data */
+		if (readMPU)
+		{
+			uint8_t type = 0x02;
+			P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)accgyrotemp.data, sizeof(accgyrotemp.data), IO_SendByte);
+		}
+
+#if 0
 		/* as long as there is data in the buffer */
 		while(!RingBuffer_Empty(&uartInputFifo))
 		{
@@ -271,39 +313,7 @@ int main(void)
 			/* mark event as detected */
 			eventsProcessed = 1;
 		}
-		
-		/* read accelerometer */
-		while (poll_mma8451q)
-		{		
-			poll_mma8451q = 0;
-			LED_RedOff();
-			
-			I2CArbiter_Select(MMA8451Q_I2CADDR);
-			MMA8451Q_ReadAcceleration14bitNoFifo(&acc);
-			if (acc.status != 0)
-			{
-				P2PPE_Transmission((uint8_t*)acc.xyz, 3*sizeof(acc.xyz[0]), IO_SendByte);
-			}
-			
-			/* mark event as detected */
-			eventsProcessed = 1;
-		}
-
-		/* read accelerometer/gyro */
-		while (poll_mpu6050)
-		{		
-			poll_mpu6050 = 0;
-			LED_BlueOff();
-			
-			I2CArbiter_Select(MPU6050_I2CADDR);
-			MPU6050_ReadData(&accgyrotemp);
-			if (acc.status != 0)
-			{
-			}
-			
-			/* mark event as detected */
-			eventsProcessed = 1;
-		}
+#endif
 		
 		/* in case of no events, allow a sleep */
 		if (!eventsProcessed)
@@ -319,7 +329,9 @@ int main(void)
 			 * To counter this behaviour, SysTick has been speed up by factor
 			 * four (0.25ms).
 			 */
+#if 1
 			__WFI();
+#endif
 		}
 	}
 	

@@ -11,6 +11,7 @@
 #define MPU6050_H_
 
 #include "derivative.h"
+#include "nice_names.h"
 
 /**
  * @brief AD0 bit of the I2C slave address of the MPU6050 IMU
@@ -466,23 +467,29 @@ typedef struct __attribute__ ((__packed__))
 {
 	uint8_t :8; 		/*! padding byte */
 	uint8_t status;		/*! the status register contents */
-	union {
+	union
+	{
 		struct {
-			int16_t x;	/*! the x acceleration */
-			int16_t y;	/*! the x acceleration */
-			int16_t z;	/*! the x acceleration */
+			union {
+				struct {
+					int16_t x;	/*! the x acceleration */
+					int16_t y;	/*! the x acceleration */
+					int16_t z;	/*! the x acceleration */
+				};
+				int16_t xyz[3];	/*! xyz array of accelerations */
+			} accel;			/*! The accelerometer data */
+			union {
+				struct {
+					int16_t x;	/*! the x angular velocity */
+					int16_t y;	/*! the y angular velocity */
+					int16_t z;	/*! the z angular velocity */
+				};
+				int16_t xyz[3];	/*! xyz array of angular velocities */
+			} gyro;
+			int16_t temperature;/*! the temperature sensor output */
 		};
-		int16_t xyz[3];	/*! xyz array of accelerations */
-	} accel;			/*! The accelerometer data */
-	union {
-		struct {
-			int16_t x;	/*! the x angular velocity */
-			int16_t y;	/*! the y angular velocity */
-			int16_t z;	/*! the z angular velocity */
-		};
-		int16_t xyz[3];	/*! xyz array of angular velocities */
-	} gyro;
-	int16_t temperature;/*! the temperature sensor output */
+		int16_t data[7];		/*! buffer to all the data */
+	};
 } mpu6050_sensor_t;
 
 /**
@@ -490,5 +497,22 @@ typedef struct __attribute__ ((__packed__))
  * @param[inout] data The data 
  */
 void MPU6050_ReadData(mpu6050_sensor_t *data);
+
+/**
+ * @brief Prepares a data buffer by clearing its values.
+ * @param[inout] data The data buffer to clear. 
+ */
+static inline void MPU6050_InitializeData(mpu6050_sensor_t *data)
+{
+	assert_not_null(data);
+	data->status = 0;
+	data->accel.x = 0;
+	data->accel.y = 0;
+	data->accel.z = 0;
+	data->gyro.x = 0;
+	data->gyro.y = 0;
+	data->gyro.z = 0;
+	data->temperature = 0;
+}
 
 #endif /* MPU6050_H_ */

@@ -13,6 +13,11 @@
 #include "led/led.h"
 
 /**
+ * @brief Enables WFI instruction on blocking operations.
+ */
+#define RINGBUFFER_ENABLE_WFI_ON_BLOCK 1
+
+/**
  * @brief Ring buffer type
  */
 typedef struct {
@@ -107,7 +112,9 @@ __STATIC_INLINE void RingBuffer_BlockWhileEmpty(const buffer_t *const buffer)
 {
 	while(RingBuffer_Empty(buffer)) 
 	{
+#if RINGBUFFER_ENABLE_WFI_ON_BLOCK
 		__WFI();
+#endif
 	}
 	
 	assert(buffer->readIndex <= buffer->writeIndex);
@@ -121,7 +128,9 @@ __STATIC_INLINE void RingBuffer_BlockWhileNotEmpty(const buffer_t *const buffer)
 {
 	while(!RingBuffer_Empty(buffer)) 
 	{
+#if RINGBUFFER_ENABLE_WFI_ON_BLOCK
 		__WFI();
+#endif
 	}
 	
 	assert(buffer->readIndex <= buffer->writeIndex);
@@ -135,10 +144,10 @@ __STATIC_INLINE void RingBuffer_BlockWhileFull(const buffer_t *const buffer)
 {
 	while(RingBuffer_Full(buffer)) 
 	{
-		LED_GreenOn();
+#if RINGBUFFER_ENABLE_WFI_ON_BLOCK
 		__WFI();
+#endif
 	}
-	LED_GreenOff();
 	
 	assert(buffer->readIndex <= buffer->writeIndex);
 }

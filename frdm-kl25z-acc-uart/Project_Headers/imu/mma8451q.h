@@ -215,9 +215,10 @@ void MMA8451Q_StoreConfiguration(const mma8451q_confreg_t *const configuration);
  */
 static inline void MMA8451Q_InitializeData(mma8451q_acc_t *const data)
 {
-	uint32_t* ptr = (uint32_t*)data;
-	ptr[0] = 0;
-	ptr[1] = 0;
+	data->status = 0;
+	data->x = 0;
+	data->y = 0;
+	data->z = 0;
 }
 
 /**
