@@ -288,7 +288,7 @@ function serial_test
                     %state = 3;
                 else
                     if escapeDetected
-                        byte = xor(byte, ESC_XOR);
+                        byte = bitxor(byte, ESC_XOR);
                         escapeDetected = false;
                     end
 
