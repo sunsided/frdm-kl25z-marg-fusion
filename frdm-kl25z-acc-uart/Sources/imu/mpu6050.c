@@ -105,7 +105,73 @@ void MPU6050_FetchConfiguration(mpu6050_confreg_t *const configuration)
  */
 void MPU6050_StoreConfiguration(const mpu6050_confreg_t *const configuration)
 {
-	assert(0);
+	assert(configuration != 0x0);
+		
+	/* loop while the bus is still busy */
+	I2C_WaitWhileBusy();
+	
+	/* start register addressing at 0x19 */
+	I2C_SendStart();
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(MPU6050_I2CADDR));
+	I2C_SendBlocking(MPU6050_REG_SMPLRT_DIV);
+	I2C_SendBlocking(configuration->SMPLRT_DIV);
+	I2C_SendBlocking(configuration->CONFIG);
+	I2C_SendBlocking(configuration->GYRO_CONFIG);
+	I2C_SendBlocking(configuration->ACCEL_CONFIG);
+	
+	/* restart register addressing at 0x23 */
+	I2C_SendRepeatedStart();
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(MPU6050_I2CADDR));
+	I2C_SendBlocking(MPU6050_REG_FIFO_EN);
+	I2C_SendBlocking(configuration->FIFO_EN);
+	I2C_SendBlocking(configuration->I2C_MST_CTRL);
+	I2C_SendBlocking(configuration->I2C_SLV0_ADDR);
+	I2C_SendBlocking(configuration->I2C_SLV0_REG);
+	I2C_SendBlocking(configuration->I2C_SLV0_CTRL);
+	I2C_SendBlocking(configuration->I2C_SLV1_ADDR);
+	I2C_SendBlocking(configuration->I2C_SLV1_REG);
+	I2C_SendBlocking(configuration->I2C_SLV1_CTRL);
+	I2C_SendBlocking(configuration->I2C_SLV2_ADDR);
+	I2C_SendBlocking(configuration->I2C_SLV2_REG);
+	I2C_SendBlocking(configuration->I2C_SLV2_CTRL);
+	I2C_SendBlocking(configuration->I2C_SLV3_ADDR);
+	I2C_SendBlocking(configuration->I2C_SLV3_REG);
+	I2C_SendBlocking(configuration->I2C_SLV3_CTRL);
+	I2C_SendBlocking(configuration->I2C_SLV4_ADDR);
+	I2C_SendBlocking(configuration->I2C_SLV4_REG);
+	I2C_SendBlocking(configuration->I2C_SLV4_DO);
+	I2C_SendBlocking(configuration->I2C_SLV4_CTRL);
+	
+	/* restart register addressing at 0x37 */
+	I2C_SendRepeatedStart();
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(MPU6050_I2CADDR));
+	I2C_SendBlocking(MPU6050_REG_INT_PIN_CFG);
+	I2C_SendBlocking(configuration->INT_PIN_CFG);
+	I2C_SendBlocking(configuration->INT_ENABLE);
+	
+	/* restart register addressing at 0x63 */
+	I2C_SendRepeatedStart();
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(MPU6050_I2CADDR));
+	I2C_SendBlocking(MPU6050_REG_I2C_SLV0_DO);
+	I2C_SendBlocking(configuration->I2C_SLV0_DO);
+	I2C_SendBlocking(configuration->I2C_SLV1_DO);
+	I2C_SendBlocking(configuration->I2C_SLV2_DO);
+	I2C_SendBlocking(configuration->I2C_SLV3_DO);
+	I2C_SendBlocking(configuration->I2C_MST_DELAY_CTRL);
+	I2C_SendBlocking(configuration->SIGNAL_PATH_RESET);
+	I2C_SendBlocking(configuration->MOT_DETECT_CTRL);
+	I2C_SendBlocking(configuration->USER_CTRL);
+	I2C_SendBlocking(configuration->PWR_MGMT_1);
+	I2C_SendBlocking(configuration->PWR_MGMT_2);
+	
+	/* restart register addressing at 0x71 */
+	I2C_SendRepeatedStart();
+	I2C_SendBlocking(I2C_WRITE_ADDRESS(MPU6050_I2CADDR));
+	I2C_SendBlocking(MPU6050_REG_FIFO_COUNTH);
+	I2C_SendBlocking(configuration->FIFO_COUNTH);
+	I2C_SendBlocking(configuration->FIFO_COUNTL);
+	I2C_SendBlocking(configuration->FIFO_R_W);
+	I2C_SendStop();
 }
 
 #define MPU6050_SMPLRT_DIV_SMPLRT_DIV_MASK 		(0b11111111)
@@ -220,7 +286,7 @@ void MPU6050_SelectClockSource(mpu6050_confreg_t *const configuration, mpu6050_c
 	MPU6050_CONFIG_SET(PWR_MGMT_1, CLKSEL, source);
 }
 
-#define MPU6050_PWR_MGMT_1_SLEEP_MASK	(0b010000000)
+#define MPU6050_PWR_MGMT_1_SLEEP_MASK	(0b01000000)
 #define MPU6050_PWR_MGMT_1_SLEEP_SHIFT	(7)
 
 /**
@@ -230,6 +296,37 @@ void MPU6050_SelectClockSource(mpu6050_confreg_t *const configuration, mpu6050_c
  */
 void MPU6050_SetSleepMode(mpu6050_confreg_t *const configuration, mpu6050_sleep_t mode)
 {
-	assert_not_null(configuration);	
+	assert_not_null(configuration);
 	MPU6050_CONFIG_SET(PWR_MGMT_1, SLEEP, mode);
+}
+
+/**
+ * @brief Reads accelerometer, gyro and temperature data from the MPU6050
+ * @param[inout] data The data 
+ */
+void MPU6050_ReadData(mpu6050_sensor_t *data)
+{
+	assert_not_null(data);
+	mpu6050_intdatareg_t buffer;
+	
+	/* fetch the data */
+	I2C_SendStart();
+	I2C_InitiateRegisterReadAt(MPU6050_I2CADDR, MPU6050_REG_INT_STATUS);
+	buffer.INT_STATUS = I2C_ReceiveDriving();
+	buffer.ACCEL_XOUT_H = I2C_ReceiveDriving();
+	buffer.ACCEL_XOUT_L = I2C_ReceiveDriving();
+	buffer.ACCEL_YOUT_H = I2C_ReceiveDriving();
+	buffer.ACCEL_YOUT_L = I2C_ReceiveDriving();
+	buffer.ACCEL_ZOUT_H = I2C_ReceiveDriving();
+	buffer.ACCEL_ZOUT_L = I2C_ReceiveDriving();
+	buffer.TEMP_OUT_H = I2C_ReceiveDriving();
+	buffer.TEMP_OUT_L = I2C_ReceiveDriving();
+	buffer.GYRO_XOUT_H = I2C_ReceiveDriving();
+	buffer.GYRO_XOUT_L = I2C_ReceiveDriving();
+	buffer.GYRO_YOUT_H = I2C_ReceiveDriving();
+	buffer.GYRO_YOUT_L = I2C_ReceiveDriving();
+	buffer.GYRO_ZOUT_H = I2C_ReceiveDrivingWithNack();
+	buffer.GYRO_ZOUT_L = I2C_ReceiveAndStop();
+	
+	/* assign the data */
 }

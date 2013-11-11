@@ -100,7 +100,7 @@ void InitMMA8451Q()
 	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTA_SHIFT) & SIM_SCGC5_PORTA_SHIFT; /* power to the masses */
 	MMA8451Q_INT_PORT->PCR[MMA8451Q_INT1_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
 	MMA8451Q_INT_PORT->PCR[MMA8451Q_INT2_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
-	GPIOA->PDDR &= ~(GPIO_PDDR_PDD(1<<14) | GPIO_PDDR_PDD(1<<15));
+	GPIOA->PDDR &= ~(GPIO_PDDR_PDD(1<<MMA8451Q_INT1_PIN) | GPIO_PDDR_PDD(1<<MMA8451Q_INT2_PIN));
 	
 	/* prepare interrupts for pin change / PORTA */
 	NVIC_ICPR |= 1 << 30;	/* clear pending flag */
@@ -120,6 +120,12 @@ void InitMMA8451Q()
 	delay_ms(20);
 	
 	/* TODO: Initiate self-test */
+	
+	/* configure interrupts for */
+	/* INT is on PTA1 */
+	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTA_SHIFT) & SIM_SCGC5_PORTA_SHIFT; /* power to the masses */
+	MPU6050_INT_PORT->PCR[MPU6050_INT_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
+	GPIOA->PDDR &= ~(GPIO_PDDR_PDD(1<<MPU6050_INT_PIN));
 	
 	/* read configuration and modify */
 	MMA8451Q_FetchConfiguration(&configuration);
@@ -161,8 +167,7 @@ void InitMPU6050()
 	MPU6050_EnableInterrupts(&configuration, MPU6050_INT_DISABLED, MPU6050_INT_DISABLED, MPU6050_INT_ENABLED); /* enable data ready interrupt */
 	MPU6050_SelectClockSource(&configuration, MPU6050_CLOCK_8MHZOSC); /* TODO: change that to gyro PLL! */
 	MPU6050_SetSleepMode(&configuration, MPU6050_SLEEP_DISABLED);
-	
-	/* TODO: Further configuration */
+	MPU6050_StoreConfiguration(&configuration);
 	
 	IO_SendZString("MPU6050: configuration done.\r\n");
 }
@@ -236,6 +241,17 @@ int main(void)
 	mma8451q_acc_t acc;
 	MMA8451Q_InitializeData(&acc);
 
+	/* initialize the MPU6050 data structure */
+	mpu6050_sensor_t accgyrotemp;
+	accgyrotemp.status = 0;
+	accgyrotemp.accel.x = 0;
+	accgyrotemp.accel.y = 0;
+	accgyrotemp.accel.z = 0;
+	accgyrotemp.gyro.x = 0;
+	accgyrotemp.gyro.y = 0;
+	accgyrotemp.gyro.z = 0;
+	accgyrotemp.temperature = 0;
+	
 	for(;;) 
 	{	
 		int eventsProcessed = 0;
@@ -273,6 +289,22 @@ int main(void)
 			eventsProcessed = 1;
 		}
 
+		/* read accelerometer/gyro */
+		while (poll_mpu6050)
+		{		
+			poll_mpu6050 = 0;
+			LED_BlueOff();
+			
+			I2CArbiter_Select(MPU6050_I2CADDR);
+			MPU6050_ReadData(&accgyrotemp);
+			if (acc.status != 0)
+			{
+			}
+			
+			/* mark event as detected */
+			eventsProcessed = 1;
+		}
+		
 		/* in case of no events, allow a sleep */
 		if (!eventsProcessed)
 		{

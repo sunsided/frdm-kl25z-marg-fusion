@@ -166,7 +166,9 @@
 /**
  * MPU6050 selftest data registers
  */
-typedef struct {
+#pragma pack(1)
+typedef struct __attribute__ ((__packed__))
+{
 	const uint8_t SELF_TEST_X;		/* 0x0D */
 	const uint8_t SELF_TEST_Y;		/* 0x0E */
 	const int8_t SELF_TEST_Z;		/* 0x0F */
@@ -176,7 +178,9 @@ typedef struct {
 /**
  * @brief The MPU6050 configuration registers
  */
-typedef struct {
+#pragma pack(1)
+typedef struct __attribute__ ((__packed__))
+{
 	/* skipping registers 0x00 .. 0x0C */
 	
 	/* skipping self-test registers 0x0D .. 0x10 */
@@ -241,7 +245,9 @@ typedef struct {
 /**
  * @brief MPU6050 internal and external sensor data registers
  */
-typedef struct {
+#pragma pack(1)
+typedef struct __attribute__ ((__packed__))
+{
 	uint8_t INT_STATUS; 		/* 0x3A */
 	uint8_t ACCEL_XOUT_H; 		/* 0x3B */
 	uint8_t ACCEL_XOUT_L; 		/* 0x3C */
@@ -262,7 +268,9 @@ typedef struct {
 /**
  * @brief MPU6050 internal and external sensor data registers
  */
-typedef struct {
+#pragma pack(1)
+typedef struct __attribute__ ((__packed__))
+{
 	mpu6050_intdatareg_t internalData; /* 0x3A .. 0x48 */
 	uint8_t EXT_SENS_DATA_00; 	/* 0x49 */
 	uint8_t EXT_SENS_DATA_01; 	/* 0x4A */
@@ -449,5 +457,38 @@ typedef enum {
  * @param[in] mode The sleep mode
  */
 void MPU6050_SetSleepMode(mpu6050_confreg_t *const configuration, mpu6050_sleep_t mode);
+
+/**
+ * @brief Accelerometer, gyroscope and temperature data
+ */
+#pragma pack(1)
+typedef struct __attribute__ ((__packed__))
+{
+	uint8_t :8; 		/*! padding byte */
+	uint8_t status;		/*! the status register contents */
+	union {
+		struct {
+			int16_t x;	/*! the x acceleration */
+			int16_t y;	/*! the x acceleration */
+			int16_t z;	/*! the x acceleration */
+		};
+		int16_t xyz[3];	/*! xyz array of accelerations */
+	} accel;			/*! The accelerometer data */
+	union {
+		struct {
+			int16_t x;	/*! the x angular velocity */
+			int16_t y;	/*! the y angular velocity */
+			int16_t z;	/*! the z angular velocity */
+		};
+		int16_t xyz[3];	/*! xyz array of angular velocities */
+	} gyro;
+	int16_t temperature;/*! the temperature sensor output */
+} mpu6050_sensor_t;
+
+/**
+ * @brief Reads accelerometer, gyro and temperature data from the MPU6050
+ * @param[inout] data The data 
+ */
+void MPU6050_ReadData(mpu6050_sensor_t *data);
 
 #endif /* MPU6050_H_ */
