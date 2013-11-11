@@ -18,7 +18,7 @@ function serial_test
     global s;
     s = serial('COM4', ...
         'FlowControl', 'none', ...
-        'BaudRate', 125000, ...
+        'BaudRate', 230400, ...
         'DataBits', 8, ...
         'Parity', 'none', ...
         'StopBits', 1, ...
@@ -153,7 +153,7 @@ function serial_test
             byte = bytes(b);
             
             % Attach byte to circular buffer
-            byteCircBuf = [byteCircBuf(2:end), double(byte)];
+            %byteCircBuf = [byteCircBuf(2:end), double(byte)];
 
             % Decode the protocol
             protocolDecode(byte);
@@ -164,7 +164,7 @@ function serial_test
                 dataReady = false;
                 
                 % Attach NaN byte to circular buffer to aid debugging
-                byteCircBuf = [byteCircBuf(2:end), NaN];
+                %byteCircBuf = [byteCircBuf(2:end), NaN];
 
                 % prepare scaling factor
                 scaling = 4096;
@@ -188,14 +188,6 @@ function serial_test
                          double(typecast(data(2:3), 'int16'));
                          double(typecast(data(6:7), 'int16'));
                         ] / scaling; %16384 for 2g mode
-                    
-                    a = data(6:7)
-                    b = typecast(data(6:7), 'int16')
-                    
-                    if b > 20000
-                        disp('gah!');
-                    end
-                    
                 else
                     disp('unknown sensor type');
                     continue;

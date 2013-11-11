@@ -1,4 +1,4 @@
-function [br, osr, baud_error] = cortex_baud(clock, baudrate)
+function [br, osr, baud_error] = cortex_baud(clock, baudrate, osr)
 
     clc; home;
 
@@ -14,13 +14,17 @@ function [br, osr, baud_error] = cortex_baud(clock, baudrate)
         baudrate = 115200;
     end
     
+    if ~exist('osr', 'var')
+        disp('using osr scan');
+        osr = 3:31;
+    end
+    
     br = 1:8192;
-    osr = 2:31;
 
     found_br = 0;
     found_osr = 0;
     found_error = 1;
-    min_error = 1000^2;
+    min_error = 1E20;
     
     % loop OSR
     for osr_value = osr
@@ -32,7 +36,7 @@ function [br, osr, baud_error] = cortex_baud(clock, baudrate)
         
         % loop BR
         for br_value = br
-            rate = floor(clock/(br_value*(osr_value+1)));
+            rate = clock/(br_value*(osr_value+1));
             if rate < 9600 
                 continue 
             end
@@ -59,7 +63,7 @@ function [br, osr, baud_error] = cortex_baud(clock, baudrate)
     br = found_br;
     osr = found_osr;
     
-    found = int32(clock/(br*(1+osr)));
+    found = int32(clock)/int32((br*(1+osr)));
     baud_error = abs(baudrate-found);
     
     disp(sprintf('Target clock:       %u Hz', clock));

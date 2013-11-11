@@ -30,13 +30,16 @@ void InitUart0()
 	static const uint32_t baud_rate = 115200U;
 	*/
 	
-#if 0
+#define USE_KNOWN_115200 0
+	
+#if USE_KNOWN_115200
 	/* is known to work */
-	static const uint32_t osr = 15U;
 	static const uint16_t sbr = 13U;
+	static const uint8_t osr = 15U;
 #else
-	static const uint32_t osr = 3U;
-	static const uint16_t sbr = 52U;
+	/* 230400 baud */
+	static const uint16_t sbr = 7U;
+	static const uint8_t osr  = 15U;
 #endif
 	
 	/*
@@ -55,9 +58,14 @@ void InitUart0()
 	/* disable rx and tx */
 	UART0->C2 &= ~UART0_C2_TE_MASK & ~UART0_C2_RE_MASK;
 	
-	/* set uart clock to oscillator clock */
+	/* set uart clock to PLL/2 clock */
+#if USE_KNOWN_115200
 	SIM->SOPT2 &= ~(SIM_SOPT2_UART0SRC_MASK | SIM_SOPT2_PLLFLLSEL_MASK); 
 	SIM->SOPT2 |= SIM_SOPT2_UART0SRC(0b01U) | SIM_SOPT2_PLLFLLSEL_MASK;
+#else
+	SIM->SOPT2 &= ~(SIM_SOPT2_UART0SRC_MASK | SIM_SOPT2_PLLFLLSEL_MASK); 
+	SIM->SOPT2 |= SIM_SOPT2_UART0SRC(0b01U) | SIM_SOPT2_PLLFLLSEL_MASK;
+#endif
 	
 	/* enable clock gating to port A */
 	SIM->SCGC5 |= SIM_SCGC5_PORTA_MASK; /* enable clock to port A (PTA1=rx, PTA2=tx) */
@@ -80,10 +88,16 @@ void InitUart0()
 	
 	/* set oversampling ratio when oversampling is between 4 and 7 
 	 * (it is optional for higher oversampling ratios) */
-#if 0
-	UART0->C5 = UART0_C5_BOTHEDGE_MASK;
-#else
+#if USE_KNOWN_115200
 	UART0->C5 = 0;
+#else
+	if (osr >= 4 && osr <= 7)
+	{
+		UART0->C5 = UART0_C5_BOTHEDGE_MASK;
+	}
+	else {
+		UART0->C5 = 0;	
+	}
 #endif
 	
 	/* keep default settings for parity and loopback */
