@@ -1,0 +1,3 @@
+[submodule "sensor-fusion"]
+	path = sensor-fusion
+	url = git@github.com:sunsided/sensor-fusion.git
