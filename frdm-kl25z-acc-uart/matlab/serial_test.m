@@ -131,6 +131,13 @@ function serial_test
     escapeDetected = false;
     dataReady = false;
     
+    % Data counters
+    ACCELEROMETER = 1;
+    GYROSCOPE     = 2;
+    COMPASS       = 3;
+    sensorDataCount = zeros(3,1);
+    totalDataCount = 0;
+    
     % Debugging
     byteCircBuf = NaN(1, 64);
     
@@ -162,6 +169,7 @@ function serial_test
             if dataReady
                 % Thanks, got it.
                 dataReady = false;
+                totalDataCount = totalDataCount + 1;
                 
                 % Attach NaN byte to circular buffer to aid debugging
                 %byteCircBuf = [byteCircBuf(2:end), NaN];
@@ -170,6 +178,7 @@ function serial_test
                 type = data(1);
                 if type == 1
                     % Decode MMA8451Q data
+                    sensorDataCount(ACCELEROMETER) = sensorDataCount(ACCELEROMETER) + 1;
                     scaling = 4096;
                     
                     accXYZ = [
@@ -180,6 +189,8 @@ function serial_test
                     continue;
                 elseif type == 2
                     % Decode MPU6050 data
+                    sensorDataCount(ACCELEROMETER) = sensorDataCount(ACCELEROMETER) + 1;
+                    sensorDataCount(GYROSCOPE)     = sensorDataCount(GYROSCOPE) + 1;
                     scaling = 8192; %16384 for 2g mode
                     
                     % Swapping components due to orientation on my board
@@ -189,7 +200,8 @@ function serial_test
                          double(typecast(data(6:7), 'int16'));
                         ] / scaling;
                 elseif type == 3
-                    % Decode MPU6050 data
+                    % Decode HMC5883L data
+                    sensorDataCount(COMPASS)        = sensorDataCount(COMPASS) + 1;
                     scaling = 1090;
                     
                     accXYZ = [
@@ -198,16 +210,27 @@ function serial_test
                          double(typecast(data(6:7), 'int16'));
                         ] / scaling;
                     
-                    msg = sprintf('compass: x: %+1.5f  y: %+1.5f  z: %+1.5f', accXYZ(1), accXYZ(2), accXYZ(3));
-                    disp(msg);
+                    %msg = sprintf('compass: x: %+1.5f  y: %+1.5f  z: %+1.5f', accXYZ(1), accXYZ(2), accXYZ(3));
+                    %disp(msg);
                     continue;
                 else
                     disp('unknown sensor type');
                     continue;
                 end
                 
-                rp = rollpitch(accXYZ);
+                % Count the received data
+                totalDataCount = totalDataCount + 1;
+                if mod(totalDataCount, 1000) == 0
+                    msg = sprintf('Data count: acc %5d, gyro %5d, compass %5d', ...
+                        sensorDataCount(ACCELEROMETER), ...
+                        sensorDataCount(GYROSCOPE), ...
+                        sensorDataCount(COMPASS) ...
+                    );
+                    disp(msg);    
+                end
                 
+                rp = rollpitch(accXYZ);
+                                
                 %msg = sprintf('x: %+1.5f  y: %+1.5f  z: %+1.5f', accXYZ(1), accXYZ(2), accXYZ(3));
                 %msg = sprintf('x: %+1.5f  y: %+1.5f  z: %+1.5f', accXYZ(1)*scaling, accXYZ(2)*scaling, accXYZ(3)*scaling);
                 %disp(msg);

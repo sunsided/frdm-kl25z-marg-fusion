@@ -281,7 +281,7 @@ int main(void)
 	
 	/* initialize the HMC5883L data structure */
 	uint32_t lastHMCRead = 0;
-	const uint32_t readHMCEvery = 500/75; /* at 75Hz, data come every (1000/75Hz) ms. Read twice as often. */
+	const uint32_t readHMCEvery = 1000/75; /* at 75Hz, data come every (1000/75Hz) ms. */
 	hmc5883l_data_t compass;
 	
 	/**
@@ -368,7 +368,7 @@ int main(void)
 		}
 		
 		/* data availability + sanity check */
-		if (readHMC && compass.status != 0) /* TODO: check if not in lock state */
+		if (readHMC && (compass.status & HMC5883L_SR_RDY_MASK) != 0) /* TODO: check if not in lock state */
 		{
 			uint8_t type = 0x03;
 			P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)compass.xyz, sizeof(compass.xyz), IO_SendByte);
