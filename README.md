@@ -28,13 +28,14 @@ to life without using Processor Expert, so just bare metal here. No CMSIS though
 
 - RGB LED GPIO access using fast GPIO (Core IOPORT; very trivial API, basically crap)
 
-### Accelerometer ###
+### Inertial Sensing ###
 
-- MMA8451Q accelerometer sensor data dumping in 14-bit non-fifo mode
+- (on-board) MMA8451Q accelerometer driver, sensor data dumping in 14-bit non-fifo mode
+- MPU6050 accelerometer, gyroscope and temperatur sensor driver
+- HMC5883L magnetometer sensor driver
 - Full configuration fetch and store over I2C
 - Automatic endian conversion based on system settings
 - Interrupt-based update notification and polling
-- MATLAB interfacing at 800 Hz over serial port
+- MATLAB interfacing at up 800 Hz over serial port
   - serial protocol decoder
-  - visual representation of the measured accelerations at 60 FPS
-    (see https://www.youtube.com/watch?v=RunpaR2PdHQ)
+  - visual representation of the measured accelerations at 60 FPS with virtual horizon; for an older version https://www.youtube.com/watch?v=RunpaR2PdHQ
