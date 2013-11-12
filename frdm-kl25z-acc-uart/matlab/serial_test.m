@@ -1,4 +1,9 @@
 function serial_test
+    % SERIAL_TEST Reads streamed sensor data.
+    %   define  
+    %   global sensorDataCount accelBuffer gyroBuffer compassBuffer temperatureBuffer
+    %   at the workspace after running this function to get the data.
+
     close all; clear all;
 
     % We turn it back on in the end
@@ -207,22 +212,25 @@ function serial_test
                     sensorDataCount(ACCELEROMETER) = sensorDataCount(ACCELEROMETER) + 1;
                     sensorDataCount(GYROSCOPE)     = sensorDataCount(GYROSCOPE) + 1;
                     sensorDataCount(TEMPERATURE)   = sensorDataCount(TEMPERATURE) + 1;
-                    scaling = 8192; %16384 for 2g mode
-                    
+                    accScaling  = 8192; %16384 for 2g mode
+                    gyroScaling = 131; %131 in 250°/s mode
+                    tempScaling = 340;
+                    tempoffset  = 36.53;
+                     
                     % Swapping components due to orientation on my board
                     accXYZ = [
                         -double(typecast(data(4:5), 'int16'));
                          double(typecast(data(2:3), 'int16'));
                          double(typecast(data(6:7), 'int16'));
-                        ] / scaling;
+                        ] / accScaling;
                     gyroXYZ = [
                         -double(typecast(data(10:11), 'int16'));
                          double(typecast(data(8:9), 'int16'));
                          double(typecast(data(12:13), 'int16'));
-                        ] / scaling;
+                        ] / gyroScaling;
                     temperature = [
                         double(typecast(data(14:15), 'int16'));
-                        ];
+                        ] / tempScaling + tempoffset;
                     
                     % attach data to buffer
                     if mod(sensorDataCount(ACCELEROMETER), BUFFER_STEP_SIZE) == 0
@@ -245,13 +253,13 @@ function serial_test
                 elseif type == 3
                     % Decode HMC5883L data
                     sensorDataCount(COMPASS)        = sensorDataCount(COMPASS) + 1;
-                    scaling = 1090;
+                    compassScaling = 1090;
                     
                     compassXYZ = [
                          double(typecast(data(2:3), 'int16'));
                          double(typecast(data(4:5), 'int16'));
                          double(typecast(data(6:7), 'int16'));
-                        ] / scaling;
+                        ] / compassScaling;
                     
                     % attach data to buffer
                     if mod(sensorDataCount(COMPASS), BUFFER_STEP_SIZE) == 0
