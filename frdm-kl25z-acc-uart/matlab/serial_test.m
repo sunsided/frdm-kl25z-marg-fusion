@@ -132,17 +132,28 @@ function serial_test
     dataReady = false;
     
     % Data counters
+    global sensorDataCount;
     ACCELEROMETER = 1;
     GYROSCOPE     = 2;
     COMPASS       = 3;
-    sensorDataCount = zeros(3,1);
+    TEMPERATURE   = 4;
+    sensorDataCount = zeros(4,1);
     totalDataCount = 0;
+    
+    % data buffers
+    BUFFER_STEP_SIZE = 1000;
+    global accelBuffer gyroBuffer compassBuffer temperatureBuffer
+    accelBuffer         = zeros(BUFFER_STEP_SIZE, 4); % time + xyz
+    gyroBuffer          = zeros(BUFFER_STEP_SIZE, 4); % time + xyz
+    compassBuffer       = zeros(BUFFER_STEP_SIZE, 4); % time + xyz
+    temperatureBuffer   = zeros(BUFFER_STEP_SIZE, 2); % time + t
     
     % Debugging
     byteCircBuf = NaN(1, 64);
     
-    % Start timing for the graphics loop
-    tic;
+    % Start timing for the graphics and data loop
+    graphicsTimer = tic;
+    dataTimer = tic;
     
     % Reading the data
     bulkSize = 80;
@@ -170,6 +181,7 @@ function serial_test
                 % Thanks, got it.
                 dataReady = false;
                 totalDataCount = totalDataCount + 1;
+                timestamp = toc(dataTimer);
                 
                 % Attach NaN byte to circular buffer to aid debugging
                 %byteCircBuf = [byteCircBuf(2:end), NaN];
@@ -177,6 +189,9 @@ function serial_test
                 % Skip everything that is not from the MMA8451Q
                 type = data(1);
                 if type == 1
+                    disp('MMA8451Q sensing disabled');
+                    continue;
+                    
                     % Decode MMA8451Q data
                     sensorDataCount(ACCELEROMETER) = sensorDataCount(ACCELEROMETER) + 1;
                     scaling = 4096;
@@ -191,6 +206,7 @@ function serial_test
                     % Decode MPU6050 data
                     sensorDataCount(ACCELEROMETER) = sensorDataCount(ACCELEROMETER) + 1;
                     sensorDataCount(GYROSCOPE)     = sensorDataCount(GYROSCOPE) + 1;
+                    sensorDataCount(TEMPERATURE)   = sensorDataCount(TEMPERATURE) + 1;
                     scaling = 8192; %16384 for 2g mode
                     
                     % Swapping components due to orientation on my board
@@ -199,20 +215,49 @@ function serial_test
                          double(typecast(data(2:3), 'int16'));
                          double(typecast(data(6:7), 'int16'));
                         ] / scaling;
+                    gyroXYZ = [
+                        -double(typecast(data(10:11), 'int16'));
+                         double(typecast(data(8:9), 'int16'));
+                         double(typecast(data(12:13), 'int16'));
+                        ] / scaling;
+                    temperature = [
+                        double(typecast(data(14:15), 'int16'));
+                        ];
+                    
+                    % attach data to buffer
+                    if mod(sensorDataCount(ACCELEROMETER), BUFFER_STEP_SIZE) == 0
+                        accelBuffer = [accelBuffer; zeros(BUFFER_STEP_SIZE, 4)];
+                    end
+                    accelBuffer(sensorDataCount(ACCELEROMETER), 1:4) = [timestamp; accXYZ];
+                    
+                    % attach data to buffer
+                    if mod(sensorDataCount(GYROSCOPE), BUFFER_STEP_SIZE) == 0
+                        gyroBuffer = [gyroBuffer; zeros(BUFFER_STEP_SIZE, 4)];
+                    end
+                    gyroBuffer(sensorDataCount(GYROSCOPE), 1:4) = [timestamp; gyroXYZ];
+                    
+                    % attach data to buffer
+                    if mod(sensorDataCount(TEMPERATURE), BUFFER_STEP_SIZE) == 0
+                        temperatureBuffer = [temperatureBuffer; zeros(BUFFER_STEP_SIZE, 2)];
+                    end
+                    temperatureBuffer(sensorDataCount(TEMPERATURE), 1:2) = [timestamp; temperature];
+                    
                 elseif type == 3
                     % Decode HMC5883L data
                     sensorDataCount(COMPASS)        = sensorDataCount(COMPASS) + 1;
                     scaling = 1090;
                     
-                    accXYZ = [
+                    compassXYZ = [
                          double(typecast(data(2:3), 'int16'));
                          double(typecast(data(4:5), 'int16'));
                          double(typecast(data(6:7), 'int16'));
                         ] / scaling;
                     
-                    %msg = sprintf('compass: x: %+1.5f  y: %+1.5f  z: %+1.5f', accXYZ(1), accXYZ(2), accXYZ(3));
-                    %disp(msg);
-                    continue;
+                    % attach data to buffer
+                    if mod(sensorDataCount(COMPASS), BUFFER_STEP_SIZE) == 0
+                        compassBuffer = [compassBuffer; zeros(BUFFER_STEP_SIZE, 4)];
+                    end
+                    compassBuffer(sensorDataCount(COMPASS), 1:4) = [timestamp; compassXYZ];
                 else
                     disp('unknown sensor type');
                     continue;
@@ -221,22 +266,22 @@ function serial_test
                 % Count the received data
                 totalDataCount = totalDataCount + 1;
                 if mod(totalDataCount, 1000) == 0
-                    msg = sprintf('Data count: acc %5d, gyro %5d, compass %5d', ...
+                    msg = sprintf('Data count: @t=%f: acc %5d, gyro %5d, compass %5d, temp %d', ...
+                        toc(dataTimer), ...
                         sensorDataCount(ACCELEROMETER), ...
                         sensorDataCount(GYROSCOPE), ...
-                        sensorDataCount(COMPASS) ...
+                        sensorDataCount(COMPASS), ...
+                        sensorDataCount(TEMPERATURE) ...
                     );
                     disp(msg);    
                 end
-                
-                rp = rollpitch(accXYZ);
-                                
+                                                
                 %msg = sprintf('x: %+1.5f  y: %+1.5f  z: %+1.5f', accXYZ(1), accXYZ(2), accXYZ(3));
                 %msg = sprintf('x: %+1.5f  y: %+1.5f  z: %+1.5f', accXYZ(1)*scaling, accXYZ(2)*scaling, accXYZ(3)*scaling);
                 %disp(msg);
                     
                 % Render with 30 Hz
-                duration = toc;
+                duration = toc(graphicsTimer);
                 if duration > 1/30
                     % Prepare the track
                     xtrack = [xtrack(2:end) accXYZ(1)];
@@ -248,6 +293,7 @@ function serial_test
                     set(trackHandle, 'XData', xtrack, 'YData', ytrack, 'ZData', ztrack);
 
                     % Set the title
+                    rp = rollpitch(accXYZ);
                     rpdegree = rp * 180/pi;
                     msg = sprintf('roll %+1.4f, yaw %+1.4f', rpdegree(1), rpdegree(2));
                     set(titleHandle, 'String', msg);
@@ -263,7 +309,7 @@ function serial_test
                     virtualHorizonPlot(rp);
                     
                     drawnow;
-                    tic;
+                    graphicsTimer = tic;
                 end;
             end
             
