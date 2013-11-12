@@ -403,6 +403,13 @@ function serial_test
         fclose(s);
         delete(s);
         clear s;
+        
+        % Trim sensor data
+        disp('Trimming sensor data arrays');
+        accelBuffer = accelBuffer(1:sensorDataCount(ACCELEROMETER), :);
+        gyroBuffer = gyroBuffer(1:sensorDataCount(GYROSCOPE), :);
+        compassBuffer = compassBuffer(1:sensorDataCount(COMPASS), :);
+        temperatureBuffer = temperatureBuffer(1:sensorDataCount(TEMPERATURE), :);
     end
     
 end
