@@ -201,7 +201,7 @@ static inline void HandleTransmitInterrupt()
 /**
  * @brief IRQ handler for UART0
  */
-void UART0_IRQHandler()
+void UART0_Handler()
 {
 	const uint8_t config = UART0->C2;
 	const uint8_t status = UART0->S1;

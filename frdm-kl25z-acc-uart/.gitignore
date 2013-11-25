@@ -3,3 +3,5 @@
 /Debug/
 /*.old
 /*.user
+/obj/
+/VisualGDBCache/
