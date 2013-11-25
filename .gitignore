@@ -11,3 +11,7 @@ FLASH
 *.launch
 
 *.asv
+/Debug/
+/*.suo
+/*.sdf
+/*.opensdf

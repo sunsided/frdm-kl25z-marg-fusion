@@ -1,2 +1,5 @@
 /frdm-kl25z-acc-uart FLASH.jlink
 /frdm-kl25z-acc-uart FLASH.traceConfig
+/Debug/
+/*.old
+/*.user
