@@ -15,7 +15,7 @@
 /**
  * @brief Configures the UART speed
  */
-#define UART_SPEED_MODE UART_230400
+#define UART_SPEED_MODE UART_115200
 
 /**
  * @brief Default UART speed mode selection
