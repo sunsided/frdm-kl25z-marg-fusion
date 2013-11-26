@@ -20,6 +20,7 @@ function serial_test
     end
     
     % Configuring port object
+    disp('Preparing serial port ...');
     global s;
     s = serial('COM9', ...
         'FlowControl', 'none', ...
@@ -36,7 +37,9 @@ function serial_test
         );
     
     % Connecting to the port
+    disp('Connecting to serial port ...');
     fopen(s);
+    disp('Connected to serial port.');
 
     % Prepare plot
     figureHandle = figure('NumberTitle', 'off', ...
@@ -113,28 +116,8 @@ function serial_test
     sjobject = igetfield(s, 'jobject');
         
     % Definitions
-    SOH     = uint8(1);
-    EOT     = uint8(4);
-    ESC     = uint8(27);
-    ESC_XOR = uint8(66);
-    DA      = uint8(218);
-    TA      = uint8(122);
-
-    % Detection state machine
-    % 0 = searching for preamble --> 0
-    % 1 = preamble found, expecting SOH --> 1
-    % 2 = SOH found, expecting length --> 2
-    % 3 = length found, expecting data --> 4
-    % 4 = reading bytes --> 5
-    % 5 = expecting EOT --> 0
-    state = 0;
-    
-    % Decoding variables
-    dataLength = 0;
-    data = [];
-    dataBytesRead = 0;
-    escapeDetected = false;
-    dataReady = false;
+    global dataReady data
+    prepareProtocolDecode();
     
     % Data counters
     global sensorDataCount ACCELEROMETER GYROSCOPE COMPASS TEMPERATURE;
@@ -162,7 +145,6 @@ function serial_test
     
     % Reading the data
     bulkSize = 80;
-    lastByte = 0;
     while true
         % Read bytes; A profiler run showed that fread(s, count) is
         % horribly slow mainly due to error string formattings even
@@ -321,78 +303,6 @@ function serial_test
                 end;
             end
             
-        end
-    end
-    
-    function protocolDecode(byte)       
-        % Switch states
-        switch state
-            % Await preamble
-            case 0
-                if byte == DA
-                    %state = 0;
-                elseif (byte == TA) && (lastByte == DA)
-                    % preamble detected
-                    state = 1;
-                else
-                    %state = 0;
-                    
-                    %disp('protocol error in state 0');
-                    %disp(s.BytesAvailable);
-                end
-                
-                % Remember byte for protocol decoding
-                lastByte = byte;
-            
-            % Await SOH
-            case 1
-                if byte == SOH
-                    state = 2;
-                else
-                    state = 0;
-                    disp('protocol error in state 1');
-                end
-                
-            % Read length
-            case 2
-                oldDataLength = dataLength;
-                dataLength = byte;
-                dataBytesRead = 0;
-                %if oldDataLength ~= dataLength
-                    data = zeros(dataLength, 1, 'uint8');
-                %end
-                state = 3;
-                                
-            % Read data bytes
-            case 3
-                if byte == ESC
-                    escapeDetected = true;
-                    %state = 3;
-                else
-                    if escapeDetected
-                        byte = bitxor(byte, ESC_XOR);
-                        escapeDetected = false;
-                    end
-
-                    dataBytesRead = dataBytesRead + 1;
-                    data(dataBytesRead) = byte;
-                    
-                    if dataBytesRead == dataLength
-                        state = 4;
-                    else
-                        %state = 3;
-                    end
-                end
-                                
-            % Await EOT
-            case 4
-                if byte == EOT
-                    state = 0;
-                    dataReady = true;
-                else
-                    state = 0;
-                    disp('protocol error in state 6');
-                end
         end
     end
     
