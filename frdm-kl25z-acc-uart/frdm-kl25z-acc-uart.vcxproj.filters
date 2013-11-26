@@ -1,0 +1,160 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source files">
+      <UniqueIdentifier>{47e03645-963c-482a-b29b-7f7e2ba105c1}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header files">
+      <UniqueIdentifier>{2a9427f6-22b1-42de-ab23-edea9a5ebd9e}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource files">
+      <UniqueIdentifier>{f6fe86e0-68ff-426f-b730-4081a185a4e0}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="Make files">
+      <UniqueIdentifier>{80af8fbd-2eed-4a29-8cd1-2b8f78b55f0c}</UniqueIdentifier>
+      <Extensions>*.mak</Extensions>
+    </Filter>
+    <Filter Include="Source files\Device-specific files">
+      <UniqueIdentifier>{82463dfc-52d8-4502-8c2b-792ed0ce0096}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\Device-specific files">
+      <UniqueIdentifier>{cf5bfb88-9d33-4c42-8a67-35e4d422c1b0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\Common\startup.c">
+      <Filter>Source files\Device-specific files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4\hwinit_KL25Z4.c">
+      <Filter>Source files\Device-specific files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4\vectors_KL25Z4.c">
+      <Filter>Source files\Device-specific files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\cpu\clock.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\cpu\systick.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\i2c\i2c.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\i2c\i2carbiter.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\imu\hmc5883l.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\imu\mma8451q.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\imu\mpu6050.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\led\led.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\main.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\sa_mtb.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\comm\buffer.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\comm\io.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\comm\p2pprotocol.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\comm\uart.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="drivers\mcg\mcg.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="debug.mak">
+      <Filter>Make files</Filter>
+    </None>
+    <None Include="release.mak">
+      <Filter>Make files</Filter>
+    </None>
+    <None Include="kinetis.mak">
+      <Filter>Source files\Device-specific files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4\mkl25z4.h">
+      <Filter>Header files\Device-specific files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\led\led.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\bme.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\endian.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\nice_names.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\comm\buffer.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\comm\io.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\comm\p2pprotocol.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\comm\uart.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\cpu\clock.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\cpu\delay.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\cpu\systick.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\i2c\i2c.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\i2c\i2carbiter.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\imu\hmc5883l.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\imu\mma8451q.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\imu\mpu6050.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="drivers\mcg\mcg.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\system_ARMCM0plus.h">
+      <Filter>Header files\Device-specific files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\ARMCM0plus.h">
+      <Filter>Header files\Device-specific files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\derivative.h">
+      <Filter>Header files\Device-specific files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

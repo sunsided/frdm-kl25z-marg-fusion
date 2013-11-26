@@ -58,7 +58,7 @@ static volatile uint8_t poll_mpu6050 = 1;
 /**
  * @brief Handler for interrupts on port A
  */
-void PORTA_IRQHandler()
+void PORTA_Handler()
 {
 	register uint32_t isfr = MMA8451Q_INT_PORT->ISFR;
 	
@@ -236,6 +236,20 @@ int main(void)
 	TrafficLight();
 	DoubleFlash();
 	
+    /* initialize the I2C bus */
+    I2C_Init();
+
+    /* Initialize UART0 */
+    InitUart0();
+
+    /* initialize UART fifos */
+    RingBuffer_Init(&uartInputFifo, &uartInputData, UART_RX_BUFFER_SIZE);
+    RingBuffer_Init(&uartOutputFifo, &uartOutputData, UART_TX_BUFFER_SIZE);
+
+    /* initialize UART0 interrupts */
+    Uart0_InitializeIrq(&uartInputFifo, &uartOutputFifo);
+    Uart0_EnableReceiveIrq();
+
 	/* prior to configuring the I2C arbiter, enable the clocks required for
 	 * the used pins
 	 */
@@ -248,21 +262,7 @@ int main(void)
 	I2CArbiter_PrepareEntry(&i2carbiter_entries[1],  MPU6050_I2CADDR, PORTB,  0, 2,  1, 2);
 	I2CArbiter_PrepareEntry(&i2carbiter_entries[2], HMC5883L_I2CADDR, PORTB,  0, 2,  1, 2);
 	I2CArbiter_Configure(i2carbiter_entries, I2CARBITER_COUNT);
-	
-	/* initlialize the I2C bus */
-	I2C_Init();
-	
-	/* Initialize UART0 */
-	InitUart0();
-	
-	/* initialize UART fifos */
-	RingBuffer_Init(&uartInputFifo, &uartInputData, UART_RX_BUFFER_SIZE);
-	RingBuffer_Init(&uartOutputFifo, &uartOutputData, UART_TX_BUFFER_SIZE);
-	
-	/* initialize UART0 interrupts */
-	Uart0_InitializeIrq(&uartInputFifo, &uartOutputFifo);
-	Uart0_EnableReceiveIrq();
-	
+		
 	/* initialize the IMUs */
 	InitMPU6050();
 	InitHMC5883L();

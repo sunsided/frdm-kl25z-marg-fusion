@@ -6,6 +6,7 @@
  */
 
 #include <stdint.h>
+#include "derivative.h"
 #include "mcg/mcg.h"
 #include "cpu/clock.h"
 
