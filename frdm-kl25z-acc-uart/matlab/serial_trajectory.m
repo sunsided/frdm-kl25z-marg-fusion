@@ -213,7 +213,7 @@ function serial_trajectory
                     m = calibrateCompass(m);
                     
                     % switch axes
-                    m = [-m(1); -m(3); m(2)];
+                    %m = [-m(1); -m(3); m(2)];
                     
                     % Debugging
                     msg = sprintf('acc: %+1.3f %+1.3f %+1.3f mag: %+1.3f %+1.3f %+1.3f', ... 
