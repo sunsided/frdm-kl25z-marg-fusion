@@ -68,16 +68,17 @@ void HMC5883L_ReadData(hmc5883l_data_t *const data)
 	bufferA = I2C_ReceiveDriving();
 	bufferB = I2C_ReceiveDriving();
 	data->x = (int16_t)(((bufferA << 8) & 0xFF00) | ((bufferB) & 0x00FF));
-	
-	/* read y */
-	bufferA = I2C_ReceiveDriving();
-	bufferB = I2C_ReceiveDriving();
-	data->y = (int16_t)(((bufferA << 8) & 0xFF00) | ((bufferB) & 0x00FF));
-	
-	/* read z */
+		
+	/* read z - note that this is not a bug but the 
+    * actual ordering of the sensor data registers */
 	bufferA = I2C_ReceiveDrivingWithNack();
 	bufferB = I2C_ReceiveAndStop();
 	data->z = (int16_t)(((bufferA << 8) & 0xFF00) | ((bufferB) & 0x00FF));
+
+    /* read y */
+    bufferA = I2C_ReceiveDriving();
+    bufferB = I2C_ReceiveDriving();
+    data->y = (int16_t)(((bufferA << 8) & 0xFF00) | ((bufferB)& 0x00FF));
 }
 
 /**
