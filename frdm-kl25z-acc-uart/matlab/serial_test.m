@@ -22,7 +22,7 @@ function serial_test
     % Configuring port object
     disp('Preparing serial port ...');
     global s;
-    s = serial('COM9', ...
+    s = serial('COM3', ...
         'FlowControl', 'none', ...
         'BaudRate', 115200, ...
         'DataBits', 8, ...
@@ -203,11 +203,11 @@ function serial_test
                     accXYZ = [
                         -double(typecast(data(4:5), 'int16'));
                          double(typecast(data(2:3), 'int16'));
-                         double(typecast(data(6:7), 'int16'));
+                        -double(typecast(data(6:7), 'int16')); % invert Z axis for MPU6050
                         ] / accScaling;
                     gyroXYZ = [
                         -double(typecast(data(10:11), 'int16'));
-                         double(typecast(data(8:9), 'int16'));
+                         double(typecast(data(8:9),   'int16'));
                          double(typecast(data(12:13), 'int16'));
                         ] / gyroScaling;
                     temperature = [
@@ -239,8 +239,8 @@ function serial_test
                     
                     compassXYZ = [
                          double(typecast(data(2:3), 'int16'));
-                         double(typecast(data(4:5), 'int16'));
-                         double(typecast(data(6:7), 'int16'));
+                         double(typecast(data(6:7), 'int16')); % because of an error in my driver, these axes
+                         double(typecast(data(4:5), 'int16')); % need to be flipped for the HMC5883L
                         ] / compassScaling;
                     
                     % attach data to buffer

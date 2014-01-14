@@ -46,6 +46,7 @@ function serial_trajectory
     
     % add data processing to path
     path(fullfile(fileparts(which(mfilename)), '..', '..', 'sensor-fusion', 'processing', 'set-1', 'trajectory'), path);
+    path(fullfile(fileparts(which(mfilename)), '..', '..', 'sensor-fusion', 'processing', 'set-1'), path);
         
     % Prepare the plot
     preparePlotTrajectory();
@@ -138,7 +139,7 @@ function serial_trajectory
                     accXYZ = [
                         -double(typecast(data(4:5), 'int16'));
                          double(typecast(data(2:3), 'int16'));
-                         double(typecast(data(6:7), 'int16'));
+                        -double(typecast(data(6:7), 'int16'));
                         ] / accScaling;
                     gyroXYZ = [
                         -double(typecast(data(10:11), 'int16'));
@@ -174,8 +175,8 @@ function serial_trajectory
                     
                     compassXYZ = [
                           double(typecast(data(2:3), 'int16'));
-                          double(typecast(data(4:5), 'int16'));
                           double(typecast(data(6:7), 'int16'));
+                          double(typecast(data(4:5), 'int16'));
                         ] / compassScaling;
                     
                     % attach data to buffer
@@ -212,14 +213,11 @@ function serial_trajectory
                     a = calibrateAccelerometer(a);
                     m = calibrateCompass(m);
                     
-                    % switch axes
-                    %m = [-m(1); -m(3); m(2)];
-                    
                     % Debugging
                     msg = sprintf('acc: %+1.3f %+1.3f %+1.3f mag: %+1.3f %+1.3f %+1.3f', ... 
                                     a(1), a(2), a(3), m(1), m(2), m(3));
                     disp(msg);
-                    
+
                     % normalize values
                     an = a/norm(a);
                     mn = m/norm(m);

@@ -25,7 +25,7 @@ function [rp] = rollpitch(acc)
     zy_cross = cross(zref, y);
     yangle   = zy_cross(1);
     rp(1)    = asin(yangle);
-    if acc(3) < 0
+    if acc(3) > 0
        rp(1) = pi - rp(1);
     end
     
@@ -33,7 +33,7 @@ function [rp] = rollpitch(acc)
     xz_cross = cross(x, zref);
     xangle   = xz_cross(2);
     rp(2)     = asin(xangle);
-    if acc(3) < 0
+    if acc(3) > 0
        rp(2) = -rp(2);
     end
 end
