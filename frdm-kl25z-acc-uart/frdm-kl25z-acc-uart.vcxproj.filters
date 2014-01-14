@@ -79,6 +79,15 @@
     <ClCompile Include="drivers\mcg\mcg.c">
       <Filter>Source files</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\kalman\cholesky.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\kalman\kalman.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\kalman\matrix.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
@@ -155,6 +164,27 @@
     </ClInclude>
     <ClInclude Include="Project_Headers\derivative.h">
       <Filter>Header files\Device-specific files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\kalman\cholesky.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\kalman\compiler.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\kalman\kalman.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\kalman\kalman_factory_cleanup.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\kalman\kalman_factory_filter.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\kalman\kalman_factory_measurement.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\kalman\matrix.h">
+      <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

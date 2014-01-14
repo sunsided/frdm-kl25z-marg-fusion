@@ -6,14 +6,14 @@ BINARYDIR := Debug
 
 #Additional flags
 PREPROCESSOR_MACROS := DEBUG
-INCLUDE_DIRS :=C:/dev/EigeneSources/arm/freescale/frdm-kl25z-acc-uart/Project_Headers C:/dev/EigeneSources/arm/freescale/frdm-kl25z-acc-uart/drivers C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include
+INCLUDE_DIRS :=C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\Project_Headers C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\Project_Headers\kalman C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\drivers C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\CMSIS\Include
 LIBRARY_DIRS :=
 LIBRARY_NAMES :=
 ADDITIONAL_LINKER_INPUTS :=
 MACOS_FRAMEWORKS :=
 
-CFLAGS := -ggdb -ffunction-sections -O0 -std=c99
-CXXFLAGS := -ggdb -ffunction-sections -fno-exceptions -O0 -std=c99
+CFLAGS := -ggdb -ffunction-sections -O0 -std=c99 -mfloat-abi=soft -ffast-math -fsingle-precision-constant -freciprocal-math -fassociative-math
+CXXFLAGS := -ggdb -ffunction-sections -fno-exceptions -O0 -std=c99 -mfloat-abi=soft -ffast-math -fsingle-precision-constant -freciprocal-math -fassociative-math
 ASFLAGS :=
 LDFLAGS := -Wl,-gc-sections
 COMMONFLAGS :=

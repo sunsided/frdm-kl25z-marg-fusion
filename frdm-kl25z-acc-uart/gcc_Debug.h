@@ -37,7 +37,7 @@
 #define __SIG_ATOMIC_TYPE__ int
 #define __UACCUM_FBIT__ 16
 #define __DBL_MIN_10_EXP__ (-307)
-#define __FINITE_MATH_ONLY__ 0
+#define __FINITE_MATH_ONLY__ 1
 #define __ARMEL__ 1
 #define __LFRACT_IBIT__ 0
 #define __GNUC_PATCHLEVEL__ 2
@@ -118,7 +118,7 @@
 #define __LACCUM_MAX__ 0X7FFFFFFFFFFFFFFFP-31LK
 #define __INT_FAST16_TYPE__ int
 #define __LDBL_HAS_DENORM__ 1
-//#define __cplusplus 199711L
+#define __cplusplus 199711L
 #define __DEC128_MAX__ 9.999999999999999999999999999999999E6144DL
 #define __INT_LEAST32_MAX__ 2147483647L
 #define __ARM_PCS 1
@@ -227,6 +227,7 @@
 #define __UINT_LEAST32_MAX__ 4294967295UL
 #define __SACCUM_FBIT__ 7
 #define __GCC_ATOMIC_LONG_LOCK_FREE 1
+#define __FAST_MATH__ 1
 #define __INT_LEAST64_TYPE__ long long int
 #define __INT16_TYPE__ short int
 #define __INT_LEAST8_TYPE__ signed char
@@ -348,9 +349,9 @@
 #endif
 
 // --- Include directories begin --- //
-//C:/dev/EigeneSources/arm/freescale/frdm-kl25z-acc-uart/Project_Headers
-//C:/dev/EigeneSources/arm/freescale/frdm-kl25z-acc-uart/drivers
-//C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include
+//C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\Project_Headers
+//C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\Project_Headers\kalman
+//C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\drivers
 //C:\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis/KL25Z4
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/include/c++/4.8.2
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/include/c++/4.8.2/arm-eabi/thumb/cortex_m0

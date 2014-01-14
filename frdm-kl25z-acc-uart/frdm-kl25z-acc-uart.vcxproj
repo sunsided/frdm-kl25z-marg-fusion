@@ -35,7 +35,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeIncludeSearchPath>$(LOCALAPPDATA)\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2\arm-eabi\thumb\cortex_m0;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2\backward;c:\dev\toolchain\sysgcc\arm-eabi\lib\gcc\arm-eabi\4.8.2\include;c:\dev\toolchain\sysgcc\arm-eabi\lib\gcc\arm-eabi\4.8.2\include-fixed;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\sys-include;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include;$(ProjectDir)\Project_Headers;$(ProjectDir)\drivers;C:\dev\Libraries\CMSIS-SP-00300-r3p2-00rel1\CMSIS\Include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(ProjectDir)\Project_Headers;$(ProjectDir)\Project_Headers\kalman;$(ProjectDir)\drivers;$(LOCALAPPDATA)\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2\arm-eabi\thumb\cortex_m0;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2\backward;c:\dev\toolchain\sysgcc\arm-eabi\lib\gcc\arm-eabi\4.8.2\include;c:\dev\toolchain\sysgcc\arm-eabi\lib\gcc\arm-eabi\4.8.2\include-fixed;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\sys-include;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)\gcc_Debug.h;$(VISUALGDB_DIR)\gcc_compat.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakeBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /build "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /clean "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeCleanCommandLine>
@@ -76,6 +76,9 @@
     <ClCompile Include="Sources\imu\hmc5883l.c" />
     <ClCompile Include="Sources\imu\mma8451q.c" />
     <ClCompile Include="Sources\imu\mpu6050.c" />
+    <ClCompile Include="Sources\kalman\cholesky.c" />
+    <ClCompile Include="Sources\kalman\kalman.c" />
+    <ClCompile Include="Sources\kalman\matrix.c" />
     <ClCompile Include="Sources\led\led.c" />
     <ClCompile Include="Sources\main.c" />
     <ClCompile Include="Sources\sa_mtb.c" />
@@ -105,6 +108,13 @@
     <ClInclude Include="Project_Headers\imu\hmc5883l.h" />
     <ClInclude Include="Project_Headers\imu\mma8451q.h" />
     <ClInclude Include="Project_Headers\imu\mpu6050.h" />
+    <ClInclude Include="Project_Headers\kalman\cholesky.h" />
+    <ClInclude Include="Project_Headers\kalman\compiler.h" />
+    <ClInclude Include="Project_Headers\kalman\kalman.h" />
+    <ClInclude Include="Project_Headers\kalman\kalman_factory_cleanup.h" />
+    <ClInclude Include="Project_Headers\kalman\kalman_factory_filter.h" />
+    <ClInclude Include="Project_Headers\kalman\kalman_factory_measurement.h" />
+    <ClInclude Include="Project_Headers\kalman\matrix.h" />
     <ClInclude Include="Project_Headers\led\led.h" />
     <ClInclude Include="Project_Headers\nice_names.h" />
     <ClInclude Include="Project_Headers\system_ARMCM0plus.h" />
