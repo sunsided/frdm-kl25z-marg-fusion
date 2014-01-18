@@ -1,9 +1,5 @@
 #include <assert.h>
 
-#ifndef FIXMATRIX_MAX_SIZE
-#error FIXMATRIX_MAX_SIZE must be defined and be at least of size 3.
-#endif
-
 #include "compiler.h"
 #include "fixmatrix.h"
 #include "fixarray.h"
