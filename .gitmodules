@@ -1,12 +1,16 @@
 [submodule "sensor-fusion"]
 	path = sensor-fusion
 	url = git@github.com:sunsided/sensor-fusion.git
+	branch = master
 [submodule "frdm-kl25z-acc-uart/libraries/libfixmath"]
 	path = frdm-kl25z-acc-uart/libraries/libfixmath
 	url = git@github.com:sunsided/libfixmath.git
+	branch = master
 [submodule "frdm-kl25z-acc-uart/libraries/libfixmatrix"]
 	path = frdm-kl25z-acc-uart/libraries/libfixmatrix
 	url = git@github.com:sunsided/libfixmatrix.git
+	branch = master
 [submodule "frdm-kl25z-acc-uart/libraries/libfixkalman"]
 	path = frdm-kl25z-acc-uart/libraries/libfixkalman
 	url = git@github.com:sunsided/libfixkalman.git
+	branch = master
