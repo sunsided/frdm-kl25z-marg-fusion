@@ -172,11 +172,11 @@
     <ClCompile Include="libraries\libfixmath\fix16_sqrt.c">
       <Filter>libraries\libfixmath</Filter>
     </ClCompile>
-    <ClCompile Include="libraries\libfixkalman\kalman.c">
-      <Filter>libraries\libfixkalman</Filter>
-    </ClCompile>
     <ClCompile Include="Sources\fusion\sensor_calibration.c">
       <Filter>Source files\fusion</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\libfixkalman\fixkalman.c">
+      <Filter>libraries\libfixkalman</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -297,14 +297,14 @@
     <ClInclude Include="libraries\libfixmath\fix16.h">
       <Filter>libraries\libfixmath</Filter>
     </ClInclude>
-    <ClInclude Include="libraries\libfixkalman\kalman.h">
-      <Filter>libraries\libfixkalman</Filter>
-    </ClInclude>
     <ClInclude Include="libraries\libfixkalman\compiler.h">
       <Filter>libraries\libfixkalman</Filter>
     </ClInclude>
     <ClInclude Include="Project_Headers\fusion\sensor_calibration.h">
       <Filter>Header files\fusion</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixkalman\fixkalman.h">
+      <Filter>libraries\libfixkalman</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

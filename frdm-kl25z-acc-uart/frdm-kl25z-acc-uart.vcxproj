@@ -65,7 +65,7 @@
     <ClCompile Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4\hwinit_KL25Z4.c" />
     <ClCompile Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4\vectors_KL25Z4.c" />
     <ClCompile Include="drivers\mcg\mcg.c" />
-    <ClCompile Include="libraries\libfixkalman\kalman.c" />
+    <ClCompile Include="libraries\libfixkalman\fixkalman.c" />
     <ClCompile Include="libraries\libfixmath\fix16.c" />
     <ClCompile Include="libraries\libfixmath\fix16_exp.c" />
     <ClCompile Include="libraries\libfixmath\fix16_sqrt.c" />
@@ -107,7 +107,7 @@
     <ClInclude Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4\mkl25z4.h" />
     <ClInclude Include="drivers\mcg\mcg.h" />
     <ClInclude Include="libraries\libfixkalman\compiler.h" />
-    <ClInclude Include="libraries\libfixkalman\kalman.h" />
+    <ClInclude Include="libraries\libfixkalman\fixkalman.h" />
     <ClInclude Include="libraries\libfixmath\fix16.h" />
     <ClInclude Include="libraries\libfixmath\fix16_trig_sin_lut.h" />
     <ClInclude Include="libraries\libfixmath\fixmath.h" />
