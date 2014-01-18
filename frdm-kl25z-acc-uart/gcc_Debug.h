@@ -348,12 +348,7 @@
 #endif
 
 // --- Include directories begin --- //
-//C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\Project_Headers
-//C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\drivers
 //C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include
-//C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\libraries\libfixmath
-//C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\libraries\libfixmatrix
-//C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\libraries\libfixkalman
 //C:\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis/KL25Z4
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/include/c++/4.8.2
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/include/c++/4.8.2/arm-eabi/thumb/cortex_m0
@@ -362,6 +357,11 @@
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/include-fixed
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/sys-include
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/include
+//$(SourceDir)\Project_Headers
+//$(SourceDir)\drivers
+//$(SourceDir)\libraries\libfixmath
+//$(SourceDir)\libraries\libfixmatrix
+//$(SourceDir)\libfixkalman
 // --- Library directories end --- //
 
 

@@ -71,6 +71,12 @@
     <Filter Include="libraries\libfixmatrix">
       <UniqueIdentifier>{f1fb81a7-9b3d-4859-9dbe-6e6cbd666335}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source files\fusion">
+      <UniqueIdentifier>{6c2281d4-6e1d-4d88-a3be-3485dabe44b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\fusion">
+      <UniqueIdentifier>{727a243b-48a5-4450-98ad-db7d8ec31ff5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\Common\startup.c">
