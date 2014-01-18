@@ -23,7 +23,7 @@ error:
 	$(error Invalid configuration, please check your inputs)
 endif
 
-SOURCEFILES := $(BSP_ROOT)/Common/startup.c $(BSP_ROOT)/KL25Z4/hwinit_KL25Z4.c $(BSP_ROOT)/KL25Z4/vectors_KL25Z4.c drivers/mcg/mcg.c libraries/libfixkalman/kalman.c libraries/libfixmath/fix16.c libraries/libfixmath/fix16_exp.c libraries/libfixmath/fix16_sqrt.c libraries/libfixmath/fix16_str.c libraries/libfixmath/fix16_trig.c libraries/libfixmath/fract32.c libraries/libfixmath/uint32.c libraries/libfixmatrix/fixarray.c libraries/libfixmatrix/fixmatrix.c libraries/libfixmatrix/fixquat.c libraries/libfixmatrix/fixstring.c libraries/libfixmatrix/fixvector2d.c libraries/libfixmatrix/fixvector3d.c Sources/comm/buffer.c Sources/comm/io.c Sources/comm/p2pprotocol.c Sources/comm/uart.c Sources/cpu/clock.c Sources/cpu/systick.c Sources/fusion/sensor_calibration.c Sources/i2c/i2c.c Sources/i2c/i2carbiter.c Sources/imu/hmc5883l.c Sources/imu/mma8451q.c Sources/imu/mpu6050.c Sources/led/led.c Sources/main.c Sources/sa_mtb.c
+SOURCEFILES := $(BSP_ROOT)/Common/startup.c $(BSP_ROOT)/KL25Z4/hwinit_KL25Z4.c $(BSP_ROOT)/KL25Z4/vectors_KL25Z4.c drivers/mcg/mcg.c libraries/libfixkalman/fixkalman.c libraries/libfixmath/fix16.c libraries/libfixmath/fix16_exp.c libraries/libfixmath/fix16_sqrt.c libraries/libfixmath/fix16_str.c libraries/libfixmath/fix16_trig.c libraries/libfixmath/fract32.c libraries/libfixmath/uint32.c libraries/libfixmatrix/fixarray.c libraries/libfixmatrix/fixmatrix.c libraries/libfixmatrix/fixquat.c libraries/libfixmatrix/fixstring.c libraries/libfixmatrix/fixvector2d.c libraries/libfixmatrix/fixvector3d.c Sources/comm/buffer.c Sources/comm/io.c Sources/comm/p2pprotocol.c Sources/comm/uart.c Sources/cpu/clock.c Sources/cpu/systick.c Sources/fusion/sensor_calibration.c Sources/fusion/sensor_fusion.c Sources/i2c/i2c.c Sources/i2c/i2carbiter.c Sources/imu/hmc5883l.c Sources/imu/mma8451q.c Sources/imu/mpu6050.c Sources/led/led.c Sources/main.c Sources/sa_mtb.c
 EXTERNAL_LIBS := 
 EXTERNAL_LIBS_COPIED := $(foreach lib, $(EXTERNAL_LIBS),$(BINARYDIR)/$(notdir $(lib)))
 
@@ -147,7 +147,7 @@ $(BINARYDIR)/mcg.o : drivers/mcg/mcg.c $(all_make_files) |$(BINARYDIR)
 	$(CC) $(CFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
-$(BINARYDIR)/kalman.o : libraries/libfixkalman/kalman.c $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/fixkalman.o : libraries/libfixkalman/fixkalman.c $(all_make_files) |$(BINARYDIR)
 	$(CC) $(CFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
@@ -228,6 +228,10 @@ $(BINARYDIR)/systick.o : Sources/cpu/systick.c $(all_make_files) |$(BINARYDIR)
 
 
 $(BINARYDIR)/sensor_calibration.o : Sources/fusion/sensor_calibration.c $(all_make_files) |$(BINARYDIR)
+	$(CC) $(CFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
+
+
+$(BINARYDIR)/sensor_fusion.o : Sources/fusion/sensor_fusion.c $(all_make_files) |$(BINARYDIR)
 	$(CC) $(CFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 

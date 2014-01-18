@@ -86,6 +86,7 @@
     <ClCompile Include="Sources\cpu\clock.c" />
     <ClCompile Include="Sources\cpu\systick.c" />
     <ClCompile Include="Sources\fusion\sensor_calibration.c" />
+    <ClCompile Include="Sources\fusion\sensor_fusion.c" />
     <ClCompile Include="Sources\i2c\i2c.c" />
     <ClCompile Include="Sources\i2c\i2carbiter.c" />
     <ClCompile Include="Sources\imu\hmc5883l.c" />
@@ -132,6 +133,7 @@
     <ClInclude Include="Project_Headers\derivative.h" />
     <ClInclude Include="Project_Headers\endian.h" />
     <ClInclude Include="Project_Headers\fusion\sensor_calibration.h" />
+    <ClInclude Include="Project_Headers\fusion\sensor_fusion.h" />
     <ClInclude Include="Project_Headers\i2c\i2c.h" />
     <ClInclude Include="Project_Headers\i2c\i2carbiter.h" />
     <ClInclude Include="Project_Headers\imu\hmc5883l.h" />
