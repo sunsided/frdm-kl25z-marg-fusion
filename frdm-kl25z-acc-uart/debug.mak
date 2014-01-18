@@ -5,8 +5,8 @@
 BINARYDIR := Debug
 
 #Additional flags
-PREPROCESSOR_MACROS := DEBUG
-INCLUDE_DIRS :=$(SourceDir)\Project_Headers $(SourceDir)\drivers C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include $(SourceDir)\libraries\libfixmath $(SourceDir)\libraries\libfixmatrix $(SourceDir)\libfixkalman
+PREPROCESSOR_MACROS := DEBUG FIXMATRIX_MAX_SIZE=4
+INCLUDE_DIRS :=$(SourceDir)\Project_Headers $(SourceDir)\drivers C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include $(SourceDir)\libraries\libfixmath $(SourceDir)\libraries\libfixmatrix $(SourceDir)\libraries\libfixkalman
 LIBRARY_DIRS :=
 LIBRARY_NAMES :=
 ADDITIONAL_LINKER_INPUTS :=
