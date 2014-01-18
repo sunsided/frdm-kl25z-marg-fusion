@@ -35,7 +35,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeIncludeSearchPath>$(LOCALAPPDATA)\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2\arm-eabi\thumb\cortex_m0;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2\backward;c:\dev\toolchain\sysgcc\arm-eabi\lib\gcc\arm-eabi\4.8.2\include;c:\dev\toolchain\sysgcc\arm-eabi\lib\gcc\arm-eabi\4.8.2\include-fixed;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\sys-include;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include;$(ProjectDir)\Project_Headers;$(ProjectDir)\drivers;C:\dev\Libraries\CMSIS-SP-00300-r3p2-00rel1\CMSIS\Include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(ProjectDir)\Project_Headers;$(ProjectDir)\drivers;C:\dev\Libraries\CMSIS-SP-00300-r3p2-00rel1\CMSIS\Include;$(ProjectDir)\libraries\libfixmath;$(ProjectDir)\libraries\libfixmatrix;$(ProjectDir)\libraries\libfixkalman;$(LOCALAPPDATA)\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2\arm-eabi\thumb\cortex_m0;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2\backward;c:\dev\toolchain\sysgcc\arm-eabi\lib\gcc\arm-eabi\4.8.2\include;c:\dev\toolchain\sysgcc\arm-eabi\lib\gcc\arm-eabi\4.8.2\include-fixed;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\sys-include;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)\gcc_Debug.h;$(VISUALGDB_DIR)\gcc_compat.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakeBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /build "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /clean "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeCleanCommandLine>
@@ -65,6 +65,20 @@
     <ClCompile Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4\hwinit_KL25Z4.c" />
     <ClCompile Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4\vectors_KL25Z4.c" />
     <ClCompile Include="drivers\mcg\mcg.c" />
+    <ClCompile Include="libraries\libfixkalman\kalman.c" />
+    <ClCompile Include="libraries\libfixmath\fix16.c" />
+    <ClCompile Include="libraries\libfixmath\fix16_exp.c" />
+    <ClCompile Include="libraries\libfixmath\fix16_sqrt.c" />
+    <ClCompile Include="libraries\libfixmath\fix16_str.c" />
+    <ClCompile Include="libraries\libfixmath\fix16_trig.c" />
+    <ClCompile Include="libraries\libfixmath\fract32.c" />
+    <ClCompile Include="libraries\libfixmath\uint32.c" />
+    <ClCompile Include="libraries\libfixmatrix\fixarray.c" />
+    <ClCompile Include="libraries\libfixmatrix\fixmatrix.c" />
+    <ClCompile Include="libraries\libfixmatrix\fixquat.c" />
+    <ClCompile Include="libraries\libfixmatrix\fixstring.c" />
+    <ClCompile Include="libraries\libfixmatrix\fixvector2d.c" />
+    <ClCompile Include="libraries\libfixmatrix\fixvector3d.c" />
     <ClCompile Include="Sources\comm\buffer.c" />
     <ClCompile Include="Sources\comm\io.c" />
     <ClCompile Include="Sources\comm\p2pprotocol.c" />
@@ -83,12 +97,28 @@
   <ItemGroup>
     <None Include="debug.mak" />
     <None Include="kinetis.mak" />
+    <None Include="libraries\libfixkalman\FUNCTIONS.rst" />
+    <None Include="libraries\libfixmatrix\FUNCTIONS.rst" />
     <None Include="Makefile" />
     <None Include="release.mak" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4\mkl25z4.h" />
     <ClInclude Include="drivers\mcg\mcg.h" />
+    <ClInclude Include="libraries\libfixkalman\compiler.h" />
+    <ClInclude Include="libraries\libfixkalman\kalman.h" />
+    <ClInclude Include="libraries\libfixmath\fix16.h" />
+    <ClInclude Include="libraries\libfixmath\fix16_trig_sin_lut.h" />
+    <ClInclude Include="libraries\libfixmath\fixmath.h" />
+    <ClInclude Include="libraries\libfixmath\fract32.h" />
+    <ClInclude Include="libraries\libfixmath\int64.h" />
+    <ClInclude Include="libraries\libfixmath\uint32.h" />
+    <ClInclude Include="libraries\libfixmatrix\fixarray.h" />
+    <ClInclude Include="libraries\libfixmatrix\fixmatrix.h" />
+    <ClInclude Include="libraries\libfixmatrix\fixquat.h" />
+    <ClInclude Include="libraries\libfixmatrix\fixstring.h" />
+    <ClInclude Include="libraries\libfixmatrix\fixvector2d.h" />
+    <ClInclude Include="libraries\libfixmatrix\fixvector3d.h" />
     <ClInclude Include="Project_Headers\ARMCM0plus.h" />
     <ClInclude Include="Project_Headers\bme.h" />
     <ClInclude Include="Project_Headers\comm\buffer.h" />

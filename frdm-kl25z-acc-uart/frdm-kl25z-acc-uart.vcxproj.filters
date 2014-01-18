@@ -59,6 +59,18 @@
     <Filter Include="Header files\led">
       <UniqueIdentifier>{8e326bed-cb7d-458d-a2cd-8f0b1eb31687}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libraries">
+      <UniqueIdentifier>{263ae818-b9f7-488c-9a5e-18e2a4b7a6d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libraries\libfixkalman">
+      <UniqueIdentifier>{d20acb27-ad47-4dcc-82de-f0ca0d668c73}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libraries\libfixmath">
+      <UniqueIdentifier>{24e65258-4341-49d8-9b5b-d150957c6be8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libraries\libfixmatrix">
+      <UniqueIdentifier>{f1fb81a7-9b3d-4859-9dbe-6e6cbd666335}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\Common\startup.c">
@@ -115,6 +127,48 @@
     <ClCompile Include="drivers\mcg\mcg.c">
       <Filter>drivers\mcg</Filter>
     </ClCompile>
+    <ClCompile Include="libraries\libfixmatrix\fixmatrix.c">
+      <Filter>libraries\libfixmatrix</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\libfixmatrix\fixquat.c">
+      <Filter>libraries\libfixmatrix</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\libfixmatrix\fixstring.c">
+      <Filter>libraries\libfixmatrix</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\libfixmatrix\fixvector2d.c">
+      <Filter>libraries\libfixmatrix</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\libfixmatrix\fixvector3d.c">
+      <Filter>libraries\libfixmatrix</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\libfixmatrix\fixarray.c">
+      <Filter>libraries\libfixmatrix</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\libfixmath\fix16_str.c">
+      <Filter>libraries\libfixmath</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\libfixmath\fix16_trig.c">
+      <Filter>libraries\libfixmath</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\libfixmath\fract32.c">
+      <Filter>libraries\libfixmath</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\libfixmath\uint32.c">
+      <Filter>libraries\libfixmath</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\libfixmath\fix16.c">
+      <Filter>libraries\libfixmath</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\libfixmath\fix16_exp.c">
+      <Filter>libraries\libfixmath</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\libfixmath\fix16_sqrt.c">
+      <Filter>libraries\libfixmath</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\libfixkalman\kalman.c">
+      <Filter>libraries\libfixkalman</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
@@ -126,6 +180,12 @@
     </None>
     <None Include="kinetis.mak">
       <Filter>Source files\Device-specific files</Filter>
+    </None>
+    <None Include="libraries\libfixmatrix\FUNCTIONS.rst">
+      <Filter>libraries\libfixmatrix</Filter>
+    </None>
+    <None Include="libraries\libfixkalman\FUNCTIONS.rst">
+      <Filter>libraries\libfixkalman</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -191,6 +251,48 @@
     </ClInclude>
     <ClInclude Include="Project_Headers\led\led.h">
       <Filter>Header files\led</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixmatrix\fixarray.h">
+      <Filter>libraries\libfixmatrix</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixmatrix\fixmatrix.h">
+      <Filter>libraries\libfixmatrix</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixmatrix\fixquat.h">
+      <Filter>libraries\libfixmatrix</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixmatrix\fixstring.h">
+      <Filter>libraries\libfixmatrix</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixmatrix\fixvector2d.h">
+      <Filter>libraries\libfixmatrix</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixmatrix\fixvector3d.h">
+      <Filter>libraries\libfixmatrix</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixmath\fix16_trig_sin_lut.h">
+      <Filter>libraries\libfixmath</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixmath\fixmath.h">
+      <Filter>libraries\libfixmath</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixmath\fract32.h">
+      <Filter>libraries\libfixmath</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixmath\int64.h">
+      <Filter>libraries\libfixmath</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixmath\uint32.h">
+      <Filter>libraries\libfixmath</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixmath\fix16.h">
+      <Filter>libraries\libfixmath</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixkalman\kalman.h">
+      <Filter>libraries\libfixkalman</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixkalman\compiler.h">
+      <Filter>libraries\libfixkalman</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

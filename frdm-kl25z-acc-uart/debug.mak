@@ -6,7 +6,7 @@ BINARYDIR := Debug
 
 #Additional flags
 PREPROCESSOR_MACROS := DEBUG
-INCLUDE_DIRS :=C:/dev/EigeneSources/arm/freescale/frdm-kl25z-acc-uart/Project_Headers C:/dev/EigeneSources/arm/freescale/frdm-kl25z-acc-uart/drivers C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include
+INCLUDE_DIRS :=C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\Project_Headers C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\drivers C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\libraries\libfixmath C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\libraries\libfixmatrix C:\dev\EigeneSources\arm\freescale\frdm-kl25z-acc-uart\libraries\libfixkalman
 LIBRARY_DIRS :=
 LIBRARY_NAMES :=
 ADDITIONAL_LINKER_INPUTS :=
