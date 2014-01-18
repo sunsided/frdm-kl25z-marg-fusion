@@ -23,6 +23,42 @@
     <Filter Include="Header files\Device-specific files">
       <UniqueIdentifier>{cf5bfb88-9d33-4c42-8a67-35e4d422c1b0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source files\cpu">
+      <UniqueIdentifier>{79c2a8ad-b570-4172-97dc-fc06b6450340}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\comm">
+      <UniqueIdentifier>{c4f6d8a7-32dd-41c6-90d6-e0c8fea92f82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\i2c">
+      <UniqueIdentifier>{76aae8d9-dca7-459f-93af-afdb33a1fdc7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\imu">
+      <UniqueIdentifier>{e631ef65-9ce1-46e7-8369-a9e1df744d06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\led">
+      <UniqueIdentifier>{0b4ef8c0-6c8b-4b8d-b59d-107bea191871}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="drivers">
+      <UniqueIdentifier>{71323771-4ef9-4dad-ae08-97f29bef299f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="drivers\mcg">
+      <UniqueIdentifier>{d151ea74-1a00-4a0d-90bc-3765ff0afb65}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\comm">
+      <UniqueIdentifier>{b2461c00-e069-4ada-ae15-c1e50305e690}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\cpu">
+      <UniqueIdentifier>{d4b9efec-eb82-4f8b-9cd4-01d0c93aee14}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\i2c">
+      <UniqueIdentifier>{ceb096c7-0394-4993-92b3-1f3f3daa9e95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\imu">
+      <UniqueIdentifier>{17b92ace-3c3f-4d3a-88b5-ca801782e052}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\led">
+      <UniqueIdentifier>{8e326bed-cb7d-458d-a2cd-8f0b1eb31687}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\Common\startup.c">
@@ -34,30 +70,6 @@
     <ClCompile Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4\vectors_KL25Z4.c">
       <Filter>Source files\Device-specific files</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\cpu\clock.c">
-      <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="Sources\cpu\systick.c">
-      <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="Sources\i2c\i2c.c">
-      <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="Sources\i2c\i2carbiter.c">
-      <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="Sources\imu\hmc5883l.c">
-      <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="Sources\imu\mma8451q.c">
-      <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="Sources\imu\mpu6050.c">
-      <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="Sources\led\led.c">
-      <Filter>Source files</Filter>
-    </ClCompile>
     <ClCompile Include="Sources\main.c">
       <Filter>Source files</Filter>
     </ClCompile>
@@ -65,19 +77,43 @@
       <Filter>Source files</Filter>
     </ClCompile>
     <ClCompile Include="Sources\comm\buffer.c">
-      <Filter>Source files</Filter>
+      <Filter>Source files\comm</Filter>
     </ClCompile>
     <ClCompile Include="Sources\comm\io.c">
-      <Filter>Source files</Filter>
+      <Filter>Source files\comm</Filter>
     </ClCompile>
     <ClCompile Include="Sources\comm\p2pprotocol.c">
-      <Filter>Source files</Filter>
+      <Filter>Source files\comm</Filter>
     </ClCompile>
     <ClCompile Include="Sources\comm\uart.c">
-      <Filter>Source files</Filter>
+      <Filter>Source files\comm</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\cpu\clock.c">
+      <Filter>Source files\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\cpu\systick.c">
+      <Filter>Source files\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\i2c\i2c.c">
+      <Filter>Source files\i2c</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\i2c\i2carbiter.c">
+      <Filter>Source files\i2c</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\imu\mma8451q.c">
+      <Filter>Source files\imu</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\imu\mpu6050.c">
+      <Filter>Source files\imu</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\imu\hmc5883l.c">
+      <Filter>Source files\imu</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\led\led.c">
+      <Filter>Source files\led</Filter>
     </ClCompile>
     <ClCompile Include="drivers\mcg\mcg.c">
-      <Filter>Source files</Filter>
+      <Filter>drivers\mcg</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -96,9 +132,6 @@
     <ClInclude Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4\mkl25z4.h">
       <Filter>Header files\Device-specific files</Filter>
     </ClInclude>
-    <ClInclude Include="Project_Headers\led\led.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="Project_Headers\bme.h">
       <Filter>Header files</Filter>
     </ClInclude>
@@ -106,45 +139,6 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="Project_Headers\nice_names.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="Project_Headers\comm\buffer.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="Project_Headers\comm\io.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="Project_Headers\comm\p2pprotocol.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="Project_Headers\comm\uart.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="Project_Headers\cpu\clock.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="Project_Headers\cpu\delay.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="Project_Headers\cpu\systick.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="Project_Headers\i2c\i2c.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="Project_Headers\i2c\i2carbiter.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="Project_Headers\imu\hmc5883l.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="Project_Headers\imu\mma8451q.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="Project_Headers\imu\mpu6050.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="drivers\mcg\mcg.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="Project_Headers\system_ARMCM0plus.h">
@@ -155,6 +149,48 @@
     </ClInclude>
     <ClInclude Include="Project_Headers\derivative.h">
       <Filter>Header files\Device-specific files</Filter>
+    </ClInclude>
+    <ClInclude Include="drivers\mcg\mcg.h">
+      <Filter>drivers\mcg</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\comm\buffer.h">
+      <Filter>Header files\comm</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\comm\io.h">
+      <Filter>Header files\comm</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\comm\p2pprotocol.h">
+      <Filter>Header files\comm</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\comm\uart.h">
+      <Filter>Header files\comm</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\cpu\clock.h">
+      <Filter>Header files\cpu</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\cpu\delay.h">
+      <Filter>Header files\cpu</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\cpu\systick.h">
+      <Filter>Header files\cpu</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\i2c\i2c.h">
+      <Filter>Header files\i2c</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\i2c\i2carbiter.h">
+      <Filter>Header files\i2c</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\imu\hmc5883l.h">
+      <Filter>Header files\imu</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\imu\mma8451q.h">
+      <Filter>Header files\imu</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\imu\mpu6050.h">
+      <Filter>Header files\imu</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\led\led.h">
+      <Filter>Header files\led</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
