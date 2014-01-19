@@ -14,9 +14,11 @@ void sensor_prepare_mpu6050_accelerometer_data(v3d *const out, int16_t rawx, int
 {
     // fetch value
     v3d value = {
+        // note that we are swapping X and Y axis here and flipping X and Z signs
+        // in order to convert from AHRS to regular coordinate system
+        fix16_from_int(-rawy),
         fix16_from_int(rawx),
-        fix16_from_int(rawy),
-        fix16_from_int(rawz)
+        fix16_from_int(-rawz)
     };
 
     // scale
@@ -38,14 +40,18 @@ void sensor_prepare_mpu6050_gyroscope_data(v3d *const out, int16_t rawx, int16_t
 {
     // fetch value
     v3d value = {
+        // note that we are swapping X and Y axis here and flipping X sign
+        // in order to convert from AHRS to regular coordinate system
+        fix16_from_int(-rawy),
         fix16_from_int(rawx),
-        fix16_from_int(rawy),
         fix16_from_int(rawz)
     };
 
+#if 0
     float tx = fix16_to_float(value.x);
     float ty = fix16_to_float(value.y);
     float tz = fix16_to_float(value.z);
+#endif
 
     // scale
     v3d_div_s(out, &value, scaling);
@@ -53,9 +59,11 @@ void sensor_prepare_mpu6050_gyroscope_data(v3d *const out, int16_t rawx, int16_t
     // calibrate!
     mpu6050_calibrate_gyroscope_v3d(out);
 
+#if 0
     float cx = fix16_to_float(out->x);
     float cy = fix16_to_float(out->y);
     float cz = fix16_to_float(out->z);
+#endif
 }
 
 /*!
