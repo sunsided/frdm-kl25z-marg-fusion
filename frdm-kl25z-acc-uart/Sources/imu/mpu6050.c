@@ -133,7 +133,13 @@ void MPU6050_StoreConfiguration(const mpu6050_confreg_t *const configuration)
 	I2C_SendBlocking(configuration->CONFIG);
 	I2C_SendBlocking(configuration->GYRO_CONFIG);
 	I2C_SendBlocking(configuration->ACCEL_CONFIG);
-	
+
+    /* restart register addressing at 0x6B */
+    I2C_SendRepeatedStart();
+    I2C_SendBlocking(I2C_WRITE_ADDRESS(MPU6050_I2CADDR));
+    I2C_SendBlocking(MPU6050_REG_PWR_MGMT_1);
+    I2C_SendBlocking(configuration->PWR_MGMT_1);
+
 	/* restart register addressing at 0x23 */
 	I2C_SendRepeatedStart();
 	I2C_SendBlocking(I2C_WRITE_ADDRESS(MPU6050_I2CADDR));
