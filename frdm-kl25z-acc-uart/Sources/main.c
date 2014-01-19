@@ -3,6 +3,16 @@
  *
  */
 
+/*!
+* \def DATA_FUSE_MODE Set to the <code>1</code> to enable raw sensor data transmission or disable with <code>0</code> to enable data fusion
+*/
+#define DATA_FETCH_MODE 0
+
+/*!
+* \def DATA_FUSE_MODE Set to the opposite of {\ref DATA_FETCH_MODE} and enables sensor fusion
+*/
+#define DATA_FUSE_MODE (!DATA_FETCH_MODE)
+
 #if 1
 
 #include "ARMCM0plus.h"
@@ -111,9 +121,6 @@ int main(void)
 
     /* Initialize UART0 */
     InitUart0();
-    for (uint8_t i = 0; i < 2; ++i) {
-        TrafficLight();
-    }
 
     /* double rainbow all across the sky */
     DoubleFlash();
@@ -153,25 +160,31 @@ int main(void)
 #endif
 
 	/* initialize the MPU6050 data structure */
-	mpu6050_sensor_t accgyrotemp;
+    mpu6050_sensor_t accgyrotemp, previous_accgyrotemp;
 	MPU6050_InitializeData(&accgyrotemp);
+    MPU6050_InitializeData(&previous_accgyrotemp);
 	
 	/* initialize the HMC5883L data structure */
-	uint32_t lastHMCRead = 0;
-	const uint32_t readHMCEvery = 1000/75; /* at 75Hz, data come every (1000/75Hz) ms. */
-	hmc5883l_data_t compass;
-	
-	/**
-	 * BUG:
-	 * There seems to be the problem that after power-up the buffers run full immediately
-	 * because too much data is fetched from the sensors.
-	 * After reset, however, everything works fine.
-	 * WORKAROUND:
-	 * Power up, wait for some seconds, then reset. 
-	 */
-	
+	hmc5883l_data_t compass, previous_compass;
+    HMC5883L_InitializeData(&compass);
+    HMC5883L_InitializeData(&previous_compass);
+
+    /* initialize HMC5883L reading */
+    uint32_t lastHMCRead = 0;
+    const uint32_t readHMCEvery = 1000 / 75; /* at 75Hz, data come every (1000/75Hz) ms. */
+    	
 	for(;;) 
 	{
+        /* helper variables to track data freshness */
+        uint_fast8_t have_gyro_data = 0;
+        uint_fast8_t have_acc_data = 0;
+        uint_fast8_t have_mag_data = 0;
+
+        /************************************************************************/
+        /* Determine if sensor data fetching is required                        */
+        /************************************************************************/
+
+        /* helper variables for event processing */
 		int eventsProcessed = 0;
         int readMPU, readHMC;
 #if ENABLE_MMA8451Q
@@ -200,6 +213,10 @@ int main(void)
 			lastHMCRead = time;
 		}
 
+        /************************************************************************/
+        /* Fetching MPU6050 sensor data if required                             */
+        /************************************************************************/
+
 		/* read accelerometer/gyro */
 		if (readMPU)
 		{
@@ -210,8 +227,24 @@ int main(void)
 			
 			/* mark event as detected */
 			eventsProcessed = 1;
+
+            /* check for data freshness */
+            have_acc_data = (accgyrotemp.accel.x != previous_accgyrotemp.accel.x)
+                || (accgyrotemp.accel.y != previous_accgyrotemp.accel.y)
+                || (accgyrotemp.accel.z != previous_accgyrotemp.accel.z);
+
+            have_gyro_data = (accgyrotemp.gyro.x != previous_accgyrotemp.gyro.x)
+                || (accgyrotemp.gyro.y != previous_accgyrotemp.gyro.y)
+                || (accgyrotemp.gyro.z != previous_accgyrotemp.gyro.z);
+
+            /* loop current data --> previous data */
+            previous_accgyrotemp = accgyrotemp;
 		}
 		
+        /************************************************************************/
+        /* Fetching HMC5883L sensor data if required                            */
+        /************************************************************************/
+
 		/* read compass data */
 		if (readHMC)
 		{
@@ -220,8 +253,20 @@ int main(void)
 			
 			/* mark event as detected */
 			eventsProcessed = 1;
+
+            /* check for data freshness */
+            have_mag_data = (compass.x != previous_compass.x)
+                || (compass.y != previous_compass.y)
+                || (compass.z != previous_compass.z);
+
+            /* loop current data --> previous data */
+            previous_accgyrotemp = accgyrotemp;
 		}
 		
+        /************************************************************************/
+        /* Fetching MMA8451Q sensor data if required                            */
+        /************************************************************************/
+
 #if ENABLE_MMA8451Q		
 		/* read accelerometer */
 		if (readMMA)
@@ -236,6 +281,12 @@ int main(void)
 		}
 #endif
 		
+        /************************************************************************/
+        /* Raw sensor data output over serial                                   */
+        /************************************************************************/
+
+#if DATA_FETCH_MODE
+
 		/* data availability + sanity check 
 		 * This sent me on a long bug hunt: Sometimes the interrupt would be raised
 		 * even if not all data registers were written. This always resulted in a
@@ -265,6 +316,20 @@ int main(void)
 		}
 #endif
 		
+#endif // DATA_FETCH_MODE
+
+        /************************************************************************/
+        /* Sensor data fusion                                                   */
+        /************************************************************************/
+
+#if DATA_FUSE_MODE
+
+#endif // DATA_FUSE_MODE
+
+        /************************************************************************/
+        /* Read user data input                                                 */
+        /************************************************************************/
+
 #if 0
 		/* as long as there is data in the buffer */
 		while(!RingBuffer_Empty(&uartInputFifo))
@@ -283,6 +348,10 @@ int main(void)
 		}
 #endif
 		
+        /************************************************************************/
+        /* Save energy if you like to                                           */
+        /************************************************************************/
+
 		/* in case of no events, allow a sleep */
 		if (!eventsProcessed)
 		{
