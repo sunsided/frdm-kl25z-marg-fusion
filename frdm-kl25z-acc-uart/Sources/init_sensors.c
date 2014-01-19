@@ -98,6 +98,7 @@ void InitMPU6050()
     IO_SendZString("MPU6050: device found.\r\n");
 
     /* disable interrupts */
+    MPU6050_SelectClockSource(MPU6050_CONFIGURE_DIRECT, MPU6050_CLOCK_8MHZOSC);
     MPU6050_EnableInterrupts(MPU6050_CONFIGURE_DIRECT,
         MPU6050_INT_DISABLED,
         MPU6050_INT_DISABLED,

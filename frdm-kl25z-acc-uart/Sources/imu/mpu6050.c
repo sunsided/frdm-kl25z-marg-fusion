@@ -330,8 +330,22 @@ void MPU6050_EnableInterrupts(mpu6050_confreg_t *const configuration, mpu6050_in
  */
 void MPU6050_SelectClockSource(mpu6050_confreg_t *const configuration, mpu6050_clock_t source)
 {
-	assert_not_null(configuration);	
-	MPU6050_CONFIG_SET(PWR_MGMT_1, CLKSEL, source);
+    if (configuration == MPU6050_CONFIGURE_DIRECT)
+    {
+        uint8_t value = 0;
+        MPU6050_VALUE_SET(value, PWR_MGMT_1, CLKSEL, source);
+
+        I2C_WaitWhileBusy();
+        I2C_SendStart();
+        I2C_SendBlocking(I2C_WRITE_ADDRESS(MPU6050_I2CADDR));
+        I2C_SendBlocking(MPU6050_REG_PWR_MGMT_1);
+        I2C_SendBlocking(value);
+        I2C_SendStop();
+    }
+    else 
+    {
+        MPU6050_CONFIG_SET(PWR_MGMT_1, CLKSEL, source);
+    }
 }
 
 #define MPU6050_PWR_MGMT_1_SLEEP_MASK	(0b01000000)
