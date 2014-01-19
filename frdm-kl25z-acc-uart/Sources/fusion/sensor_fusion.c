@@ -111,6 +111,8 @@ static mf16 state_previous_dcm = { 3, 3, 0, 0 };
 #define matrix_set(matrix, row, column, value) \
     assert(row <= FIXMATRIX_MAX_SIZE); \
     assert(column <= FIXMATRIX_MAX_SIZE); \
+    assert(row <= matrix->rows); \
+    assert(column <= matrix->columns); \
     matrix->data[row][column] = value
 
 /*!
@@ -119,6 +121,10 @@ static mf16 state_previous_dcm = { 3, 3, 0, 0 };
 #define matrix_set_symmetric(matrix, row, column, value) \
     assert(row <= FIXMATRIX_MAX_SIZE); \
     assert(column <= FIXMATRIX_MAX_SIZE); \
+    assert(row <= matrix->rows); \
+    assert(column <= matrix->columns); \
+    assert(row <= matrix->columns); \
+    assert(column <= matrix->rows); \
     matrix->data[row][column] = value; \
     matrix->data[column][row] = value
 
@@ -667,9 +673,68 @@ void fusion_update_using_iddcm_only(register const fix16_t deltaT)
 HOT
 void fusion_update_using_gyro_and_iddcm(register const fix16_t deltaT)
 {
+    /************************************************************************/
+    /* Prepare gyroscope data                                               */
+    /************************************************************************/
 
+    v3d scaled_velocity;
+    v3d_mul_s(&scaled_velocity, &m_gyroscope, deltaT);
+
+    // angle += velocity * dT
+    v3d_add(&state_ypr_from_gyro, &state_ypr_from_gyro, &scaled_velocity);
+
+    /************************************************************************/
+    /* Prepare DCM data                                                     */
+    /************************************************************************/
+
+    // fetch current DCM
+    mf16 dcm = { 3, 3, 0, 0 };
+    sensor_dcm(&dcm, &m_accelerometer, &m_magnetometer);
+
+    // build difference DCM
+    fix16_t om_yaw, om_pitch, om_roll;
+    sensor_ddcm(&dcm, &state_previous_dcm, &om_yaw, &om_pitch, &om_roll);
+
+    // save current DCM --> previous DCM
+    for (uint_fast8_t r = 0; r < 3; ++r)
+    {
+        for (uint_fast8_t c = 0; c < 3; ++c)
+        {
+            state_previous_dcm.data[r][c] = dcm.data[r][c];
+        }
+    }
+
+    // angle += velocity * dT
+    // note that dT is already contained in the dDCM.
+    state_ypr_from_iddcm.x = fix16_add(state_ypr_from_iddcm.x, om_yaw);
+    state_ypr_from_iddcm.y = fix16_add(state_ypr_from_iddcm.y, om_pitch);
+    state_ypr_from_iddcm.z = fix16_add(state_ypr_from_iddcm.z, om_roll);
+
+    /************************************************************************/
+    /* Prepare measurement                                                  */
+    /************************************************************************/
+    {
+        mf16 *const z = &kfm_gyro_iddcm.z;
+
+        matrix_set(z, 0, 0, state_ypr_from_iddcm.x);
+        matrix_set(z, 1, 0, state_ypr_from_iddcm.y);
+        matrix_set(z, 2, 0, state_ypr_from_iddcm.z);
+
+        matrix_set(z, 3, 0, state_ypr_from_gyro.x);
+        matrix_set(z, 4, 0, state_ypr_from_gyro.y);
+        matrix_set(z, 5, 0, state_ypr_from_gyro.z);
+
+        matrix_set(z, 6, 0, m_gyroscope.x);
+        matrix_set(z, 7, 0, m_gyroscope.y);
+        matrix_set(z, 8, 0, m_gyroscope.z);
+    }
+
+    /************************************************************************/
+    /* Perform Kalman update                                                */
+    /************************************************************************/
+
+    kalman_correct_uc(&kf_orientation, &kfm_gyro_iddcm);
 }
-
 
 /*!
 * \brief Updates the current prediction with the set measurements.
