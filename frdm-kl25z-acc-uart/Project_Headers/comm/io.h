@@ -8,6 +8,8 @@
 #ifndef IO_H_
 #define IO_H_
 
+#include "ARMCM0plus.h"
+
 /**
  * @brief Sends a char without flushing the buffer.
  */

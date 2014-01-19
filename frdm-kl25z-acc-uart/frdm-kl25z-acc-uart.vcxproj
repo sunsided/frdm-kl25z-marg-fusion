@@ -91,6 +91,7 @@
     <ClCompile Include="Sources\imu\hmc5883l.c" />
     <ClCompile Include="Sources\imu\mma8451q.c" />
     <ClCompile Include="Sources\imu\mpu6050.c" />
+    <ClCompile Include="Sources\init_sensors.c" />
     <ClCompile Include="Sources\led\led.c" />
     <ClCompile Include="Sources\main.c" />
     <ClCompile Include="Sources\maintest.c" />
@@ -138,6 +139,7 @@
     <ClInclude Include="Project_Headers\imu\hmc5883l.h" />
     <ClInclude Include="Project_Headers\imu\mma8451q.h" />
     <ClInclude Include="Project_Headers\imu\mpu6050.h" />
+    <ClInclude Include="Project_Headers\init_sensors.h" />
     <ClInclude Include="Project_Headers\led\led.h" />
     <ClInclude Include="Project_Headers\nice_names.h" />
     <ClInclude Include="Project_Headers\system_ARMCM0plus.h" />

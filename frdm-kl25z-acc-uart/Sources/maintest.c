@@ -1,3 +1,5 @@
+#if 0
+
 #include "ARMCM0plus.h"
 #include "derivative.h" /* include peripheral declarations */
 #include "bme.h"
@@ -28,3 +30,5 @@ void main()
     
     for (;;) {}
 }
+
+#endif 
