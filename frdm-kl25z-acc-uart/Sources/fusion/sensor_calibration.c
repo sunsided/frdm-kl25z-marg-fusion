@@ -4,9 +4,6 @@
 #include "fixmatrix.h"
 #include "fixarray.h"
 
-#define EXTERN_INLINE_SENSOR INLINE
-#include "fusion/sensor_calibration.h"
-
 #if !defined(FIXMATRIX_MAX_SIZE) || (FIXMATRIX_MAX_SIZE < 4)
 #error FIXMATRIX_MAX_SIZE must be defined to value greater or equal 4.
 #endif
@@ -185,7 +182,7 @@ void mpu6050_calibrate_accelerometer(register fix16_t *const RESTRICT x, registe
 * \param[inout] z The z data (will be overwritten with the calibrated version)
 */
 HOT NONNULL
-void mpu6050_calibrate_gyroscope(register fix16_t *x, register fix16_t *y, register fix16_t *z)
+void mpu6050_calibrate_gyroscope(register fix16_t *RESTRICT const x, register fix16_t *RESTRICT const y, register fix16_t *RESTRICT const z)
 {
     sensor_calibrate(&mpu6050_gyroscope_calibration_data[0], x, y, z);
 }
@@ -197,7 +194,7 @@ void mpu6050_calibrate_gyroscope(register fix16_t *x, register fix16_t *y, regis
 * \param[inout] z The z data (will be overwritten with the calibrated version)
 */
 HOT NONNULL
-void hmc5883l_calibrate(register fix16_t *x, register fix16_t *y, register fix16_t *z)
+void hmc5883l_calibrate(register fix16_t *RESTRICT const x, register fix16_t *RESTRICT const y, register fix16_t *RESTRICT const z)
 {
     sensor_calibrate(&hmc5883l_calibration_data[0], x, y, z);
 }

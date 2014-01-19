@@ -10,6 +10,7 @@
 
 #include "compiler.h"
 #include "fixmath.h"
+#include "fixvector3d.h"
 
 /*!
 * \brief Calibrates MPU6050 accelerometer sensor data
@@ -18,7 +19,17 @@
 * \param[inout] z The z data (will be overwritten with the calibrated version)
 */
 HOT NONNULL
-void mpu6050_calibrate_accelerometer(register fix16_t *x, register fix16_t *y, register fix16_t *z);
+void mpu6050_calibrate_accelerometer(register fix16_t *RESTRICT const x, register fix16_t *RESTRICT const y, register fix16_t *RESTRICT const z);
+
+/*!
+* \brief Calibrates MPU6050 accelerometer sensor data
+* \param[inout] data The data (will be overwritten with the calibrated version)
+*/
+HOT NONNULL
+STATIC_INLINE void mpu6050_calibrate_accelerometer_v3d(register v3d *const data)
+{
+    mpu6050_calibrate_accelerometer(&data->x, &data->y, &data->z);
+}
 
 /*!
 * \brief Calibrates MPU6050 gyroscope sensor data
@@ -27,7 +38,17 @@ void mpu6050_calibrate_accelerometer(register fix16_t *x, register fix16_t *y, r
 * \param[inout] z The z data (will be overwritten with the calibrated version)
 */
 HOT NONNULL
-void mpu6050_calibrate_gyroscope(register fix16_t *x, register fix16_t *y, register fix16_t *z);
+void mpu6050_calibrate_gyroscope(register fix16_t *RESTRICT const x, register fix16_t *RESTRICT const y, register fix16_t *RESTRICT const z);
+
+/*!
+* \brief Calibrates MPU6050 gyroscope sensor data
+* \param[inout] data The data (will be overwritten with the calibrated version)
+*/
+HOT NONNULL
+STATIC_INLINE void mpu6050_calibrate_gyroscope_v3d(register v3d *const data)
+{
+    mpu6050_calibrate_gyroscope(&data->x, &data->y, &data->z);
+}
 
 /*!
 * \brief Calibrates HMC5883L magnetometer sensor data
@@ -36,8 +57,17 @@ void mpu6050_calibrate_gyroscope(register fix16_t *x, register fix16_t *y, regis
 * \param[inout] z The z data (will be overwritten with the calibrated version)
 */
 HOT NONNULL
-void hmc5883l_calibrate(register fix16_t *x, register fix16_t *y, register fix16_t *z);
+void hmc5883l_calibrate(register fix16_t *RESTRICT const x, register fix16_t *RESTRICT const y, register fix16_t *RESTRICT const z);
 
+/*!
+* \brief Calibrates HMC5883L magnetometer sensor data
+* \param[inout] data The data (will be overwritten with the calibrated version)
+*/
+HOT NONNULL
+STATIC_INLINE void hmc5883l_calibrate_v3d(register v3d *const data)
+{
+    hmc5883l_calibrate(&data->x, &data->y, &data->z);
+}
 
 /*!
 * \brief Retrieves the variances of the MPU6050 accelerometer
