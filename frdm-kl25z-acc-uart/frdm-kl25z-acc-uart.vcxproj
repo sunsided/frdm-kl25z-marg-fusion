@@ -47,9 +47,8 @@
     <NMakePreprocessorDefinitions>__VisualGDB_CFG_Debug;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <NMakeIncludeSearchPath>$(LOCALAPPDATA)\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2\arm-eabi\thumb\cortex_m0;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2\backward;c:\dev\toolchain\sysgcc\arm-eabi\lib\gcc\arm-eabi\4.8.2\include;c:\dev\toolchain\sysgcc\arm-eabi\lib\gcc\arm-eabi\4.8.2\include-fixed;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\sys-include;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>C:\dev\Libraries\CMSIS-SP-00300-r3p2-00rel1\CMSIS\Include;$(LOCALAPPDATA)\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2\arm-eabi\thumb\cortex_m0;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include\c++\4.8.2\backward;c:\dev\toolchain\sysgcc\arm-eabi\lib\gcc\arm-eabi\4.8.2\include;c:\dev\toolchain\sysgcc\arm-eabi\lib\gcc\arm-eabi\4.8.2\include-fixed;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\sys-include;c:\dev\toolchain\sysgcc\arm-eabi\arm-eabi\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)\gcc_Release.h;$(VISUALGDB_DIR)\gcc_compat.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
-    <NMakePreprocessorDefinitions>__VisualGDB_CFG_Release;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /build "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /clean "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /rebuild "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeReBuildCommandLine>
@@ -57,6 +56,7 @@
     <IncludePath />
     <ReferencePath />
     <LibraryPath />
+    <NMakePreprocessorDefinitions>__VisualGDB_CFG_Release;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>

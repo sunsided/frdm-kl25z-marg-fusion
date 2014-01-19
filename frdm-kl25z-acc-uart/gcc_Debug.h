@@ -58,7 +58,6 @@
 #define __UINTMAX_TYPE__ long long unsigned int
 #define __LLFRACT_EPSILON__ 0x1P-63LLR
 #define __DEC32_EPSILON__ 1E-6DF
-#define __OPTIMIZE__ 1
 #define __CHAR_UNSIGNED__ 1
 #define __UINT32_MAX__ 4294967295UL
 #define __ULFRACT_MAX__ 0XFFFFFFFFP-32ULR
@@ -134,6 +133,7 @@
 #define __FRACT_IBIT__ 0
 #define __PTRDIFF_MAX__ 2147483647
 #define __UACCUM_MIN__ 0.0UK
+#define FIXMATH_FAST_SIN 1
 #define __UACCUM_IBIT__ 16
 #define __GNUG__ 4
 #define __LONG_LONG_MAX__ 9223372036854775807LL
@@ -166,6 +166,7 @@
 #define __SQ_IBIT__ 0
 #define __UINT8_TYPE__ unsigned char
 #define __UHA_FBIT__ 8
+#define __NO_INLINE__ 1
 #define __SFRACT_MIN__ (-0.5HR-0.5HR)
 #define __UTQ_FBIT__ 128
 #define __FLT_MANT_DIG__ 24
@@ -208,7 +209,7 @@
 #define __SIZEOF_PTRDIFF_T__ 4
 #define __LACCUM_EPSILON__ 0x1P-31LK
 #define __DEC32_SUBNORMAL_MIN__ 0.000001E-95DF
-#define FIXMATRIX_MAX_SIZE 12
+#define FIXMATRIX_MAX_SIZE 9
 #define __INT_FAST16_MAX__ 2147483647
 #define __UINT_FAST32_MAX__ 4294967295U
 #define __UINT_LEAST64_TYPE__ long long unsigned int

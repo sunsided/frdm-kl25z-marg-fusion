@@ -31,6 +31,7 @@
 #define __GCC_ATOMIC_CHAR_LOCK_FREE 1
 #define __FLT_EVAL_METHOD__ 0
 #define __LLACCUM_MAX__ 0X7FFFFFFFFFFFFFFFP-31LLK
+#define FIXMATH_NO_CACHE 1
 #define __GCC_ATOMIC_CHAR32_T_LOCK_FREE 1
 #define __FRACT_FBIT__ 15
 #define __UINT_FAST64_MAX__ 18446744073709551615ULL
@@ -57,6 +58,7 @@
 #define __UINTMAX_TYPE__ long long unsigned int
 #define __LLFRACT_EPSILON__ 0x1P-63LLR
 #define __DEC32_EPSILON__ 1E-6DF
+#define __OPTIMIZE__ 1
 #define __CHAR_UNSIGNED__ 1
 #define __UINT32_MAX__ 4294967295UL
 #define __ULFRACT_MAX__ 0XFFFFFFFFP-32ULR
@@ -71,6 +73,7 @@
 #define __LLACCUM_MIN__ (-0X1P31LLK-0X1P31LLK)
 #define __SIZEOF_INT__ 4
 #define __SIZEOF_POINTER__ 4
+#define NDEBUG 1
 #define __GCC_ATOMIC_CHAR16_T_LOCK_FREE 1
 #define __USACCUM_IBIT__ 8
 #define __USER_LABEL_PREFIX__ 
@@ -96,6 +99,7 @@
 #define __DECIMAL_DIG__ 17
 #define __LFRACT_EPSILON__ 0x1P-31LR
 #define __ULFRACT_MIN__ 0.0ULR
+#define RELEASE 1
 #define __LDBL_HAS_QUIET_NAN__ 1
 #define __ULACCUM_IBIT__ 32
 #define __UACCUM_EPSILON__ 0x1P-16UK
@@ -118,7 +122,7 @@
 #define __LACCUM_MAX__ 0X7FFFFFFFFFFFFFFFP-31LK
 #define __INT_FAST16_TYPE__ int
 #define __LDBL_HAS_DENORM__ 1
-//#define __cplusplus 199711L
+#define __cplusplus 199711L
 #define __DEC128_MAX__ 9.999999999999999999999999999999999E6144DL
 #define __INT_LEAST32_MAX__ 2147483647L
 #define __ARM_PCS 1
@@ -132,6 +136,7 @@
 #define __FRACT_IBIT__ 0
 #define __PTRDIFF_MAX__ 2147483647
 #define __UACCUM_MIN__ 0.0UK
+#define FIXMATH_FAST_SIN 1
 #define __UACCUM_IBIT__ 16
 #define __GNUG__ 4
 #define __LONG_LONG_MAX__ 9223372036854775807LL
@@ -164,7 +169,6 @@
 #define __SQ_IBIT__ 0
 #define __UINT8_TYPE__ unsigned char
 #define __UHA_FBIT__ 8
-#define __NO_INLINE__ 1
 #define __SFRACT_MIN__ (-0.5HR-0.5HR)
 #define __UTQ_FBIT__ 128
 #define __FLT_MANT_DIG__ 24
@@ -206,6 +210,7 @@
 #define __SIZEOF_PTRDIFF_T__ 4
 #define __LACCUM_EPSILON__ 0x1P-31LK
 #define __DEC32_SUBNORMAL_MIN__ 0.000001E-95DF
+#define FIXMATRIX_MAX_SIZE 9
 #define __INT_FAST16_MAX__ 2147483647
 #define __UINT_FAST32_MAX__ 4294967295U
 #define __UINT_LEAST64_TYPE__ long long unsigned int
@@ -297,9 +302,11 @@
 #define __INTMAX_MAX__ 9223372036854775807LL
 #define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
 #define __FLT_DENORM_MIN__ 1.4012984643248171e-45F
+#define FIXMATH_NO_OVERFLOW 1
 #define __LLFRACT_IBIT__ 0
 #define __INT8_MAX__ 127
 #define __UINT_FAST32_TYPE__ unsigned int
+#define KALMAN_DISABLE_C 1
 #define __CHAR32_TYPE__ long unsigned int
 #define __FLT_MAX__ 3.4028234663852886e+38F
 #define __USACCUM_FBIT__ 8
@@ -344,11 +351,10 @@
 #define __QQ_IBIT__ 0
 #define __ATOMIC_ACQ_REL 4
 #define __ATOMIC_RELEASE 3
-#define NDEBUG 
-#define RELEASE 
 #endif
 
 // --- Include directories begin --- //
+//C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include
 //C:\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis/KL25Z4
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/include/c++/4.8.2
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/include/c++/4.8.2/arm-eabi/thumb/cortex_m0
@@ -357,6 +363,11 @@
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/include-fixed
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/sys-include
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/include
+//$(SourceDir)\Project_Headers
+//$(SourceDir)\drivers
+//$(SourceDir)\libraries\libfixmath
+//$(SourceDir)\libraries\libfixmatrix
+//$(SourceDir)\libraries\libfixkalman
 // --- Library directories end --- //
 
 

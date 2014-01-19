@@ -9,6 +9,7 @@
 #define HMC5883L_H_
 
 #include "derivative.h"
+#include "nice_names.h"
 
 /**
  * @brief I2C slave address of the HMC5883L magnetometer

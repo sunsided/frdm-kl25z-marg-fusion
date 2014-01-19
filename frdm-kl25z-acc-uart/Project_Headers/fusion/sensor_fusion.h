@@ -87,4 +87,9 @@ STATIC_INLINE void fusion_set_magnetometer_v3d(register const v3d *const data)
 */
 void fusion_update(register const fix16_t deltaT) HOT;
 
+/*!
+* \brief Sanitizes the state variables
+*/
+void fusion_sanitize_state() HOT;
+
 #endif // SENSOR_FUNCTION_H_

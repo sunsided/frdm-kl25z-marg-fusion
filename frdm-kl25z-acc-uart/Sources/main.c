@@ -121,7 +121,6 @@ void InitI2CArbiter()
     I2CArbiter_Configure(i2carbiter_entries, I2CARBITER_COUNT);
 }
 
-
 /************************************************************************/
 /* Signaling of fusion process                                          */
 /************************************************************************/
@@ -170,7 +169,7 @@ STATIC_INLINE void FusionSignal_Clear()
     GPIOB->PCOR = (1 << 8) | (1 << 9);
 }
 
-#endif #if DATA_FUSE_MODE
+#endif // #if DATA_FUSE_MODE
 
 /************************************************************************/
 /* Main program                                                         */
@@ -462,6 +461,9 @@ int main(void)
 
             // correct the measurements
             fusion_update(deltaT);
+
+            // sanitize state data
+            fusion_sanitize_state();
 
             FusionSignal_Clear();
         }

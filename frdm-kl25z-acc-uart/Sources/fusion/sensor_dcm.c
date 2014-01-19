@@ -10,38 +10,10 @@
 void sensor_dcm(mf16 *const dcm,
     const v3d *RESTRICT const a, const v3d *RESTRICT const m)
 {
-    // TODO: check pointer to array dereferencing
-
-#if 0
-
-    // calculate the vector norms for normalization
-    register const fix16_t norm_a = fa16_norm(&(*a)[0], 1, 3);
-    register const fix16_t norm_m = fa16_norm(&(*m)[0], 1, 3);
-
-    // invert norm to speed up following calculations
-    register const fix16_t inv_norm_a = fix16_div(F16(1), norm_a);
-    register const fix16_t inv_norm_m = fix16_div(F16(1), norm_m);
-
-    // normalize vectors
-    const fix16_t an[3] = {
-        fix16_mul((*a)[0], inv_norm_a),
-        fix16_mul((*a)[1], inv_norm_a),
-        fix16_mul((*a)[2], inv_norm_a)
-    };
-
-    const fix16_t mn[3] = {
-        fix16_mul((*m)[0], inv_norm_m),
-        fix16_mul((*m)[1], inv_norm_m),
-        fix16_mul((*m)[2], inv_norm_m)
-    };
-
-#else
 
     v3d an, mn;
     v3d_normalize(&an, a);
     v3d_normalize(&mn, m);
-
-#endif
 
     // define coordinate system
     v3d X, Y, Z;

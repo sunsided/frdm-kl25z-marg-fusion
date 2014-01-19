@@ -5,18 +5,18 @@
 BINARYDIR := Release
 
 #Additional flags
-PREPROCESSOR_MACROS := NDEBUG RELEASE
-INCLUDE_DIRS := 
-LIBRARY_DIRS := 
-LIBRARY_NAMES := 
-ADDITIONAL_LINKER_INPUTS := 
-MACOS_FRAMEWORKS := 
+PREPROCESSOR_MACROS := NDEBUG RELEASE FIXMATRIX_MAX_SIZE=9 KALMAN_DISABLE_C FIXMATH_NO_CACHE FIXMATH_NO_OVERFLOW FIXMATH_FAST_SIN
+INCLUDE_DIRS :=$(SourceDir)\Project_Headers $(SourceDir)\drivers C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include $(SourceDir)\libraries\libfixmath $(SourceDir)\libraries\libfixmatrix $(SourceDir)\libraries\libfixkalman
+LIBRARY_DIRS :=
+LIBRARY_NAMES :=
+ADDITIONAL_LINKER_INPUTS :=
+MACOS_FRAMEWORKS :=
 
-CFLAGS := -ggdb -ffunction-sections -O3
-CXXFLAGS := -ggdb -ffunction-sections -fno-exceptions -O3
-ASFLAGS := 
-LDFLAGS := -Wl,-gc-sections
-COMMONFLAGS := 
+CFLAGS := -ggdb -ffunction-sections -fdata-sections -std=c99 -O3
+CXXFLAGS := -ggdb -ffunction-sections -fdata-sections -fno-exceptions -std=c99 -O3
+ASFLAGS :=
+LDFLAGS := -Wl,--gc-sections
+COMMONFLAGS :=
 
 START_GROUP := -Wl,--start-group
 END_GROUP := -Wl,--end-group
