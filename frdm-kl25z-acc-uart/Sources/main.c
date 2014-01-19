@@ -60,6 +60,10 @@ static volatile uint8_t poll_mma8451q = 1;
  */
 static volatile uint8_t poll_mpu6050 = 1;
 
+/************************************************************************/
+/* Interrupt handlers                                                   */
+/************************************************************************/
+
 /**
  * @brief Handler for interrupts on port A
  */
@@ -97,6 +101,10 @@ void PORTA_Handler()
 	}
 }
 
+/************************************************************************/
+/* I2C arbiter configuration                                            */
+/************************************************************************/
+
 void InitI2CArbiter()
 {
     /* prior to configuring the I2C arbiter, enable the clocks required for
@@ -112,6 +120,61 @@ void InitI2CArbiter()
     I2CArbiter_PrepareEntry(&i2carbiter_entries[2], HMC5883L_I2CADDR, PORTB, 0, 2, 1, 2);
     I2CArbiter_Configure(i2carbiter_entries, I2CARBITER_COUNT);
 }
+
+
+/************************************************************************/
+/* Signaling of fusion process                                          */
+/************************************************************************/
+
+#if DATA_FUSE_MODE
+
+/**
+* @brief Sets up the GPIOs for fusion signaling
+*/
+void FusionSignal_Init()
+{
+    /* Set system clock gating to enable gate to port B */
+    SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK;
+
+    /* Set Port B, pin 8 and 9 to GPIO mode */
+    PORTB->PCR[8] = PORT_PCR_MUX(1); /* not using |= assignment here due to some of the flags being undefined at reset */
+    PORTB->PCR[9] = PORT_PCR_MUX(1);
+
+    /* Data direction for port B, pin 8 and 9  to output */
+    GPIOB->PDDR |= GPIO_PDDR_PDD(1 << 8) | GPIO_PDDR_PDD(1 << 9);
+}
+
+/**
+* @brief Sets the fusion predict signal
+*/
+STATIC_INLINE void FusionSignal_Predict()
+{
+    GPIOB->PSOR = 1 << 8;
+    GPIOB->PCOR = 1 << 9;
+}
+
+/**
+* @brief Clears the fusion update signal
+*/
+STATIC_INLINE void FusionSignal_Update()
+{
+    GPIOB->PCOR = 1 << 8;
+    GPIOB->PSOR = 1 << 9;
+}
+
+/**
+* @brief Clears the fusion signal
+*/
+STATIC_INLINE void FusionSignal_Clear()
+{
+    GPIOB->PCOR = (1 << 8) | (1 << 9);
+}
+
+#endif #if DATA_FUSE_MODE
+
+/************************************************************************/
+/* Main program                                                         */
+/************************************************************************/
 
 int main(void)
 {
@@ -130,6 +193,13 @@ int main(void)
 
     /* initialize the I2C bus */
     I2C_Init();
+
+#if DATA_FUSE_MODE
+
+    /* signaling for fusion */
+    FusionSignal_Init();
+
+#endif // DATA_FUSE_MODE
 
     /* initialize UART fifos */
     RingBuffer_Init(&uartInputFifo, &uartInputData, UART_RX_BUFFER_SIZE);
@@ -383,11 +453,17 @@ int main(void)
             // get the time differential
             const fix16_t deltaT = F16(1); // TODO: get correct value!
 
+            FusionSignal_Predict();
+
             // predict the current measurements
             fusion_predict(deltaT);
 
+            FusionSignal_Update();
+
             // correct the measurements
             fusion_update(deltaT);
+
+            FusionSignal_Clear();
         }
 
 #endif // DATA_FUSE_MODE
