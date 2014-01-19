@@ -5,7 +5,8 @@
 #include "cpu/clock.h"
 #include "cpu/systick.h"
 
-#include "fusion/sensor_dcm.h"
+#include "fixvector3d.h"
+#include "fusion/sensor_calibration.h"
 
 void main()
 {
@@ -13,31 +14,13 @@ void main()
     InitClock();
     InitSysTick();
     
-    fix16_t roll = 0;
-    fix16_t pitch = 0;
-    fix16_t yaw = 0;
+    v3d a = { F16(-0.99976), F16(0.026611), F16(-0.14551) };
 
-    mf16 old_dcm = { 3, 3, 0,
-    {
-        { F16(0.11206), F16(-0.25495), F16(-0.96044) },
-        { F16(0.037374), F16(0.96693), F16(-0.25231) },
-        { F16(0.993), F16(-0.0076226), F16(0.11788) },
-    }
-    };
-
-    mf16 new_dcm = { 3, 3, 0,
-    {
-        { F16(0.11165), F16(-0.26533), F16(-0.95767) },
-        { F16(0.038577), F16(0.96413), F16(-0.26263) },
-        { F16(0.993), F16(-0.0076226), F16(0.11788) },
-    }
-    };
-
-    sensor_ddcm(&new_dcm, &old_dcm, &roll, &pitch, &yaw);
-
-    float om_rollf = fix16_to_float(fix16_rad_to_deg(roll));
-    float om_pitchf = fix16_to_float(fix16_rad_to_deg(pitch));
-    float om_yawf = fix16_to_float(fix16_rad_to_deg(yaw));
+    mpu6050_calibrate_accelerometer(&a.x, &a.y, &a.z);
+    
+    float x = fix16_to_float(a.x);
+    float y = fix16_to_float(a.y);
+    float z = fix16_to_float(a.z);
     
     for (;;) {}
 }
