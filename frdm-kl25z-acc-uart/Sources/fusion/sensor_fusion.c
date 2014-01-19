@@ -400,13 +400,13 @@ static void initialize_observation_gyroscope()
     {
         mf16 *const R = &kfm->R;
 
-        matrix_set(R, 3, 3, F16(3.7462));
-        matrix_set(R, 4, 4, F16(3.265));
-        matrix_set(R, 5, 5, F16(3.9315));
+        matrix_set(R, 0, 0, F16(3.7462));
+        matrix_set(R, 1, 1, F16(3.265));
+        matrix_set(R, 2, 2, F16(3.9315));
 
-        matrix_set(R, 6, 6, F16_ONE);
-        matrix_set(R, 7, 7, F16_ONE);
-        matrix_set(R, 8, 8, F16_ONE);
+        matrix_set(R, 3, 3, F16_ONE);
+        matrix_set(R, 4, 4, F16_ONE);
+        matrix_set(R, 5, 5, F16_ONE);
     }
 }
 

@@ -180,9 +180,23 @@ int main(void)
     /* Fetch scaler values                                                  */
     /************************************************************************/
 
+#if DATA_FUSE_MODE
+
     const fix16_t mpu6050_accelerometer_scaler = mpu6050_accelerometer_get_scaler();
     const fix16_t mpu6050_gyroscope_scaler = mpu6050_gyroscope_get_scaler();
     const fix16_t hmc5883l_magnetometer_scaler = hmc5883l_magnetometer_get_scaler();
+
+#endif // DATA_FUSE_MODE
+
+    /************************************************************************/
+    /* Prepare data fusion                                                  */
+    /************************************************************************/
+
+#if DATA_FUSE_MODE
+
+    fusion_initialize();
+
+#endif // DATA_FUSE_MODE
 
     /************************************************************************/
     /* Main loop                                                            */
@@ -275,7 +289,7 @@ int main(void)
                 || (compass.z != previous_compass.z);
 
             /* loop current data --> previous data */
-            previous_accgyrotemp = accgyrotemp;
+            previous_compass = compass;
 		}
 		
         /************************************************************************/
@@ -359,7 +373,7 @@ int main(void)
             }
 
             // convert, calibrate and store magnetometer data
-            if (have_acc_data)
+            if (have_mag_data)
             {
                 v3d mag;
                 sensor_prepare_hmc5883l_data(&mag, compass.x, compass.y, compass.z, hmc5883l_magnetometer_scaler);

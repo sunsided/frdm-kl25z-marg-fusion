@@ -12,8 +12,8 @@ LIBRARY_NAMES :=
 ADDITIONAL_LINKER_INPUTS :=
 MACOS_FRAMEWORKS :=
 
-CFLAGS := -ggdb -ffunction-sections -O0 -std=c99
-CXXFLAGS := -ggdb -ffunction-sections -fno-exceptions -O0 -std=c99
+CFLAGS := -ggdb -ffunction-sections -std=c99 -O3 -flto -fuse-linker-plugin
+CXXFLAGS := -ggdb -ffunction-sections -fno-exceptions -std=c99 -O3 -flto -fuse-linker-plugin
 ASFLAGS :=
 LDFLAGS := -Wl,-gc-sections
 COMMONFLAGS :=
