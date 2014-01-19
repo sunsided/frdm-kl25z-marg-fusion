@@ -23,9 +23,9 @@ STATIC_INLINE fix16_t fix16_from_raw_mpu6050(register uint16_t raw)
 * \param[in] raw_x The sensor x value
 * \param[in] raw_y The sensor y value
 * \param[in] raw_z The sensor z value
-* \param[in] scaling The scaling factor, e.g. 8192 for 4g mode, 16384 for 4g mode, ...
+* \param[in] scaling The scaling factor, e.g. F16(8192) for 4g mode, F16(16384) for 4g mode, ...
 */
-void sensor_prepare_mpu6050_accelerometer_data(v3d *const out, uint16_t rawx, uint16_t rawy, uint16_t rawz, const uint_fast16_t scaling)
+void sensor_prepare_mpu6050_accelerometer_data(v3d *const out, uint16_t rawx, uint16_t rawy, uint16_t rawz, const fix16_t scaling)
 {
     // fetch value
     v3d value = {
@@ -35,7 +35,7 @@ void sensor_prepare_mpu6050_accelerometer_data(v3d *const out, uint16_t rawx, ui
     };
 
     // scale
-    v3d_div_s(out, &value, fix16_from_int(scaling));
+    v3d_div_s(out, &value, scaling);
 
     // calibrate!
     mpu6050_calibrate_accelerometer_v3d(out);
@@ -47,9 +47,9 @@ void sensor_prepare_mpu6050_accelerometer_data(v3d *const out, uint16_t rawx, ui
 * \param[in] raw_x The sensor x value
 * \param[in] raw_y The sensor y value
 * \param[in] raw_z The sensor z value
-* \param[in] scaling The scaling factor, e.g. 131 for 250°/s mode ...
+* \param[in] scaling The scaling factor, e.g. F16(131) for 250°/s mode ...
 */
-void sensor_prepare_mpu6050_gyroscope_data(v3d *const out, uint16_t rawx, uint16_t rawy, uint16_t rawz, const uint_fast16_t scaling)
+void sensor_prepare_mpu6050_gyroscope_data(v3d *const out, uint16_t rawx, uint16_t rawy, uint16_t rawz, const fix16_t scaling)
 {
     // fetch value
     v3d value = {
@@ -59,7 +59,7 @@ void sensor_prepare_mpu6050_gyroscope_data(v3d *const out, uint16_t rawx, uint16
     };
 
     // scale
-    v3d_div_s(out, &value, fix16_from_int(scaling));
+    v3d_div_s(out, &value, scaling);
 
     // calibrate!
     mpu6050_calibrate_gyroscope_v3d(out);
@@ -71,12 +71,12 @@ void sensor_prepare_mpu6050_gyroscope_data(v3d *const out, uint16_t rawx, uint16
 * \param[in] raw_x The sensor x value
 * \param[in] raw_y The sensor y value
 * \param[in] raw_z The sensor z value
-* \param[in] scaling The scaling factor, e.g. 1090 for 1.3 gauss mode ...
+* \param[in] scaling The scaling factor, e.g. F16(1090) for 1.3 gauss mode ...
 */
-void sensor_prepare_hmc5883l_data(v3d *const out, uint16_t rawx, uint16_t rawy, uint16_t rawz, const uint_fast16_t scaling)
+void sensor_prepare_hmc5883l_data(v3d *const out, uint16_t rawx, uint16_t rawy, uint16_t rawz, const fix16_t scaling)
 {
     // fetch value
-    const register fix16_t invScaling = fix16_div(F16(1), fix16_from_int(scaling));
+    const register fix16_t invScaling = fix16_div(F16(1), scaling);
     out->x = fix16_mul(fix16_from_int(rawx), invScaling);
     out->y = fix16_mul(fix16_from_int(rawx), invScaling);
     out->z = fix16_mul(fix16_from_int(rawx), invScaling);
