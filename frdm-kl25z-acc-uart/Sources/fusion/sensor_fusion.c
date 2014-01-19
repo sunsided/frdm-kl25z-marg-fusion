@@ -60,6 +60,11 @@ static kalman16_observation_t kfm_gyro_iddcm;
 #define KFM_GYROIDDCM 9
 
 /*!
+* \brief Lambda parameter for certainty tuning
+*/
+static fix16_t lambda = F16(0.98);
+
+/*!
 * \brief The current accelerometer measurements
 */
 static v3d m_accelerometer = { 0, 0, 0 };
@@ -417,6 +422,40 @@ void fusion_initialize()
 }
 
 /*!
+* \brief Corrects an angle to be within +/- 180°
+*/
+HOT
+STATIC_INLINE void fusion_clampangle(fix16_t *angle)
+{
+    while (*angle > F16(180)) {
+        *angle = fix16_sub(*angle, F16(360));
+    }
+
+    while (*angle < F16(-180)) {
+        *angle = fix16_add(*angle, F16(360));
+    }
+}
+
+/*!
+* \brief Sanitizes the state variables
+*/
+HOT
+void fusion_sanitize_state()
+{
+    mf16 *const x = kalman_get_state_vector_uc(&kf_orientation);
+
+    // iddcm angles
+    fusion_clampangle(&x->data[0][0]);
+    fusion_clampangle(&x->data[1][1]);
+    fusion_clampangle(&x->data[2][2]);
+
+    // integrated gyro angles
+    fusion_clampangle(&x->data[3][3]);
+    fusion_clampangle(&x->data[4][4]);
+    fusion_clampangle(&x->data[5][5]);
+}
+
+/*!
 * \brief Calculate the weighted sum of two values based on their variance
 * \param[in] a The first value
 * \param[in] var_a The first value's variance
@@ -424,7 +463,7 @@ void fusion_initialize()
 * \param[in] var_b The second value's variance
 * \return The sum
 */
-HOT PURE
+HOT CONST
 STATIC_INLINE fix16_t variance_weighted_sum(register const fix16_t a, register const fix16_t var_a, register const fix16_t b, register const fix16_t var_b)
 {
     // create variance weighting factor
@@ -524,7 +563,10 @@ void fusion_predict(register const fix16_t deltaT)
     }
 
     // predict.
-    kalman_predict_uc(&kf_orientation);
+    kalman_predict_tuned_uc(&kf_orientation, lambda);
+
+    // sanitize state data
+    fusion_sanitize_state();
 }
 
 /*!
@@ -763,34 +805,44 @@ void fusion_update(register const fix16_t deltaT)
     // select strategy
     switch (strategy)
     {
-    case 2: // 0b10 -- if (use_gyro && !use_iddcm)      
+        case 2: // 0b10 -- if (use_gyro && !use_iddcm)      
         {
             // this is the most probable case: gyro observation is available, 
             // but accelerometer and magnetometer observations are missing
-                fusion_update_using_gyro_only(deltaT);
+            fusion_update_using_gyro_only(deltaT);
+
+            // sanitize state data
+            fusion_sanitize_state();
             break;
         }
-    case 3: // 0b11 -- if (use_gyro && use_iddcm)
+        case 3: // 0b11 -- if (use_gyro && use_iddcm)
         {
             // this is the second-most probable case: gyro observation is available, 
             // and either accelerometer or magnetometer observations is available
-                fusion_update_using_gyro_and_iddcm(deltaT);
+            fusion_update_using_gyro_and_iddcm(deltaT);
+
+            // sanitize state data
+            fusion_sanitize_state();
             break;
         }
-    case 1: // 0b01 -- (!use_gyro && use_iddcm)
+        case 1: // 0b01 -- (!use_gyro && use_iddcm)
         {
             // this is the least probable case: and either accelerometer or 
             // magnetometer observations is available, but gyro observation is missing
-                fusion_update_using_iddcm_only(deltaT);
+            fusion_update_using_iddcm_only(deltaT);
+
+            // sanitize state data
+            fusion_sanitize_state();
             break;
         }
-    default: // 0b00 -- (!use_gyro && !use_iddcm)
+        default: // 0b00 -- (!use_gyro && !use_iddcm)
         {
             // in any other case, do nothing.
             break;
         }
     }
-    
+   
+
     m_have_accelerometer = false;
     m_have_gyroscope = false;
     m_have_magnetometer = false;
