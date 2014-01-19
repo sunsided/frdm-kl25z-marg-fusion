@@ -99,11 +99,26 @@ void sensor_dcm(mf16 *const dcm,
 * \param[out] pitch The pitch(elevation) angle in radians.
 * \param[out] yaw The yaw(heading, azimuth) angle in radians.
 */
-void sensor_dcm2rpy(const mf16 *dcm, fix16_t *RESTRICT const roll, fix16_t *RESTRICT const pitch, fix16_t *RESTRICT const yaw)
+void sensor_dcm2rpy(const mf16 *RESTRICT const dcm, fix16_t *RESTRICT const roll, fix16_t *RESTRICT const pitch, fix16_t *RESTRICT const yaw)
 {
     // extract angles
     // see: William Premerlani, "Computing Euler Angles from Direction Cosines"
     *pitch = -fix16_asin(dcm->data[0][2]);
     *roll = fix16_atan2(dcm->data[1][2], dcm->data[2][2]);
     *yaw = fix16_atan2(dcm->data[0][1], dcm->data[0][0]);
+}
+
+/*!
+* \brief Gets roll, pitch, yaw angular velocities from difference DCM.
+* \param[in] current_dcm The DCM matrix
+* \param[in] previous_dcm The previous time step DCM matrix
+* \param[out] omega_roll The roll anglular velocity in radians/s.
+* \param[out] omega_pitch The pitch(elevation) anglular velocity in radians/s.
+* \param[out] omega_yaw The yaw(heading, azimuth) anglular velocity in radians/s.
+*/
+void sensor_ddcm(const mf16 *RESTRICT const current_dcm, const mf16 *RESTRICT const previous_dcm, fix16_t *RESTRICT const omega_roll, fix16_t *RESTRICT const omega_pitch, fix16_t *RESTRICT const omega_yaw)
+{
+    mf16 ddcm;
+    mf16_mul_at(&ddcm, current_dcm, previous_dcm);
+    sensor_dcm2rpy(&ddcm, omega_roll, omega_pitch, omega_yaw);
 }
