@@ -181,6 +181,9 @@
     <ClCompile Include="Sources\fusion\sensor_fusion.c">
       <Filter>Source files\fusion</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\fusion\sensor_dcm.c">
+      <Filter>Source files\fusion</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
@@ -310,6 +313,9 @@
       <Filter>libraries\libfixkalman</Filter>
     </ClInclude>
     <ClInclude Include="Project_Headers\fusion\sensor_fusion.h">
+      <Filter>Header files\fusion</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Headers\fusion\sensor_dcm.h">
       <Filter>Header files\fusion</Filter>
     </ClInclude>
   </ItemGroup>

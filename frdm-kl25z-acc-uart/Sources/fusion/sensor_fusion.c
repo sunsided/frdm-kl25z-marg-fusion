@@ -549,9 +549,6 @@ void fusion_set_magnetometer(register const fix16_t *const mx, register const fi
 /*!
 * \brief Updates the current prediction with the set measurements.
 * \param[in] deltaT The time difference in seconds to the last prediction or observation update call.
-* \param[out] roll The roll angle in radians.
-* \param[out] pitch The pitch (elevation) angle in radians.
-* \param[out] yaw The yaw (heading, azimuth) angle in radians.
 */
 void fusion_update(register const fix16_t deltaT)
 {
@@ -577,19 +574,34 @@ void fusion_update(register const fix16_t deltaT)
     }
 
     // select strategy
-    if (use_gyro && !use_iddcm)
+    uint_fast8_t strategy = ((use_gyro == true ? 1 : 0) << 1) |
+                            ((use_iddcm == true ? 1 : 0) << 0);
+
+    switch (strategy)
     {
-        // this is the most probable case: gyro observation is available, 
-        // but accelerometer and magnetometer observations are missing
+    case 2: // 0b10 -- if (use_gyro && !use_iddcm)      
+        {
+            // this is the most probable case: gyro observation is available, 
+            // but accelerometer and magnetometer observations are missing
+            break;
+        }
+    case 3: // 0b11 -- if (use_gyro && use_iddcm)
+        {
+            // this is the second-most probable case: gyro observation is available, 
+            // and either accelerometer or magnetometer observations is available
+            break;
+        }
+    case 1: // 0b01 -- (!use_gyro && use_iddcm)
+        {
+            // this is the least probable case: and either accelerometer or 
+            // magnetometer observations is available, but gyro observation is missing
+            break;
+        }
+    default: // 0b00 -- (!use_gyro && !use_iddcm)
+        {
+            // in any other case, do nothing.
+            break;
+        }
     }
-    else if (use_gyro && use_iddcm)
-    {
-        // this is the second-most probable case: gyro observation is available, 
-        // and either accelerometer or magnetometer observations is available
-    }
-    else
-    {
-        // this is the least probable case: and either accelerometer or 
-        // magnetometer observations is available, but gyro observation is missing
-    }
+    
 }

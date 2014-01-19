@@ -28,7 +28,7 @@ void fetch_values(register fix16_t *const roll, register fix16_t *const pitch, r
 * \brief Performs a prediction of the current Euler angles based on the time difference to the prediction or observation update call.
 * \param[in] deltaT The time difference in seconds to the last prediction or observation update call.
 */
-void fusion_predict(register const fix16_t deltaT) HOT NONNULL;
+void fusion_predict(register const fix16_t deltaT) HOT;
 
 /*!
 * \brief Updates the current prediction with accelerometer measurements
@@ -58,6 +58,6 @@ void fusion_set_magnetometer(register const fix16_t *const mx, register const fi
 * \brief Updates the current prediction with the set measurements.
 * \param[in] deltaT The time difference in seconds to the last prediction or observation update call.
 */
-void fusion_update(register const fix16_t deltaT) HOT NONNULL;
+void fusion_update(register const fix16_t deltaT) HOT;
 
 #endif // SENSOR_FUNCTION_H_
