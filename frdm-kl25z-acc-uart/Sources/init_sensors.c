@@ -20,6 +20,22 @@ static union {
     hmc5883l_confreg_t hmc5883l_configuration;
 } config_buffer;
 
+
+/**
+* @brief Gets the scaling value for the MPU6050 accelerometer
+*/
+static fix16_t mpu6050_accelerometer_scaler = 0;
+
+/**
+* @brief Gets the scaling value for the MPU6050 gyroscope
+*/
+static fix16_t mpu6050_gyroscope_scaler = 0;
+
+/**
+* @brief Gets the scaling value for the HMC5883L magnetometer
+*/
+static fix16_t hmc5883l_magnetometer_scaler = 0;
+
 /**
 * @brief Sets up the MMA8451Q communication
 */
@@ -107,8 +123,13 @@ void InitMPU6050()
     /* read configuration and modify */
     MPU6050_FetchConfiguration(configuration);
     MPU6050_SetGyroscopeSampleRateDivider(configuration, 80); /* the gyro samples at 8kHz, so division by 40 --> 200Hz */
+    
     MPU6050_SetGyroscopeFullScale(configuration, MPU6050_GYRO_FS_250);
+    mpu6050_gyroscope_scaler = fix16_from_int(131);         /* scaler value for GYRO_FS_250*/
+
     MPU6050_SetAccelerometerFullScale(configuration, MPU6050_ACC_FS_4);
+    mpu6050_accelerometer_scaler = fix16_from_int(8192);    /* scaler value for ACC_FS_4*/
+
     MPU6050_ConfigureInterrupts(configuration,
         MPU6050_INTLEVEL_ACTIVELOW,
         MPU6050_INTOPEN_OPENDRAIN,
@@ -153,9 +174,36 @@ void InitHMC5883L()
     HMC5883L_SetAveraging(configuration, HMC5883L_MA_1);
     HMC5883L_SetOutputRate(configuration, HMC5883L_DO_75Hz);
     HMC5883L_SetMeasurementMode(configuration, HMC5883L_MS_NORMAL);
+    
     HMC5883L_SetGain(configuration, HMC5883L_GN_1090_1p3Ga);
+    hmc5883l_magnetometer_scaler = fix16_from_int(1090);         /* scaler value for GN_1090_1p3Ga*/
+
     HMC5883L_SetOperatingMode(configuration, HMC5883L_MD_CONT);
     HMC5883L_StoreConfiguration(configuration);
 
     IO_SendZString("HMC5883L: configuration done.\r\n");
+}
+
+/**
+* @brief Gets the scaling value for the MPU6050 accelerometer
+*/
+fix16_t mpu6050_accelerometer_get_scaler()
+{
+    return mpu6050_accelerometer_scaler;
+}
+
+/**
+* @brief Gets the scaling value for the MPU6050 gyroscope
+*/
+fix16_t mpu6050_gyroscope_get_scaler()
+{
+    return mpu6050_gyroscope_scaler;
+}
+
+/**
+* @brief Gets the scaling value for the HMC5883L magnetometer
+*/
+fix16_t hmc5883l_magnetometer_get_scaler()
+{
+    return hmc5883l_magnetometer_scaler;
 }

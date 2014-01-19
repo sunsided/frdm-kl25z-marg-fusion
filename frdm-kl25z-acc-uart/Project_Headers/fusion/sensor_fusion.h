@@ -39,6 +39,15 @@ void fusion_predict(register const fix16_t deltaT) HOT;
 void fusion_set_accelerometer(register const fix16_t *const ax, register const fix16_t *const ay, register const fix16_t *const az) LEAF HOT NONNULL;
 
 /*!
+* \brief Registers accelerometer measurements for the next update
+* \param[in] data The accelerometer data.
+*/
+STATIC_INLINE void fusion_set_accelerometer_v3d(register const v3d *const data)
+{
+    fusion_set_accelerometer(&data->x, &data->y, &data->z);
+}
+
+/*!
 * \brief Registers gyroscope measurements for the next update
 * \param[in] gx The x-axis gyroscope value.
 * \param[in] gy The y-axis gyroscope value.
@@ -47,12 +56,30 @@ void fusion_set_accelerometer(register const fix16_t *const ax, register const f
 void fusion_set_gyroscope(register const fix16_t *const gx, register const fix16_t *const gy, register const fix16_t *const gz) LEAF HOT NONNULL;
 
 /*!
+* \brief Registers gyroscope measurements for the next update
+* \param[in] data The gyroscope data.
+*/
+STATIC_INLINE void fusion_set_gyroscope_v3d(register const v3d *const data)
+{
+    fusion_set_gyroscope(&data->x, &data->y, &data->z);
+}
+
+/*!
 * \brief Registers magnetometer measurements for the next update
 * \param[in] mx The x-axis magnetometer value.
 * \param[in] my The y-axis magnetometer value.
 * \param[in] mz The z-axis magnetometer value.
 */
 void fusion_set_magnetometer(register const fix16_t *const mx, register const fix16_t *const my, register const fix16_t *const mz) LEAF HOT NONNULL;
+
+/*!
+* \brief Registers magnetometer measurements for the next update
+* \param[in] data The magnetometer data.
+*/
+STATIC_INLINE void fusion_set_magnetometer_v3d(register const v3d *const data)
+{
+    fusion_set_magnetometer(&data->x, &data->y, &data->z);
+}
 
 /*!
 * \brief Updates the current prediction with the set measurements.

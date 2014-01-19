@@ -34,6 +34,9 @@
 #include "imu/hmc5883l.h"
 #include "led/led.h"
 
+#include "fusion/sensor_prepare.h"
+#include "fusion/sensor_fusion.h"
+
 #include "init_sensors.h"
 #include "nice_names.h"
 
@@ -173,6 +176,18 @@ int main(void)
     uint32_t lastHMCRead = 0;
     const uint32_t readHMCEvery = 1000 / 75; /* at 75Hz, data come every (1000/75Hz) ms. */
     	
+    /************************************************************************/
+    /* Fetch scaler values                                                  */
+    /************************************************************************/
+
+    const fix16_t mpu6050_accelerometer_scaler = mpu6050_accelerometer_get_scaler();
+    const fix16_t mpu6050_gyroscope_scaler = mpu6050_gyroscope_get_scaler();
+    const fix16_t hmc5883l_magnetometer_scaler = hmc5883l_magnetometer_get_scaler();
+
+    /************************************************************************/
+    /* Main loop                                                            */
+    /************************************************************************/
+
 	for(;;) 
 	{
         /* helper variables to track data freshness */
@@ -323,6 +338,43 @@ int main(void)
         /************************************************************************/
 
 #if DATA_FUSE_MODE
+
+        // if there were sensor data ...
+        if (eventsProcessed)
+        {
+            // convert, calibrate and store gyroscope data
+            if (have_gyro_data)
+            {
+                v3d gyro;
+                sensor_prepare_mpu6050_gyroscope_data(&gyro, accgyrotemp.gyro.x, accgyrotemp.gyro.y, accgyrotemp.gyro.z, mpu6050_gyroscope_scaler);
+                fusion_set_gyroscope_v3d(&gyro);
+            }
+
+            // convert, calibrate and store accelerometer data
+            if (have_acc_data)
+            {
+                v3d acc;
+                sensor_prepare_mpu6050_accelerometer_data(&acc, accgyrotemp.accel.x, accgyrotemp.accel.y, accgyrotemp.accel.z, mpu6050_accelerometer_scaler);
+                fusion_set_accelerometer_v3d(&acc);
+            }
+
+            // convert, calibrate and store magnetometer data
+            if (have_acc_data)
+            {
+                v3d mag;
+                sensor_prepare_hmc5883l_data(&mag, compass.x, compass.y, compass.z, hmc5883l_magnetometer_scaler);
+                fusion_set_magnetometer_v3d(&mag);
+            }
+
+            // get the time differential
+            const fix16_t deltaT = F16(1); // TODO: get correct value!
+
+            // predict the current measurements
+            fusion_predict(deltaT);
+
+            // correct the measurements
+            fusion_update(deltaT);
+        }
 
 #endif // DATA_FUSE_MODE
 

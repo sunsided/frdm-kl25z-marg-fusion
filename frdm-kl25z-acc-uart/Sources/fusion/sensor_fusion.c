@@ -116,8 +116,8 @@ static mf16 state_previous_dcm = { 3, 3, 0, 0 };
 #define matrix_set(matrix, row, column, value) \
     assert(row <= FIXMATRIX_MAX_SIZE); \
     assert(column <= FIXMATRIX_MAX_SIZE); \
-    assert(row <= matrix->rows); \
-    assert(column <= matrix->columns); \
+    assert(row < matrix->rows); \
+    assert(column < matrix->columns); \
     matrix->data[row][column] = value
 
 /*!
