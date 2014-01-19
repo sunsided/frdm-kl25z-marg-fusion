@@ -3,13 +3,14 @@
 
 #include "fixmath.h"
 #include "fixkalman.h"
+#include "fixvector3d.h"
 #include "fixmatrix.h"
 
 #if !defined(FIXMATRIX_MAX_SIZE) || (FIXMATRIX_MAX_SIZE < 12)
 #error FIXMATRIX_MAX_SIZE must be defined to value greater or equal 12.
 #endif
 
-#include "fusion/sensor_calibration.h"
+#include "fusion/sensor_dcm.h"
 #include "fusion/sensor_fusion.h"
 
 /*!
@@ -61,17 +62,17 @@ static kalman16_observation_t kfm_gyro_iddcm;
 /*!
 * \brief The current accelerometer measurements
 */
-static fix16_t m_accelerometer[3] = { 0, 0, 0 };
+static v3d m_accelerometer = { 0, 0, 0 };
 
 /*!
 * \brief The current gyroscope measurements
 */
-static fix16_t m_gyroscope[3] = { 0, 0, 0 };
+static v3d m_gyroscope = { 0, 0, 0 };
 
 /*!
 * \brief The current magnetometer measurements
 */
-static fix16_t m_magnetometer[3] = { 0, 0, 0 };
+static v3d m_magnetometer = { 0, 0, 0 };
 
 /*!
 * \brief Determines if an accelerometer measurement is available
@@ -87,6 +88,22 @@ static bool m_have_gyroscope = false;
 * \brief Determines if an magnetometer measurement is available
 */
 static bool m_have_magnetometer = false;
+
+/*!
+* \brief yaw/pitch/roll from gyroscope integration
+*/
+static v3d state_ypr_from_gyro = { 0, 0, 0 };
+
+/*!
+* \brief yaw/pitch/roll from difference DCM integration
+*/
+static v3d state_ypr_from_iddcm = { 0, 0, 0 };
+
+/*!
+* \brief DCM from previous loop
+*/
+static mf16 state_previous_dcm = { 3, 3, 0, 0 };
+
 
 /*!
 * \def matrix_set Helper macro to set a value in a specific matrix field
@@ -505,17 +522,45 @@ void fusion_predict(register const fix16_t deltaT)
 }
 
 /*!
-* \brief Updates the current prediction with accelerometer measurements
+* \brief Registers accelerometer measurements for the next update
 * \param[in] ax The x-axis accelerometer value.
 * \param[in] ay The y-axis accelerometer value.
 * \param[in] az The z-axis accelerometer value.
 */
 void fusion_set_accelerometer(register const fix16_t *const ax, register const fix16_t *const ay, register const fix16_t *const az)
 {
-    m_accelerometer[0] = *ax;
-    m_accelerometer[1] = *ay;
-    m_accelerometer[2] = *az;
+    m_accelerometer.x = *ax;
+    m_accelerometer.y = *ay;
+    m_accelerometer.z = *az;
     m_have_accelerometer = true;
+}
+
+/*!
+* \brief Registers gyroscope measurements for the next update
+* \param[in] gx The x-axis gyroscope value.
+* \param[in] gy The y-axis gyroscope value.
+* \param[in] gz The z-axis gyroscope value.
+*/
+void fusion_set_gyroscope(register const fix16_t *const gx, register const fix16_t *const gy, register const fix16_t *const gz)
+{
+    m_gyroscope.x = *gx;
+    m_gyroscope.y = *gy;
+    m_gyroscope.z = *gz;
+    m_have_gyroscope = true;
+}
+
+/*!
+* \brief Registers magnetometer measurements for the next update
+* \param[in] mx The x-axis magnetometer value.
+* \param[in] my The y-axis magnetometer value.
+* \param[in] mz The z-axis magnetometer value.
+*/
+void fusion_set_magnetometer(register const fix16_t *const mx, register const fix16_t *const my, register const fix16_t *const mz)
+{
+    m_magnetometer.x = *mx;
+    m_magnetometer.y = *my;
+    m_magnetometer.z = *mz;
+    m_have_magnetometer = true;
 }
 
 /*!
@@ -524,27 +569,107 @@ void fusion_set_accelerometer(register const fix16_t *const ax, register const f
 * \param[in] gy The y-axis gyroscope value.
 * \param[in] gz The z-axis gyroscope value.
 */
-void fusion_set_gyroscope(register const fix16_t *const gx, register const fix16_t *const gy, register const fix16_t *const gz)
+HOT
+void fusion_update_using_gyro_only(register const fix16_t deltaT)
 {
-    m_gyroscope[0] = *gx;
-    m_gyroscope[1] = *gy;
-    m_gyroscope[2] = *gz;
-    m_have_gyroscope = true;
+    /************************************************************************/
+    /* Prepare gyroscope data                                               */
+    /************************************************************************/
+
+    v3d scaled_velocity;
+    v3d_mul_s(&scaled_velocity, &m_gyroscope, deltaT);
+
+    // angle += velocity * dT
+    v3d_add(&state_ypr_from_gyro, &state_ypr_from_gyro, &scaled_velocity);
+
+    /************************************************************************/
+    /* Prepare measurement                                                  */
+    /************************************************************************/
+    {
+        mf16 *const z = &kfm_gyro.z;
+
+        matrix_set(z, 0, 0, state_ypr_from_gyro.x);
+        matrix_set(z, 1, 0, state_ypr_from_gyro.y);
+        matrix_set(z, 2, 0, state_ypr_from_gyro.z);
+
+        matrix_set(z, 3, 0, m_gyroscope.x);
+        matrix_set(z, 4, 0, m_gyroscope.y);
+        matrix_set(z, 5, 0, m_gyroscope.z);
+    }
+
+    /************************************************************************/
+    /* Perform Kalman update                                                */
+    /************************************************************************/
+
+    kalman_correct_uc(&kf_orientation, &kfm_gyro);
 }
 
 /*!
-* \brief Updates the current prediction with magnetometer measurements
-* \param[in] mx The x-axis magnetometer value.
-* \param[in] my The y-axis magnetometer value.
-* \param[in] mz The z-axis magnetometer value.
+* \brief Updates the current prediction with magnetometer and/or accelerometer measurements
+* \param[in] gx The x-axis gyroscope value.
+* \param[in] gy The y-axis gyroscope value.
+* \param[in] gz The z-axis gyroscope value.
 */
-void fusion_set_magnetometer(register const fix16_t *const mx, register const fix16_t *const my, register const fix16_t *const mz)
+HOT
+void fusion_update_using_iddcm_only(register const fix16_t deltaT)
 {
-    m_magnetometer[0] = *mx;
-    m_magnetometer[1] = *my;
-    m_magnetometer[2] = *mz;
-    m_have_magnetometer = true;
+    /************************************************************************/
+    /* Prepare DCM data                                                     */
+    /************************************************************************/
+
+    // fetch current DCM
+    mf16 dcm = { 3, 3, 0, 0 };
+    sensor_dcm(&dcm, &m_accelerometer, &m_magnetometer);
+
+    // build difference DCM
+    fix16_t om_yaw, om_pitch, om_roll;
+    sensor_ddcm(&dcm, &state_previous_dcm, &om_yaw, &om_pitch, &om_roll);
+
+    // save current DCM --> previous DCM
+    for (uint_fast8_t r = 0; r < 3; ++r)
+    {
+        for (uint_fast8_t c = 0; c < 3; ++c)
+        {
+            state_previous_dcm.data[r][c] = dcm.data[r][c];
+        }
+    }
+
+    // angle += velocity * dT
+    // note that dT is already contained in the dDCM.
+    state_ypr_from_iddcm.x = fix16_add(state_ypr_from_iddcm.x, om_yaw);
+    state_ypr_from_iddcm.y = fix16_add(state_ypr_from_iddcm.y, om_pitch);
+    state_ypr_from_iddcm.z = fix16_add(state_ypr_from_iddcm.z, om_roll);
+
+    /************************************************************************/
+    /* Prepare measurement                                                  */
+    /************************************************************************/
+    {
+        mf16 *const z = &kfm_iddcm.z;
+
+        matrix_set(z, 0, 0, state_ypr_from_iddcm.x);
+        matrix_set(z, 1, 0, state_ypr_from_iddcm.y);
+        matrix_set(z, 2, 0, state_ypr_from_iddcm.z);
+    }
+
+    /************************************************************************/
+    /* Perform Kalman update                                                */
+    /************************************************************************/
+
+    kalman_correct_uc(&kf_orientation, &kfm_iddcm);
 }
+
+/*!
+* \brief Updates the current prediction with gyroscope and iddcm measurements
+* \param[in] gx The x-axis gyroscope value.
+* \param[in] gy The y-axis gyroscope value.
+* \param[in] gz The z-axis gyroscope value.
+*/
+HOT
+void fusion_update_using_gyro_and_iddcm(register const fix16_t deltaT)
+{
+
+}
+
 
 /*!
 * \brief Updates the current prediction with the set measurements.
@@ -552,49 +677,46 @@ void fusion_set_magnetometer(register const fix16_t *const mx, register const fi
 */
 void fusion_update(register const fix16_t deltaT)
 {
-    bool use_gyro = false, 
-         use_iddcm = false;
+    uint_fast8_t strategy = 0;
 
     // integrate gyroscope if required
     if (true == m_have_gyroscope)
     {
-        use_gyro = true;
-
         // in this case, we need to integrate the gyro and either update
         // using kfm_gyro_iddcm or kfm_gyro, depending on the other values
+        strategy = 2; // 0b10;
     }
 
     // integrate difference DCM if required
     if (true == m_have_accelerometer || true == m_have_magnetometer)
     {
-        use_iddcm = true;
-
         // in this case, we need to build the difference DCM either update
         // using kfm_iddcm or kfm_gyro_iddcm, depending on m_have_gyroscope
+        strategy |= 1; // 0b01;
     }
 
     // select strategy
-    uint_fast8_t strategy = ((use_gyro == true ? 1 : 0) << 1) |
-                            ((use_iddcm == true ? 1 : 0) << 0);
-
     switch (strategy)
     {
     case 2: // 0b10 -- if (use_gyro && !use_iddcm)      
         {
             // this is the most probable case: gyro observation is available, 
             // but accelerometer and magnetometer observations are missing
+                fusion_update_using_gyro_only(deltaT);
             break;
         }
     case 3: // 0b11 -- if (use_gyro && use_iddcm)
         {
             // this is the second-most probable case: gyro observation is available, 
             // and either accelerometer or magnetometer observations is available
+                fusion_update_using_gyro_and_iddcm(deltaT);
             break;
         }
     case 1: // 0b01 -- (!use_gyro && use_iddcm)
         {
             // this is the least probable case: and either accelerometer or 
             // magnetometer observations is available, but gyro observation is missing
+                fusion_update_using_iddcm_only(deltaT);
             break;
         }
     default: // 0b00 -- (!use_gyro && !use_iddcm)
@@ -604,4 +726,7 @@ void fusion_update(register const fix16_t deltaT)
         }
     }
     
+    m_have_accelerometer = false;
+    m_have_gyroscope = false;
+    m_have_magnetometer = false;
 }

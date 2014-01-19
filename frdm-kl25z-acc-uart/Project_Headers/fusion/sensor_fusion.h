@@ -31,7 +31,7 @@ void fetch_values(register fix16_t *const roll, register fix16_t *const pitch, r
 void fusion_predict(register const fix16_t deltaT) HOT;
 
 /*!
-* \brief Updates the current prediction with accelerometer measurements
+* \brief Registers accelerometer measurements for the next update
 * \param[in] ax The x-axis accelerometer value.
 * \param[in] ay The y-axis accelerometer value.
 * \param[in] az The z-axis accelerometer value.
@@ -39,7 +39,7 @@ void fusion_predict(register const fix16_t deltaT) HOT;
 void fusion_set_accelerometer(register const fix16_t *const ax, register const fix16_t *const ay, register const fix16_t *const az) LEAF HOT NONNULL;
 
 /*!
-* \brief Updates the current prediction with gyroscope measurements
+* \brief Registers gyroscope measurements for the next update
 * \param[in] gx The x-axis gyroscope value.
 * \param[in] gy The y-axis gyroscope value.
 * \param[in] gz The z-axis gyroscope value.
@@ -47,7 +47,7 @@ void fusion_set_accelerometer(register const fix16_t *const ax, register const f
 void fusion_set_gyroscope(register const fix16_t *const gx, register const fix16_t *const gy, register const fix16_t *const gz) LEAF HOT NONNULL;
 
 /*!
-* \brief Updates the current prediction with magnetometer measurements
+* \brief Registers magnetometer measurements for the next update
 * \param[in] mx The x-axis magnetometer value.
 * \param[in] my The y-axis magnetometer value.
 * \param[in] mz The z-axis magnetometer value.
