@@ -88,9 +88,6 @@
     <ClCompile Include="..\..\..\..\..\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis\KL25Z4\vectors_KL25Z4.c">
       <Filter>Source files\Device-specific files</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\main.c">
-      <Filter>Source files</Filter>
-    </ClCompile>
     <ClCompile Include="Sources\sa_mtb.c">
       <Filter>Source files</Filter>
     </ClCompile>
@@ -136,15 +133,6 @@
     <ClCompile Include="libraries\libfixmatrix\fixmatrix.c">
       <Filter>libraries\libfixmatrix</Filter>
     </ClCompile>
-    <ClCompile Include="libraries\libfixmatrix\fixquat.c">
-      <Filter>libraries\libfixmatrix</Filter>
-    </ClCompile>
-    <ClCompile Include="libraries\libfixmatrix\fixstring.c">
-      <Filter>libraries\libfixmatrix</Filter>
-    </ClCompile>
-    <ClCompile Include="libraries\libfixmatrix\fixvector2d.c">
-      <Filter>libraries\libfixmatrix</Filter>
-    </ClCompile>
     <ClCompile Include="libraries\libfixmatrix\fixvector3d.c">
       <Filter>libraries\libfixmatrix</Filter>
     </ClCompile>
@@ -183,6 +171,12 @@
     </ClCompile>
     <ClCompile Include="Sources\fusion\sensor_dcm.c">
       <Filter>Source files\fusion</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\maintest.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\main.c">
+      <Filter>Source files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -271,15 +265,6 @@
       <Filter>libraries\libfixmatrix</Filter>
     </ClInclude>
     <ClInclude Include="libraries\libfixmatrix\fixmatrix.h">
-      <Filter>libraries\libfixmatrix</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\libfixmatrix\fixquat.h">
-      <Filter>libraries\libfixmatrix</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\libfixmatrix\fixstring.h">
-      <Filter>libraries\libfixmatrix</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\libfixmatrix\fixvector2d.h">
       <Filter>libraries\libfixmatrix</Filter>
     </ClInclude>
     <ClInclude Include="libraries\libfixmatrix\fixvector3d.h">

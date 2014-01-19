@@ -3,6 +3,8 @@
  *
  */
 
+#if 0
+
 #include "ARMCM0plus.h"
 #include "derivative.h" /* include peripheral declarations */
 #include "bme.h"
@@ -231,7 +233,8 @@ int main(void)
 	
 	/* initialize the RGB led */
 	LED_Init();
-	
+    DoubleFlash();
+
 	/* fun fun fun */
 	TrafficLight();
 	DoubleFlash();
@@ -420,6 +423,8 @@ int main(void)
 #endif
 		}
 	}
-	
+
 	return 0;
 }
+
+#endif // 0

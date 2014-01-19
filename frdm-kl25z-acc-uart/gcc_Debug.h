@@ -31,6 +31,7 @@
 #define __GCC_ATOMIC_CHAR_LOCK_FREE 1
 #define __FLT_EVAL_METHOD__ 0
 #define __LLACCUM_MAX__ 0X7FFFFFFFFFFFFFFFP-31LLK
+#define FIXMATH_NO_CACHE 1
 #define __GCC_ATOMIC_CHAR32_T_LOCK_FREE 1
 #define __FRACT_FBIT__ 15
 #define __UINT_FAST64_MAX__ 18446744073709551615ULL
@@ -302,6 +303,7 @@
 #define __LLFRACT_IBIT__ 0
 #define __INT8_MAX__ 127
 #define __UINT_FAST32_TYPE__ unsigned int
+#define KALMAN_DISABLE_C 1
 #define __CHAR32_TYPE__ long unsigned int
 #define __FLT_MAX__ 3.4028234663852886e+38F
 #define __USACCUM_FBIT__ 8

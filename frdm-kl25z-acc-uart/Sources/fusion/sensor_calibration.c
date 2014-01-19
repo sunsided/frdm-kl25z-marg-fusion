@@ -11,6 +11,8 @@
 #error FIXMATRIX_MAX_SIZE must be defined to value greater or equal 4.
 #endif
 
+// TODO: these should not be mf16 because of the static allocation of FIXMATRIX_MAX_SIZE x FIXMATRIX_MAX_SIZE
+
 /*!
 * \brief Affine transformation matrix for HMC5883L sensor data calibration
 *

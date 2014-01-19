@@ -1,5 +1,4 @@
 #include "fixmath.h"
-#include "fixarray.h"
 #include "fusion/sensor_dcm.h"
 
 /*!
@@ -9,7 +8,7 @@
 * \param[in] m The magnetometer vector
 */
 void sensor_dcm(mf16 *const dcm,
-    register const v3d *RESTRICT const a, register const v3d *RESTRICT const m)
+    const v3d *RESTRICT const a, const v3d *RESTRICT const m)
 {
     // TODO: check pointer to array dereferencing
 
@@ -90,6 +89,8 @@ void sensor_dcm(mf16 *const dcm,
     dcm->data[2][0] = X.z;
     dcm->data[2][1] = Y.z;
     dcm->data[2][2] = Z.z;
+
+    dcm->rows = dcm->columns = 3;
 }
 
 /*!
@@ -98,7 +99,7 @@ void sensor_dcm(mf16 *const dcm,
 * \param[out] pitch The pitch(elevation) angle in radians.
 * \param[out] yaw The yaw(heading, azimuth) angle in radians.
 */
-void sensor_dcm2rpy(mf16 *const dcm, fix16_t *RESTRICT const roll, fix16_t *RESTRICT const pitch, fix16_t *RESTRICT const yaw)
+void sensor_dcm2rpy(const mf16 *dcm, fix16_t *RESTRICT const roll, fix16_t *RESTRICT const pitch, fix16_t *RESTRICT const yaw)
 {
     // extract angles
     // see: William Premerlani, "Computing Euler Angles from Direction Cosines"

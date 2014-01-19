@@ -18,8 +18,7 @@
 * \param[in] a The accelerometer vector.
 * \param[in] m The magnetometer vector
 */
-void sensor_dcm(mf16 *const dcm, 
-    register const v3d *RESTRICT const a, register const v3d *RESTRICT const m) HOT NONNULL;
+void sensor_dcm(mf16 *const dcm, const v3d *RESTRICT const a, const v3d *RESTRICT const m) HOT NONNULL;
 
 /*!
 * \brief Gets roll, pitch, yaw from DCM.
@@ -27,6 +26,6 @@ void sensor_dcm(mf16 *const dcm,
 * \param[out] pitch The pitch(elevation) angle in radians.
 * \param[out] yaw The yaw(heading, azimuth) angle in radians.
 */
-void sensor_dcm2rpy(mf16 *const dcm, fix16_t *RESTRICT const roll, fix16_t *RESTRICT const pitch, fix16_t *RESTRICT const yaw) HOT NONNULL;
+void sensor_dcm2rpy(const mf16 *dcm, fix16_t *RESTRICT const roll, fix16_t *RESTRICT const pitch, fix16_t *RESTRICT const yaw) HOT NONNULL;
 
 #endif // SENSOR_DDCM_H_
