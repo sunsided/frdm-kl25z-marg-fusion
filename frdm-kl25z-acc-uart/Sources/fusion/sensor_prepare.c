@@ -17,7 +17,7 @@ void sensor_prepare_mpu6050_accelerometer_data(v3d *const out, int16_t rawx, int
         // note that we are swapping X and Y axis here and flipping X and Z signs
         // in order to convert from AHRS to regular coordinate system
         -fix16_from_int(rawy),
-        fix16_from_int(rawx),
+         fix16_from_int(rawx),
         -fix16_from_int(rawz)
     };
 
@@ -44,8 +44,8 @@ void sensor_prepare_mpu6050_gyroscope_data(v3d *const out, int16_t rawx, int16_t
         // note that we are swapping X and Y axis here and flipping X sign
         // in order to convert from AHRS to regular coordinate system
         -fix16_from_int(rawy),
-        fix16_from_int(rawx),
-        fix16_from_int(rawz)
+         fix16_from_int(rawx),
+         fix16_from_int(rawz)
     };
 #else
     // fetch value
@@ -93,8 +93,8 @@ void sensor_prepare_hmc5883l_data(v3d *const out, int16_t rawx, int16_t rawy, in
     // fetch value
     const register fix16_t invScaling = fix16_div(F16(1), scaling);
     out->x = fix16_mul(fix16_from_int(rawx), invScaling);
-    out->y = fix16_mul(fix16_from_int(rawx), invScaling);
-    out->z = fix16_mul(fix16_from_int(rawx), invScaling);
+    out->y = fix16_mul(fix16_from_int(rawy), invScaling);
+    out->z = fix16_mul(fix16_from_int(rawz), invScaling);
 
     // calibrate!
     hmc5883l_calibrate_v3d(out);
