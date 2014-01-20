@@ -263,6 +263,8 @@ int main(void)
 
 #if DATA_FUSE_MODE
 
+    uint32_t last_fusion_time = systemTime();
+
     fusion_initialize();
 
 #endif // DATA_FUSE_MODE
@@ -450,7 +452,11 @@ int main(void)
             }
 
             // get the time differential
-            const fix16_t deltaT = F16(1); // TODO: get correct value!
+            const uint32_t current_time = systemTime();
+            const fix16_t deltaT_ms = fix16_from_int(current_time - last_fusion_time);
+            const fix16_t deltaT = fix16_mul(deltaT_ms, F16(0.001));
+            
+            last_fusion_time = current_time;
 
             FusionSignal_Predict();
 
@@ -466,6 +472,26 @@ int main(void)
             fusion_sanitize_state();
 
             FusionSignal_Clear();
+
+            fix16_t yaw, pitch, roll;
+            fusion_fetch_angles(&yaw, &pitch, &roll);
+
+            float yawf = fix16_to_float(yaw),
+                pitchf = fix16_to_float(pitch),
+                rollf = fix16_to_float(roll);
+            
+            fusion_fetch_angular_velocities(&yaw, &pitch, &roll);
+
+            float omyawf = fix16_to_float(yaw),
+                ompitchf = fix16_to_float(pitch),
+                omrollf = fix16_to_float(roll);
+
+            IO_SendInt16((int16_t)yawf);
+            IO_SendInt16((int16_t)pitchf);
+            IO_SendInt16((int16_t)rollf);
+
+            IO_SendByteUncommited('\r');
+            IO_SendByte('\n');
         }
 
 #endif // DATA_FUSE_MODE

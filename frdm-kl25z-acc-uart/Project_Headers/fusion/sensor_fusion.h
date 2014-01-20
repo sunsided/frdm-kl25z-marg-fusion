@@ -22,7 +22,16 @@ void fusion_initialize() COLD;
 * \param[out] pitch The pitch (elevation) angle in degree.
 * \param[out] yaw The yaw (heading, azimuth) angle in degree.
 */
-void fetch_values(register fix16_t *const roll, register fix16_t *const pitch, register fix16_t *const yaw) HOT PURE NONNULL;
+void fusion_fetch_angles(register fix16_t *const roll, register fix16_t *const pitch, register fix16_t *const yaw) HOT NONNULL LEAF;
+
+/*!
+* \brief Fetches the values without any modification
+* \param[out] roll The roll angle velocity in degree/2.
+* \param[out] pitch The pitch (elevation) angle velocity in degree/2.
+* \param[out] yaw The yaw (heading, azimuth) angle velocity in degree/2.
+*/
+HOT NONNULL LEAF
+void fusion_fetch_angular_velocities(register fix16_t *const roll, register fix16_t *const pitch, register fix16_t *const yaw);
 
 /*!
 * \brief Performs a prediction of the current Euler angles based on the time difference to the prediction or observation update call.

@@ -133,7 +133,6 @@
 #define __FRACT_IBIT__ 0
 #define __PTRDIFF_MAX__ 2147483647
 #define __UACCUM_MIN__ 0.0UK
-#define FIXMATH_FAST_SIN 1
 #define __UACCUM_IBIT__ 16
 #define __GNUG__ 4
 #define __LONG_LONG_MAX__ 9223372036854775807LL

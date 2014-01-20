@@ -109,6 +109,10 @@ static v3d state_ypr_from_iddcm = { 0, 0, 0 };
 */
 static mf16 state_previous_dcm = { 3, 3, 0, 0 };
 
+/*!
+* \brief Determines if a previous DCM exists
+*/
+static bool state_has_previous_dcm = false;
 
 /*!
 * \def matrix_set Helper macro to set a value in a specific matrix field
@@ -331,18 +335,23 @@ static void initialize_observation_gyro_iddcm()
     {
         mf16 *const R = &kfm->R;
 
-        matrix_set(R, 0, 0, F16(10.087));
-        matrix_set(R, 1, 1, F16(6.1297));
-        matrix_set(R, 2, 2, F16(8.8969));
+        matrix_set(R, 0, 0, F16(10));
+        matrix_set(R, 1, 1, F16(10));
+        matrix_set(R, 2, 2, F16(10));
 
-        matrix_set(R, 3, 3, F16(3.7462));
-        matrix_set(R, 4, 4, F16(3.265));
-        matrix_set(R, 5, 5, F16(3.9315));
+        matrix_set(R, 3, 3, F16(3));
+        matrix_set(R, 4, 4, F16(3));
+        matrix_set(R, 5, 5, F16(3));
 
-        matrix_set(R, 6, 6, F16_ONE);
-        matrix_set(R, 7, 7, F16_ONE);
-        matrix_set(R, 8, 8, F16_ONE);
+        matrix_set(R, 6, 6, F16(5));
+        matrix_set(R, 7, 7, F16(5));
+        matrix_set(R, 8, 8, F16(5));
 
+        matrix_set_symmetric(R, 0, 3, F16_ONE);
+        matrix_set_symmetric(R, 1, 4, F16_ONE);
+        matrix_set_symmetric(R, 2, 5, F16_ONE);
+
+        /*
         matrix_set_symmetric(R, 0, 3, F16(0.1));
         matrix_set_symmetric(R, 0, 4, F16(0.67));
         matrix_set_symmetric(R, 0, 5, F16(1.24));
@@ -354,6 +363,7 @@ static void initialize_observation_gyro_iddcm()
         matrix_set_symmetric(R, 2, 3, F16(0.26));
         matrix_set_symmetric(R, 2, 4, F16(0.05));
         matrix_set_symmetric(R, 2, 5, F16(1.02));
+        */
     }
 }
 
@@ -387,13 +397,13 @@ static void initialize_observation_gyroscope()
     {
         mf16 *const R = &kfm->R;
 
-        matrix_set(R, 0, 0, F16(3.7462));
-        matrix_set(R, 1, 1, F16(3.265));
-        matrix_set(R, 2, 2, F16(3.9315));
+        matrix_set(R, 0, 0, F16(2));
+        matrix_set(R, 1, 1, F16(2));
+        matrix_set(R, 2, 2, F16(2));
 
-        matrix_set(R, 3, 3, F16_ONE);
-        matrix_set(R, 4, 4, F16_ONE);
-        matrix_set(R, 5, 5, F16_ONE);
+        matrix_set(R, 3, 3, F16(0.3));
+        matrix_set(R, 4, 4, F16(0.3));
+        matrix_set(R, 5, 5, F16(0.3));
     }
 }
 
@@ -433,15 +443,20 @@ void fusion_sanitize_state()
 {
     mf16 *const x = kalman_get_state_vector_uc(&kf_orientation);
 
-    // iddcm angles
+    // angles
     x->data[0][0] = fusion_clampangle(x->data[0][0]);
-    x->data[1][1] = fusion_clampangle(x->data[1][1]);
-    x->data[2][2] = fusion_clampangle(x->data[2][2]);
+    x->data[1][0] = fusion_clampangle(x->data[1][0]);
+    x->data[2][0] = fusion_clampangle(x->data[2][0]);
 
-    // integrated gyro angles
-    x->data[3][3] = fusion_clampangle(x->data[3][3]);
-    x->data[4][4] = fusion_clampangle(x->data[4][4]);
-    x->data[5][5] = fusion_clampangle(x->data[5][5]);
+    // gyro
+    state_ypr_from_gyro.x = fusion_clampangle(state_ypr_from_gyro.x);
+    state_ypr_from_gyro.y = fusion_clampangle(state_ypr_from_gyro.y);
+    state_ypr_from_gyro.z = fusion_clampangle(state_ypr_from_gyro.z);
+
+    // iddcm
+    state_ypr_from_iddcm.x = fusion_clampangle(state_ypr_from_iddcm.x);
+    state_ypr_from_iddcm.y = fusion_clampangle(state_ypr_from_iddcm.y);
+    state_ypr_from_iddcm.z = fusion_clampangle(state_ypr_from_iddcm.z);
 }
 
 /*!
@@ -475,23 +490,42 @@ STATIC_INLINE fix16_t variance_weighted_sum(register const fix16_t a, register c
 * \param[out] pitch The pitch (elevation) angle in degree.
 * \param[out] yaw The yaw (heading, azimuth) angle in degree.
 */
-HOT
-void fetch_values(register fix16_t *const roll, register fix16_t *const pitch, register fix16_t *const yaw)
+HOT NONNULL LEAF
+void fusion_fetch_angles(register fix16_t *const roll, register fix16_t *const pitch, register fix16_t *const yaw)
 {
     // fetch state vector and covariance reference
     const mf16 *const x = kalman_get_state_vector_uc(&kf_orientation);
-    const mf16 *const P = kalman_get_system_covariance_uc(&kf_orientation);
-
-    // TODO: verify that variance_weighted_sum works as expected
 
     // fetch yaw
-    *roll = variance_weighted_sum(x->data[0][0], P->data[0][0], x->data[3][0], P->data[3][3]);
+    *roll = x->data[0][0];
 
     // fetch pitch
-    *pitch = variance_weighted_sum(x->data[1][0], P->data[1][1], x->data[4][0], P->data[4][4]);
+    *pitch = x->data[1][0];
 
     // fetch yaw
-    *yaw = variance_weighted_sum(x->data[2][0], P->data[2][2], x->data[5][0], P->data[5][5]);
+    *yaw = x->data[2][0];
+}
+
+/*!
+* \brief Fetches the values without any modification
+* \param[out] roll The roll angle velocity in degree/2.
+* \param[out] pitch The pitch (elevation) angle velocity in degree/2.
+* \param[out] yaw The yaw (heading, azimuth) angle velocity in degree/2.
+*/
+HOT NONNULL LEAF
+void fusion_fetch_angular_velocities(register fix16_t *const roll, register fix16_t *const pitch, register fix16_t *const yaw)
+{
+    // fetch state vector and covariance reference
+    const mf16 *const x = kalman_get_state_vector_uc(&kf_orientation);
+
+    // fetch yaw
+    *roll = x->data[3][0];
+
+    // fetch pitch
+    *pitch = x->data[4][0];
+
+    // fetch yaw
+    *yaw = x->data[5][0];
 }
 
 /*!
@@ -591,15 +625,15 @@ void fusion_predict(register const fix16_t deltaT)
         /* Calculate angle transition                                           */
         /************************************************************************/
 
-        // integrated difference DCM: phi
+        // phi
         const register fix16_t temp1 = fix16_add(x->data[0][0], omega_x_dt);
         x->data[0][0] = fix16_add(temp1, alpha_x_hdtsq);
 
-        // integrated difference DCM: psi
+        // psi
         const register fix16_t temp2 = fix16_add(x->data[1][0], omega_y_dt);
         x->data[1][0] = fix16_add(temp2, alpha_y_hdtsq);
 
-        // integrated difference DCM: theta
+        // theta
         const register fix16_t temp3 = fix16_add(x->data[2][0], omega_z_dt);
         x->data[2][0] = fix16_add(temp3, alpha_z_hdtsq);
 
@@ -716,9 +750,38 @@ void fusion_update_using_iddcm_only(register const fix16_t deltaT)
 
     // build difference DCM
     fix16_t om_yaw, om_pitch, om_roll;
-    sensor_ddcm(&dcm, &state_previous_dcm, &om_yaw, &om_pitch, &om_roll);
+    if (true == state_has_previous_dcm)
+    {
+        sensor_ddcm(&dcm, &state_previous_dcm, &om_yaw, &om_pitch, &om_roll);
+
+        // convert to angle
+        om_yaw = fix16_rad_to_deg(om_yaw);
+        om_pitch = fix16_rad_to_deg(om_pitch);
+        om_roll = fix16_rad_to_deg(om_roll);
+    }
+    else
+    {
+        fix16_t yaw, pitch, roll;
+        sensor_dcm2rpy(&dcm, &yaw, &pitch, &roll);
+
+        // convert to angle
+        yaw = fix16_rad_to_deg(yaw);
+        pitch = fix16_rad_to_deg(pitch);
+        roll = fix16_rad_to_deg(roll);
+
+        // bootstrap iddcm state
+        state_ypr_from_iddcm.x = yaw;
+        state_ypr_from_iddcm.y = pitch;
+        state_ypr_from_iddcm.z = roll;
+
+        // bootstrap gyro state
+        state_ypr_from_gyro.x = yaw;
+        state_ypr_from_gyro.y = pitch;
+        state_ypr_from_gyro.z = roll;
+    }
 
     // save current DCM --> previous DCM
+    state_has_previous_dcm = true;
     for (uint_fast8_t r = 0; r < 3; ++r)
     {
         for (uint_fast8_t c = 0; c < 3; ++c)
@@ -726,6 +789,11 @@ void fusion_update_using_iddcm_only(register const fix16_t deltaT)
             state_previous_dcm.data[r][c] = dcm.data[r][c];
         }
     }
+
+    // convert to angle
+    om_yaw = fix16_rad_to_deg(om_yaw);
+    om_pitch = fix16_rad_to_deg(om_pitch);
+    om_roll = fix16_rad_to_deg(om_roll);
 
     // angle += velocity * dT
     // note that dT is already contained in the dDCM.
@@ -761,16 +829,6 @@ HOT
 void fusion_update_using_gyro_and_iddcm(register const fix16_t deltaT)
 {
     /************************************************************************/
-    /* Prepare gyroscope data                                               */
-    /************************************************************************/
-
-    v3d scaled_velocity;
-    v3d_mul_s(&scaled_velocity, &m_gyroscope, deltaT);
-
-    // angle += velocity * dT
-    v3d_add(&state_ypr_from_gyro, &state_ypr_from_gyro, &scaled_velocity);
-
-    /************************************************************************/
     /* Prepare DCM data                                                     */
     /************************************************************************/
     
@@ -779,11 +837,40 @@ void fusion_update_using_gyro_and_iddcm(register const fix16_t deltaT)
     sensor_dcm(&dcm, &m_accelerometer, &m_magnetometer);
 
     // build difference DCM
-    fix16_t om_yaw, om_pitch, om_roll;
-    sensor_ddcm(&dcm, &state_previous_dcm, &om_yaw, &om_pitch, &om_roll);
+    fix16_t om_yaw = 0, om_pitch = 0, om_roll = 0;
+    if (true == state_has_previous_dcm)
+    {
+        sensor_ddcm(&dcm, &state_previous_dcm, &om_yaw, &om_pitch, &om_roll);
+
+        // convert to angle
+        om_yaw = fix16_rad_to_deg(om_yaw);
+        om_pitch = fix16_rad_to_deg(om_pitch);
+        om_roll = fix16_rad_to_deg(om_roll);
+    }
+    else
+    {
+        fix16_t yaw, pitch, roll;
+        sensor_dcm2rpy(&dcm, &yaw, &pitch, &roll);
+
+        // convert to angle
+        yaw = fix16_rad_to_deg(yaw);
+        pitch = fix16_rad_to_deg(pitch);
+        roll = fix16_rad_to_deg(roll);
+
+        // bootstrap iddcm state
+        state_ypr_from_iddcm.x = yaw;
+        state_ypr_from_iddcm.y = pitch;
+        state_ypr_from_iddcm.z = roll;
+
+        // bootstrap gyro state
+        state_ypr_from_gyro.x = yaw;
+        state_ypr_from_gyro.y = pitch;
+        state_ypr_from_gyro.z = roll;
+    }
     
     // save current DCM --> previous DCM
-#if 0
+    state_has_previous_dcm = true;
+#if 1
     for (uint_fast8_t r = 0; r < 3; ++r)
     {
         for (uint_fast8_t c = 0; c < 3; ++c)
@@ -810,6 +897,16 @@ void fusion_update_using_gyro_and_iddcm(register const fix16_t deltaT)
     state_ypr_from_iddcm.x = fix16_add(state_ypr_from_iddcm.x, om_yaw);
     state_ypr_from_iddcm.y = fix16_add(state_ypr_from_iddcm.y, om_pitch);
     state_ypr_from_iddcm.z = fix16_add(state_ypr_from_iddcm.z, om_roll);
+
+    /************************************************************************/
+    /* Prepare gyroscope data                                               */
+    /************************************************************************/
+
+    v3d scaled_velocity;
+    v3d_mul_s(&scaled_velocity, &m_gyroscope, deltaT);
+
+    // angle += velocity * dT
+    v3d_add(&state_ypr_from_gyro, &state_ypr_from_gyro, &scaled_velocity);
 
     /************************************************************************/
     /* Prepare measurement                                                  */
@@ -864,18 +961,18 @@ void fusion_update(register const fix16_t deltaT)
     // select strategy
     switch (strategy)
     {
-        case 2: // 0b10 -- if (use_gyro && !use_iddcm)      
-        {
-            // this is the most probable case: gyro observation is available, 
-            // but accelerometer and magnetometer observations are missing
-            fusion_update_using_gyro_only(deltaT);
-            break;
-        }
         case 3: // 0b11 -- if (use_gyro && use_iddcm)
         {
             // this is the second-most probable case: gyro observation is available, 
             // and either accelerometer or magnetometer observations is available
             fusion_update_using_gyro_and_iddcm(deltaT);
+            break;
+        }
+        case 2: // 0b10 -- if (use_gyro && !use_iddcm)      
+        {
+            // this is the most probable case: gyro observation is available, 
+            // but accelerometer and magnetometer observations are missing
+            fusion_update_using_gyro_only(deltaT);
             break;
         }
         case 1: // 0b01 -- (!use_gyro && use_iddcm)

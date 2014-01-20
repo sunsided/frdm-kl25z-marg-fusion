@@ -35,6 +35,10 @@ void sensor_dcm(mf16 *const dcm,
     v3d_cross(&X, &Z, &Y);
     v3d_normalize(&X, &X);
 
+    // and now, Z from X and Y
+    v3d_cross(&Z, &X, &Y);
+    v3d_normalize(&Z, &Z);
+
     /*
         The direction cosine matrix is defined as the matrix of dot products
         between all vector components.
