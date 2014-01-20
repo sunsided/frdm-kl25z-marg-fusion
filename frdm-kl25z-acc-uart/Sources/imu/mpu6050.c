@@ -24,6 +24,20 @@
 	configuration->reg |= (value << MPU6050_## reg ## _ ## bits ## _SHIFT) & MPU6050_ ## reg ## _ ## bits ## _MASK
 
 /**
+* @brief Helper macro to set bits in a given variable
+* @param[in] variable The variable to set
+* @param[in] reg The register name
+* @param[in] bits The name of the bit to set
+* @param[in] value The value to set
+*
+* Requires the macros MPU6050_regname_bitname_MASK and
+* MPU6050_regname_bitname_SHIFT to be set at expansion time.
+*/
+#define MPU6050_VALUE_SET(variable, reg, bits, value) \
+    variable &= (uint8_t)~(MPU6050_ ## reg ## _ ## bits ## _MASK); \
+    variable |= (value << MPU6050_## reg ## _ ## bits ## _SHIFT) & MPU6050_ ## reg ## _ ## bits ## _MASK
+
+/**
  * @brief Reads the WHO_AM_I register from the MPU6050.
  * @return Device identification code; Should be 0b0110100 (0x68)
  */
@@ -119,7 +133,13 @@ void MPU6050_StoreConfiguration(const mpu6050_confreg_t *const configuration)
 	I2C_SendBlocking(configuration->CONFIG);
 	I2C_SendBlocking(configuration->GYRO_CONFIG);
 	I2C_SendBlocking(configuration->ACCEL_CONFIG);
-	
+
+    /* restart register addressing at 0x6B */
+    I2C_SendRepeatedStart();
+    I2C_SendBlocking(I2C_WRITE_ADDRESS(MPU6050_I2CADDR));
+    I2C_SendBlocking(MPU6050_REG_PWR_MGMT_1);
+    I2C_SendBlocking(configuration->PWR_MGMT_1);
+
 	/* restart register addressing at 0x23 */
 	I2C_SendRepeatedStart();
 	I2C_SendBlocking(I2C_WRITE_ADDRESS(MPU6050_I2CADDR));
@@ -244,11 +264,28 @@ void MPU6050_SetAccelerometerFullScale(mpu6050_confreg_t *const configuration, m
  */
 void MPU6050_ConfigureInterrupts(mpu6050_confreg_t *const configuration, mpu6050_intlevel_t level, mpu6050_intopen_t type, mpu6050_intlatch_t latch, mpu6050_intrdclear_t clear)
 {
-	assert_not_null(configuration);	
-	MPU6050_CONFIG_SET(INT_PIN_CFG, INT_LEVEL, level);
-	MPU6050_CONFIG_SET(INT_PIN_CFG, INT_OPEN, type);
-	MPU6050_CONFIG_SET(INT_PIN_CFG, LATCH_INT_EN, latch);
-	MPU6050_CONFIG_SET(INT_PIN_CFG, INT_RD_CLEAR, clear);
+    if (configuration == MPU6050_CONFIGURE_DIRECT)
+    {
+        uint8_t value = 0;
+        MPU6050_VALUE_SET(value, INT_PIN_CFG, INT_LEVEL, level);
+        MPU6050_VALUE_SET(value, INT_PIN_CFG, INT_OPEN, type);
+        MPU6050_VALUE_SET(value, INT_PIN_CFG, LATCH_INT_EN, latch);
+        MPU6050_VALUE_SET(value, INT_PIN_CFG, INT_RD_CLEAR, clear);
+
+        I2C_WaitWhileBusy();
+        I2C_SendStart();
+        I2C_SendBlocking(I2C_WRITE_ADDRESS(MPU6050_I2CADDR));
+        I2C_SendBlocking(MPU6050_REG_INT_PIN_CFG);
+        I2C_SendBlocking(value);
+        I2C_SendStop();
+    }
+    else
+    {
+        MPU6050_CONFIG_SET(INT_PIN_CFG, INT_LEVEL, level);
+        MPU6050_CONFIG_SET(INT_PIN_CFG, INT_OPEN, type);
+        MPU6050_CONFIG_SET(INT_PIN_CFG, LATCH_INT_EN, latch);
+        MPU6050_CONFIG_SET(INT_PIN_CFG, INT_RD_CLEAR, clear);
+    }
 }
 
 #define MPU6050_INT_ENABLE_FIFO_OFLOW_EN_MASK	(0b00010000)
@@ -267,10 +304,26 @@ void MPU6050_ConfigureInterrupts(mpu6050_confreg_t *const configuration, mpu6050
  */
 void MPU6050_EnableInterrupts(mpu6050_confreg_t *const configuration, mpu6050_inten_t fifoOverflow, mpu6050_inten_t i2cMaster, mpu6050_inten_t dataReady)
 {
-	assert_not_null(configuration);	
-	MPU6050_CONFIG_SET(INT_ENABLE, FIFO_OFLOW_EN, fifoOverflow);
-	MPU6050_CONFIG_SET(INT_ENABLE, I2CMST_INT_EN, i2cMaster);
-	MPU6050_CONFIG_SET(INT_ENABLE, DATA_RDY_EN, dataReady);
+    if (configuration == MPU6050_CONFIGURE_DIRECT)
+    {
+        uint8_t value = 0;
+        MPU6050_VALUE_SET(value, INT_ENABLE, FIFO_OFLOW_EN, fifoOverflow);
+        MPU6050_VALUE_SET(value, INT_ENABLE, I2CMST_INT_EN, i2cMaster);
+        MPU6050_VALUE_SET(value, INT_ENABLE, DATA_RDY_EN, dataReady);
+
+        I2C_WaitWhileBusy();
+        I2C_SendStart();
+        I2C_SendBlocking(I2C_WRITE_ADDRESS(MPU6050_I2CADDR));
+        I2C_SendBlocking(MPU6050_REG_INT_ENABLE);
+        I2C_SendBlocking(value);
+        I2C_SendStop();
+    }
+    else
+    {
+        MPU6050_CONFIG_SET(INT_ENABLE, FIFO_OFLOW_EN, fifoOverflow);
+        MPU6050_CONFIG_SET(INT_ENABLE, I2CMST_INT_EN, i2cMaster);
+        MPU6050_CONFIG_SET(INT_ENABLE, DATA_RDY_EN, dataReady);
+    }
 }
 
 #define MPU6050_PWR_MGMT_1_CLKSEL_MASK	(0b00000111)
@@ -283,8 +336,22 @@ void MPU6050_EnableInterrupts(mpu6050_confreg_t *const configuration, mpu6050_in
  */
 void MPU6050_SelectClockSource(mpu6050_confreg_t *const configuration, mpu6050_clock_t source)
 {
-	assert_not_null(configuration);	
-	MPU6050_CONFIG_SET(PWR_MGMT_1, CLKSEL, source);
+    if (configuration == MPU6050_CONFIGURE_DIRECT)
+    {
+        uint8_t value = 0;
+        MPU6050_VALUE_SET(value, PWR_MGMT_1, CLKSEL, source);
+
+        I2C_WaitWhileBusy();
+        I2C_SendStart();
+        I2C_SendBlocking(I2C_WRITE_ADDRESS(MPU6050_I2CADDR));
+        I2C_SendBlocking(MPU6050_REG_PWR_MGMT_1);
+        I2C_SendBlocking(value);
+        I2C_SendStop();
+    }
+    else 
+    {
+        MPU6050_CONFIG_SET(PWR_MGMT_1, CLKSEL, source);
+    }
 }
 
 #define MPU6050_PWR_MGMT_1_SLEEP_MASK	(0b01000000)

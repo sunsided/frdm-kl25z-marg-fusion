@@ -5,3 +5,5 @@
 /*.user
 /obj/
 /VisualGDBCache/
+/*.i
+/*.s

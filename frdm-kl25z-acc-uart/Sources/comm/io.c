@@ -298,7 +298,7 @@ void IO_Send2p14AsString(register int16_t input)
 	 * 
 	 * Note
 	 * ----
-	 * Since event the fourth decimal place can not be represented 
+	 * Since even the fourth decimal place can not be represented 
 	 * correctly anymore, only six decimal places will be rendered. 
 	 */
 	

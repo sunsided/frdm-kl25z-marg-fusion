@@ -3,6 +3,18 @@
  *
  */
 
+/*!
+* \def DATA_FUSE_MODE Set to the <code>1</code> to enable raw sensor data transmission or disable with <code>0</code> to enable data fusion
+*/
+#define DATA_FETCH_MODE 0
+
+/*!
+* \def DATA_FUSE_MODE Set to the opposite of {\ref DATA_FETCH_MODE} and enables sensor fusion
+*/
+#define DATA_FUSE_MODE (!DATA_FETCH_MODE)
+
+#if 1
+
 #include "ARMCM0plus.h"
 #include "derivative.h" /* include peripheral declarations */
 #include "bme.h"
@@ -22,9 +34,11 @@
 #include "imu/hmc5883l.h"
 #include "led/led.h"
 
-#include "nice_names.h"
+#include "fusion/sensor_prepare.h"
+#include "fusion/sensor_fusion.h"
 
-#define ENABLE_MMA8451Q 0						/*! Used to enable or disable MMA8451Q fetching */
+#include "init_sensors.h"
+#include "nice_names.h"
 
 #define UART_RX_BUFFER_SIZE	(32)				/*! Size of the UART RX buffer in byte*/
 #define UART_TX_BUFFER_SIZE	(128)				/*! Size of the UART TX buffer in byte */
@@ -32,15 +46,6 @@ uint8_t uartInputData[UART_RX_BUFFER_SIZE], 	/*! The UART RX buffer */
 		uartOutputData[UART_TX_BUFFER_SIZE];	/*! The UART TX buffer */
 buffer_t uartInputFifo, 						/*! The UART RX buffer driver */
 		uartOutputFifo;							/*! The UART TX buffer driver */
-
-#define MMA8451Q_INT_PORT	PORTA				/*! Port at which the MMA8451Q INT1 and INT2 pins are attached */
-#define MMA8451Q_INT_GPIO	GPIOA				/*! Port at which the MMA8451Q INT1 and INT2 pins are attached */
-#define MMA8451Q_INT1_PIN	14					/*! Pin at which the MMA8451Q INT1 is attached */
-#define MMA8451Q_INT2_PIN	15					/*! Pin at which the MMA8451Q INT2 is attached */
-
-#define MPU6050_INT_PORT	PORTA				/*! Port at which the MPU6050 INT pin is attached */
-#define MPU6050_INT_GPIO	GPIOA				/*! Port at which the MPU6050 INT pin is attached */
-#define MPU6050_INT_PIN		13					/*! Pin at which the MPU6050 INT is attached */
 
 #define I2CARBITER_COUNT 	(3)					/*< Number of I2C devices we're talking to */
 i2carbiter_entry_t i2carbiter_entries[I2CARBITER_COUNT]; /*< Structure for the pin enabling/disabling manager */
@@ -55,16 +60,20 @@ static volatile uint8_t poll_mma8451q = 1;
  */
 static volatile uint8_t poll_mpu6050 = 1;
 
+/************************************************************************/
+/* Interrupt handlers                                                   */
+/************************************************************************/
+
 /**
  * @brief Handler for interrupts on port A
  */
 void PORTA_Handler()
 {
-	register uint32_t isfr = MMA8451Q_INT_PORT->ISFR;
-	
 #if ENABLE_MMA8451Q	
+    register uint32_t isfr_mma = MMA8451Q_INT_PORT->ISFR;
+
 	/* check MMA8451Q */
-	register uint32_t fromMMA8451Q 	= (isfr & ((1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN)));
+    register uint32_t fromMMA8451Q 	= (isfr_mma & ((1 << MMA8451Q_INT1_PIN) | (1 << MMA8451Q_INT2_PIN)));
 	if (fromMMA8451Q || fromMPU6050)
 	{
 		poll_mma8451q = 1;
@@ -78,7 +87,8 @@ void PORTA_Handler()
 #endif
 	
 	/* check MPU6050 */
-	register uint32_t fromMPU6050	= (isfr & (1 << MPU6050_INT_PIN));
+    register uint32_t isfr_mpu = MPU6050_INT_PORT->ISFR;
+    register uint32_t fromMPU6050 = (isfr_mpu & (1 << MPU6050_INT_PIN));
 	if (fromMPU6050)
 	{
 		poll_mpu6050 = 1;
@@ -91,156 +101,104 @@ void PORTA_Handler()
 	}
 }
 
-/**
- * @brief Sets up the MMA8451Q communication
- */
-void InitMMA8451Q()
-{
-#if ENABLE_MMA8451Q
-	mma8451q_confreg_t configuration;
+/************************************************************************/
+/* I2C arbiter configuration                                            */
+/************************************************************************/
 
-	IO_SendZString("MMA8451Q: initializing ...\r\n");
-	
-	/* configure interrupts for accelerometer */
-	/* INT1_ACCEL is on PTA14, INT2_ACCEL is on PTA15 */
-	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTC_SHIFT) & SIM_SCGC5_PORTC_MASK; /* power to the masses */
-	MMA8451Q_INT_PORT->PCR[MMA8451Q_INT1_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
-	MMA8451Q_INT_PORT->PCR[MMA8451Q_INT2_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
-	MMA8451Q_INT_GPIO->PDDR &= ~(GPIO_PDDR_PDD(1<<MMA8451Q_INT1_PIN) | GPIO_PDDR_PDD(1<<MMA8451Q_INT2_PIN));
-	
-	/* prepare interrupts for pin change / PORTA */
-	NVIC_ICPR |= 1 << 30;	/* clear pending flag */
-	NVIC_ISER |= 1 << 30;	/* enable interrupt */
-	
-	/* switch to the correct port */
-	I2CArbiter_Select(MMA8451Q_I2CADDR);
-	
-	/* perform identity check */
-	uint8_t id = MMA8451Q_WhoAmI();
-	assert(id = 0x1A);
-	IO_SendZString("MMA8451Q: device found.\r\n");
-	
-	/* configure accelerometer */
-	MMA8451Q_EnterPassiveMode();
-	MMA8451Q_Reset();
-	delay_ms(20);
-	
-	/* TODO: Initiate self-test */
-	
-	/* read configuration and modify */
-	MMA8451Q_FetchConfiguration(&configuration);
-	
-	MMA8451Q_SetSensitivity(&configuration, MMA8451Q_SENSITIVITY_2G, MMA8451Q_HPO_DISABLED);
-	MMA8451Q_SetDataRate(&configuration, MMA8451Q_DATARATE_100Hz, MMA8451Q_LOWNOISE_ENABLED);
-	MMA8451Q_SetOversampling(&configuration, MMA8451Q_OVERSAMPLING_HIGHRESOLUTION);
-	MMA8451Q_ClearInterruptConfiguration(&configuration);
-	MMA8451Q_SetInterruptMode(&configuration, MMA8451Q_INTMODE_OPENDRAIN, MMA8451Q_INTPOL_ACTIVELOW);
-	MMA8451Q_ConfigureInterrupt(&configuration, MMA8451Q_INT_DRDY, MMA8451Q_INTPIN_INT2);
-	
-	MMA8451Q_StoreConfiguration(&configuration);
-	MMA8451Q_EnterActiveMode();
-	
-	IO_SendZString("MMA8451Q: configuration done.\r\n");
-#endif
+void InitI2CArbiter()
+{
+    /* prior to configuring the I2C arbiter, enable the clocks required for
+    * the used pins
+    */
+    SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTE_MASK;
+
+    /* configure I2C arbiter
+    * The arbiter takes care of pin selection
+    */
+    I2CArbiter_PrepareEntry(&i2carbiter_entries[0], MMA8451Q_I2CADDR, PORTE, 24, 5, 25, 5);
+    I2CArbiter_PrepareEntry(&i2carbiter_entries[1], MPU6050_I2CADDR, PORTB, 0, 2, 1, 2);
+    I2CArbiter_PrepareEntry(&i2carbiter_entries[2], HMC5883L_I2CADDR, PORTB, 0, 2, 1, 2);
+    I2CArbiter_Configure(i2carbiter_entries, I2CARBITER_COUNT);
+}
+
+/************************************************************************/
+/* Signaling of fusion process                                          */
+/************************************************************************/
+
+#if DATA_FUSE_MODE
+
+/**
+* @brief Sets up the GPIOs for fusion signaling
+*/
+void FusionSignal_Init()
+{
+    /* Set system clock gating to enable gate to port B */
+    SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK;
+
+    /* Set Port B, pin 8 and 9 to GPIO mode */
+    PORTB->PCR[8] = PORT_PCR_MUX(1); /* not using |= assignment here due to some of the flags being undefined at reset */
+    PORTB->PCR[9] = PORT_PCR_MUX(1);
+
+    /* Data direction for port B, pin 8 and 9  to output */
+    GPIOB->PDDR |= GPIO_PDDR_PDD(1 << 8) | GPIO_PDDR_PDD(1 << 9);
 }
 
 /**
- * @brief Sets up the MPU6050 communication
- */
-void InitMPU6050()
+* @brief Sets the fusion predict signal
+*/
+STATIC_INLINE void FusionSignal_Predict()
 {
-	mpu6050_confreg_t configuration;
-	IO_SendZString("MPU6050: initializing ...\r\n");
-	
-	/**
-	 * BUG: see also note in main()
-	 * After power-up the interrupt line toggles
-	 * WORKAROUND:
-	 * Power up, wait for some seconds, then reset. 
-	 */
-	
-	/* switch to the correct port */
-	I2CArbiter_Select(MPU6050_I2CADDR);
-		
-	/* perform identity check */
-	uint8_t value = MPU6050_WhoAmI();
-	assert(value == 0x68);
-	IO_SendZString("MPU6050: device found.\r\n");
-	
-	/* read configuration and modify */
-	MPU6050_FetchConfiguration(&configuration);
-	MPU6050_SetGyroscopeSampleRateDivider(&configuration, 80); /* the gyro samples at 8kHz, so division by 40 --> 200Hz */
-	MPU6050_SetGyroscopeFullScale(&configuration, MPU6050_GYRO_FS_250);
-	MPU6050_SetAccelerometerFullScale(&configuration, MPU6050_ACC_FS_4);
-	MPU6050_ConfigureInterrupts(&configuration, 
-			MPU6050_INTLEVEL_ACTIVELOW, 
-			MPU6050_INTOPEN_OPENDRAIN, 
-			MPU6050_INTLATCH_LATCHED, /* if configured to PULSE the line goes postal */ 
-			MPU6050_INTRDCLEAR_READSTATUS);
-	MPU6050_EnableInterrupts(&configuration, 
-			MPU6050_INT_DISABLED, 
-			MPU6050_INT_DISABLED, 
-			MPU6050_INT_ENABLED); /* enable data ready interrupt */
-	MPU6050_SelectClockSource(&configuration, MPU6050_CLOCK_XGYROPLL);
-	MPU6050_SetSleepMode(&configuration, MPU6050_SLEEP_DISABLED);
-	MPU6050_StoreConfiguration(&configuration);
-	
-	/* configure interrupts for MPU6050 */
-	/* INT is on PTA13 */
-	SIM->SCGC5 |= (1 << SIM_SCGC5_PORTA_SHIFT) & SIM_SCGC5_PORTA_MASK; /* power to the masses */
-	MPU6050_INT_PORT->PCR[MPU6050_INT_PIN] = PORT_PCR_MUX(0x1) | PORT_PCR_IRQC(0b1010) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK; /* interrupt on falling edge, pull-up for open drain/active low line */
-	MPU6050_INT_GPIO->PDDR &= ~(GPIO_PDDR_PDD(1<<MPU6050_INT_PIN));
-	
-	/* prepare interrupts for pin change / PORTA */
-	NVIC_ICPR |= 1 << 30;	/* clear pending flag */
-	NVIC_ISER |= 1 << 30;	/* enable interrupt */	
-	
-	IO_SendZString("MPU6050: configuration done.\r\n");
+    GPIOB->PSOR = 1 << 8;
+    GPIOB->PCOR = 1 << 9;
 }
 
 /**
- * @brief Sets up the HMC5883L communication
- */
-void InitHMC5883L()
+* @brief Clears the fusion update signal
+*/
+STATIC_INLINE void FusionSignal_Update()
 {
-	hmc5883l_confreg_t configuration;
-	IO_SendZString("HMC5883L: initializing ...\r\n");
-	
-	I2CArbiter_Select(HMC5883L_I2CADDR);
-	uint32_t ident = HMC5883L_Identification();
-	assert(ident == 0x00483433);
-	IO_SendZString("HMC5883L: device found.\r\n");
-	
-	/* read configuration and modify */
-	HMC5883L_FetchConfiguration(&configuration);
-	HMC5883L_SetAveraging(&configuration, HMC5883L_MA_1);
-	HMC5883L_SetOutputRate(&configuration, HMC5883L_DO_75Hz);
-	HMC5883L_SetMeasurementMode(&configuration, HMC5883L_MS_NORMAL);
-	HMC5883L_SetGain(&configuration, HMC5883L_GN_1090_1p3Ga);
-	HMC5883L_SetOperatingMode(&configuration, HMC5883L_MD_CONT);
-	HMC5883L_StoreConfiguration(&configuration);
-	
-	IO_SendZString("HMC5883L: configuration done.\r\n");
+    GPIOB->PCOR = 1 << 8;
+    GPIOB->PSOR = 1 << 9;
 }
+
+/**
+* @brief Clears the fusion signal
+*/
+STATIC_INLINE void FusionSignal_Clear()
+{
+    GPIOB->PCOR = (1 << 8) | (1 << 9);
+}
+
+#endif // #if DATA_FUSE_MODE
+
+/************************************************************************/
+/* Main program                                                         */
+/************************************************************************/
 
 int main(void)
 {
-	/* initialize the core clock and the systick timer */
-	InitClock();
-	InitSysTick();
-	
-	/* initialize the RGB led */
-	LED_Init();
-	
-	/* fun fun fun */
-	TrafficLight();
-	DoubleFlash();
-	
-    /* initialize the I2C bus */
-    I2C_Init();
+    /* initialize the core clock and the systick timer */
+    InitClock();
+    InitSysTick();
+
+    /* initialize the RGB led */
+    LED_Init();
 
     /* Initialize UART0 */
     InitUart0();
+
+    /* double rainbow all across the sky */
+    DoubleFlash();
+
+    /* initialize the I2C bus */
+    I2C_Init();
+
+#if DATA_FUSE_MODE
+
+    /* signaling for fusion */
+    FusionSignal_Init();
+
+#endif // DATA_FUSE_MODE
 
     /* initialize UART fifos */
     RingBuffer_Init(&uartInputFifo, &uartInputData, UART_RX_BUFFER_SIZE);
@@ -250,57 +208,95 @@ int main(void)
     Uart0_InitializeIrq(&uartInputFifo, &uartOutputFifo);
     Uart0_EnableReceiveIrq();
 
-	/* prior to configuring the I2C arbiter, enable the clocks required for
-	 * the used pins
-	 */
-	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTE_MASK;
-	
-	/* configure I2C arbiter 
-	 * The arbiter takes care of pin selection 
-	 */
-	I2CArbiter_PrepareEntry(&i2carbiter_entries[0], MMA8451Q_I2CADDR, PORTE, 24, 5, 25, 5);
-	I2CArbiter_PrepareEntry(&i2carbiter_entries[1],  MPU6050_I2CADDR, PORTB,  0, 2,  1, 2);
-	I2CArbiter_PrepareEntry(&i2carbiter_entries[2], HMC5883L_I2CADDR, PORTB,  0, 2,  1, 2);
-	I2CArbiter_Configure(i2carbiter_entries, I2CARBITER_COUNT);
+    /* initialize I2C arbiter */
+    InitI2CArbiter();
 		
 	/* initialize the IMUs */
+    InitHMC5883L();
 	InitMPU6050();
-	InitHMC5883L();
+//    InitMPU6050();
+
+#if ENABLE_MMA8451Q
 	InitMMA8451Q();
-	
+#endif
+
 	/* Wait for the config messages to get flushed */
+    //TrafficLight();
+    DoubleFlash();
 	RingBuffer_BlockWhileNotEmpty(&uartOutputFifo);
 
+#if ENABLE_MMA8451Q
 	/* initialize the MMA8451Q data structure for accelerometer data fetching */
 	mma8451q_acc_t acc;
 	MMA8451Q_InitializeData(&acc);
+#endif
 
 	/* initialize the MPU6050 data structure */
-	mpu6050_sensor_t accgyrotemp;
+    mpu6050_sensor_t accgyrotemp, previous_accgyrotemp;
 	MPU6050_InitializeData(&accgyrotemp);
+    MPU6050_InitializeData(&previous_accgyrotemp);
 	
 	/* initialize the HMC5883L data structure */
-	uint32_t lastHMCRead = 0;
-	const uint32_t readHMCEvery = 1000/75; /* at 75Hz, data come every (1000/75Hz) ms. */
-	hmc5883l_data_t compass;
-	
-	/**
-	 * BUG:
-	 * There seems to be the problem that after power-up the buffers run full immediately
-	 * because too much data is fetched from the sensors.
-	 * After reset, however, everything works fine.
-	 * WORKAROUND:
-	 * Power up, wait for some seconds, then reset. 
-	 */
-	
+	hmc5883l_data_t compass, previous_compass;
+    HMC5883L_InitializeData(&compass);
+    HMC5883L_InitializeData(&previous_compass);
+
+    /* initialize HMC5883L reading */
+    uint32_t lastHMCRead = 0;
+    const uint32_t readHMCEvery = 1000 / 75; /* at 75Hz, data come every (1000/75Hz) ms. */
+    	
+    /************************************************************************/
+    /* Fetch scaler values                                                  */
+    /************************************************************************/
+
+#if DATA_FUSE_MODE
+
+    const fix16_t mpu6050_accelerometer_scaler = mpu6050_accelerometer_get_scaler();
+    const fix16_t mpu6050_gyroscope_scaler = mpu6050_gyroscope_get_scaler();
+    const fix16_t hmc5883l_magnetometer_scaler = hmc5883l_magnetometer_get_scaler();
+
+#endif // DATA_FUSE_MODE
+
+    /************************************************************************/
+    /* Prepare data fusion                                                  */
+    /************************************************************************/
+
+#if DATA_FUSE_MODE
+
+    uint32_t last_transmit_time = 0;
+    uint32_t last_fusion_time = systemTime();
+
+    fusion_initialize();
+
+#endif // DATA_FUSE_MODE
+
+    /************************************************************************/
+    /* Main loop                                                            */
+    /************************************************************************/
+
 	for(;;) 
 	{
+        /* helper variables to track data freshness */
+        uint_fast8_t have_gyro_data = 0;
+        uint_fast8_t have_acc_data = 0;
+        uint_fast8_t have_mag_data = 0;
+
+        /************************************************************************/
+        /* Determine if sensor data fetching is required                        */
+        /************************************************************************/
+
+        /* helper variables for event processing */
 		int eventsProcessed = 0;
-		int readMMA, readMPU, readHMC;
+        int readMPU, readHMC;
+#if ENABLE_MMA8451Q
+        int readMMA;
+#endif
 		
 		/* atomic detection of fresh data */
-		__disable_irq();	
+		__disable_irq();
+#if ENABLE_MMA8451Q
 		readMMA = poll_mma8451q;
+#endif
 		readMPU = poll_mpu6050;
 		poll_mma8451q = 0;
 		poll_mpu6050 = 0;
@@ -318,6 +314,10 @@ int main(void)
 			lastHMCRead = time;
 		}
 
+        /************************************************************************/
+        /* Fetching MPU6050 sensor data if required                             */
+        /************************************************************************/
+
 		/* read accelerometer/gyro */
 		if (readMPU)
 		{
@@ -328,8 +328,24 @@ int main(void)
 			
 			/* mark event as detected */
 			eventsProcessed = 1;
+
+            /* check for data freshness */
+            have_acc_data = (accgyrotemp.accel.x != previous_accgyrotemp.accel.x)
+                || (accgyrotemp.accel.y != previous_accgyrotemp.accel.y)
+                || (accgyrotemp.accel.z != previous_accgyrotemp.accel.z);
+
+            have_gyro_data = (accgyrotemp.gyro.x != previous_accgyrotemp.gyro.x)
+                || (accgyrotemp.gyro.y != previous_accgyrotemp.gyro.y)
+                || (accgyrotemp.gyro.z != previous_accgyrotemp.gyro.z);
+
+            /* loop current data --> previous data */
+            previous_accgyrotemp = accgyrotemp;
 		}
 		
+        /************************************************************************/
+        /* Fetching HMC5883L sensor data if required                            */
+        /************************************************************************/
+
 		/* read compass data */
 		if (readHMC)
 		{
@@ -338,8 +354,20 @@ int main(void)
 			
 			/* mark event as detected */
 			eventsProcessed = 1;
+
+            /* check for data freshness */
+            have_mag_data = (compass.x != previous_compass.x)
+                || (compass.y != previous_compass.y)
+                || (compass.z != previous_compass.z);
+
+            /* loop current data --> previous data */
+            previous_compass = compass;
 		}
 		
+        /************************************************************************/
+        /* Fetching MMA8451Q sensor data if required                            */
+        /************************************************************************/
+
 #if ENABLE_MMA8451Q		
 		/* read accelerometer */
 		if (readMMA)
@@ -354,6 +382,12 @@ int main(void)
 		}
 #endif
 		
+        /************************************************************************/
+        /* Raw sensor data output over serial                                   */
+        /************************************************************************/
+
+#if DATA_FETCH_MODE
+
 		/* data availability + sanity check 
 		 * This sent me on a long bug hunt: Sometimes the interrupt would be raised
 		 * even if not all data registers were written. This always resulted in a
@@ -383,6 +417,103 @@ int main(void)
 		}
 #endif
 		
+#endif // DATA_FETCH_MODE
+
+        /************************************************************************/
+        /* Sensor data fusion                                                   */
+        /************************************************************************/
+
+#if DATA_FUSE_MODE
+
+        // if there were sensor data ...
+        if (eventsProcessed)
+        {
+            // convert, calibrate and store gyroscope data
+            if (have_gyro_data)
+            {
+                v3d gyro;
+                sensor_prepare_mpu6050_gyroscope_data(&gyro, accgyrotemp.gyro.x, accgyrotemp.gyro.y, accgyrotemp.gyro.z, mpu6050_gyroscope_scaler);
+                fusion_set_gyroscope_v3d(&gyro);
+            }
+
+            // convert, calibrate and store accelerometer data
+            if (have_acc_data)
+            {
+                v3d acc;
+                sensor_prepare_mpu6050_accelerometer_data(&acc, accgyrotemp.accel.x, accgyrotemp.accel.y, accgyrotemp.accel.z, mpu6050_accelerometer_scaler);
+                fusion_set_accelerometer_v3d(&acc);
+            }
+
+            // convert, calibrate and store magnetometer data
+            if (have_mag_data)
+            {
+                v3d mag;
+                sensor_prepare_hmc5883l_data(&mag, compass.x, compass.y, compass.z, hmc5883l_magnetometer_scaler);
+                fusion_set_magnetometer_v3d(&mag);
+            }
+
+            // get the time differential
+            const uint32_t current_time = systemTime();
+            const fix16_t deltaT_ms = fix16_from_int(current_time - last_fusion_time);
+            const fix16_t deltaT = fix16_mul(deltaT_ms, F16(0.001));
+            
+            last_fusion_time = current_time;
+
+            FusionSignal_Predict();
+
+            // predict the current measurements
+            fusion_predict(deltaT);
+
+            FusionSignal_Update();
+
+            // correct the measurements
+            fusion_update(deltaT);
+
+            // sanitize state data
+            fusion_sanitize_state();
+
+            FusionSignal_Clear();
+
+            fix16_t yaw, pitch, roll;
+            fusion_fetch_angles(&roll, &pitch, &yaw);
+#if 0
+            float yawf = fix16_to_float(yaw),
+                pitchf = fix16_to_float(pitch),
+                rollf = fix16_to_float(roll);
+            
+            fusion_fetch_angular_velocities(&yaw, &pitch, &roll);
+
+            float omyawf = fix16_to_float(yaw),
+                ompitchf = fix16_to_float(pitch),
+                omrollf = fix16_to_float(roll);
+#endif
+
+#if 0
+            IO_SendInt16((int16_t)yawf);
+            IO_SendInt16((int16_t)pitchf);
+            IO_SendInt16((int16_t)rollf);
+
+            IO_SendByteUncommited('\r');
+            IO_SendByte('\n');
+#else
+            if (current_time - last_transmit_time >= 25)
+            {
+                /* write data */
+                uint8_t type = 0x01;
+                fix16_t buffer[3] = { roll, pitch, yaw };
+                P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)buffer, sizeof(buffer), IO_SendByte);
+
+                last_transmit_time = current_time;
+            }
+#endif
+        }
+
+#endif // DATA_FUSE_MODE
+
+        /************************************************************************/
+        /* Read user data input                                                 */
+        /************************************************************************/
+
 #if 0
 		/* as long as there is data in the buffer */
 		while(!RingBuffer_Empty(&uartInputFifo))
@@ -401,6 +532,10 @@ int main(void)
 		}
 #endif
 		
+        /************************************************************************/
+        /* Save energy if you like to                                           */
+        /************************************************************************/
+
 		/* in case of no events, allow a sleep */
 		if (!eventsProcessed)
 		{
@@ -420,6 +555,8 @@ int main(void)
 #endif
 		}
 	}
-	
+
 	return 0;
 }
+
+#endif // 0

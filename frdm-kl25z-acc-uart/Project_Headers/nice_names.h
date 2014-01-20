@@ -42,7 +42,12 @@
  */
 #ifndef assert
 #define assert(condition) if (!(condition)) { __asm("bkpt"); }
-#define assert_not_null(pointer) if ((void*)0 == (void*)(pointer)) { __asm("bkpt"); }
+#endif
+
+#ifndef DEBUG
+#define assert_not_null(pointer) assert((void*)0 != (void*)(pointer))
+#else
+#define assert_not_null(pointer) ((void)0)
 #endif
 
 #define SIM 	SIM_BASE_PTR

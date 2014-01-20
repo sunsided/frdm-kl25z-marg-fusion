@@ -5,17 +5,17 @@
 BINARYDIR := Debug
 
 #Additional flags
-PREPROCESSOR_MACROS := DEBUG
-INCLUDE_DIRS :=C:/dev/EigeneSources/arm/freescale/frdm-kl25z-acc-uart/Project_Headers C:/dev/EigeneSources/arm/freescale/frdm-kl25z-acc-uart/drivers C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include
+PREPROCESSOR_MACROS := DEBUG FIXMATRIX_MAX_SIZE=9 KALMAN_DISABLE_C FIXMATH_NO_CACHE
+INCLUDE_DIRS :=$(SourceDir)\Project_Headers $(SourceDir)\drivers C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include $(SourceDir)\libraries\libfixmath $(SourceDir)\libraries\libfixmatrix $(SourceDir)\libraries\libfixkalman
 LIBRARY_DIRS :=
 LIBRARY_NAMES :=
 ADDITIONAL_LINKER_INPUTS :=
 MACOS_FRAMEWORKS :=
 
-CFLAGS := -ggdb -ffunction-sections -O0 -std=c99
-CXXFLAGS := -ggdb -ffunction-sections -fno-exceptions -O0 -std=c99
+CFLAGS := -ggdb -ffunction-sections -std=c99 -O0
+CXXFLAGS := -ggdb -ffunction-sections -fno-exceptions -std=c99 -O0
 ASFLAGS :=
-LDFLAGS := -Wl,-gc-sections
+LDFLAGS := -Wl,--gc-sections
 COMMONFLAGS :=
 
 START_GROUP := -Wl,--start-group

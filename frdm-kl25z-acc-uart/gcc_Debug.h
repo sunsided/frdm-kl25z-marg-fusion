@@ -31,6 +31,7 @@
 #define __GCC_ATOMIC_CHAR_LOCK_FREE 1
 #define __FLT_EVAL_METHOD__ 0
 #define __LLACCUM_MAX__ 0X7FFFFFFFFFFFFFFFP-31LLK
+#define FIXMATH_NO_CACHE 1
 #define __GCC_ATOMIC_CHAR32_T_LOCK_FREE 1
 #define __FRACT_FBIT__ 15
 #define __UINT_FAST64_MAX__ 18446744073709551615ULL
@@ -118,7 +119,7 @@
 #define __LACCUM_MAX__ 0X7FFFFFFFFFFFFFFFP-31LK
 #define __INT_FAST16_TYPE__ int
 #define __LDBL_HAS_DENORM__ 1
-//#define __cplusplus 199711L
+#define __cplusplus 199711L
 #define __DEC128_MAX__ 9.999999999999999999999999999999999E6144DL
 #define __INT_LEAST32_MAX__ 2147483647L
 #define __ARM_PCS 1
@@ -207,6 +208,7 @@
 #define __SIZEOF_PTRDIFF_T__ 4
 #define __LACCUM_EPSILON__ 0x1P-31LK
 #define __DEC32_SUBNORMAL_MIN__ 0.000001E-95DF
+#define FIXMATRIX_MAX_SIZE 9
 #define __INT_FAST16_MAX__ 2147483647
 #define __UINT_FAST32_MAX__ 4294967295U
 #define __UINT_LEAST64_TYPE__ long long unsigned int
@@ -301,6 +303,7 @@
 #define __LLFRACT_IBIT__ 0
 #define __INT8_MAX__ 127
 #define __UINT_FAST32_TYPE__ unsigned int
+#define KALMAN_DISABLE_C 1
 #define __CHAR32_TYPE__ long unsigned int
 #define __FLT_MAX__ 3.4028234663852886e+38F
 #define __USACCUM_FBIT__ 8
@@ -348,8 +351,6 @@
 #endif
 
 // --- Include directories begin --- //
-//C:/dev/EigeneSources/arm/freescale/frdm-kl25z-acc-uart/Project_Headers
-//C:/dev/EigeneSources/arm/freescale/frdm-kl25z-acc-uart/drivers
 //C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include
 //C:\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis/KL25Z4
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/include/c++/4.8.2
@@ -359,6 +360,11 @@
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/include-fixed
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/sys-include
 //c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/include
+//$(SourceDir)\Project_Headers
+//$(SourceDir)\drivers
+//$(SourceDir)\libraries\libfixmath
+//$(SourceDir)\libraries\libfixmatrix
+//$(SourceDir)\libraries\libfixkalman
 // --- Library directories end --- //
 
 

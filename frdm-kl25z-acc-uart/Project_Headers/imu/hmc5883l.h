@@ -9,6 +9,7 @@
 #define HMC5883L_H_
 
 #include "derivative.h"
+#include "nice_names.h"
 
 /**
  * @brief I2C slave address of the HMC5883L magnetometer
@@ -184,5 +185,19 @@ void HMC5883L_SetOperatingMode(hmc5883l_confreg_t *const configuration, register
  * @param[inout] data The sensor data
  */
 void HMC5883L_ReadData(hmc5883l_data_t *const data);
+
+
+/**
+* @brief Prepares a data buffer by clearing its values.
+* @param[inout] data The data buffer to clear.
+*/
+static inline void HMC5883L_InitializeData(hmc5883l_data_t *data)
+{
+    assert_not_null(data);
+    data->status = 0;
+    data->x = 0;
+    data->y = 0;
+    data->z = 0;
+}
 
 #endif /* HMC5883L_H_ */
