@@ -6,7 +6,7 @@
 #include "fixvector3d.h"
 #include "fixmatrix.h"
 
-#if !defined(FIXMATRIX_MAX_SIZE) || (FIXMATRIX_MAX_SIZE < 9)
+#if !defined(FIXMATRIX_MAX_SIZE) || (FIXMATRIX_MAX_SIZE < 12)
 #error FIXMATRIX_MAX_SIZE must be defined to value greater or equal 12.
 #endif
 
@@ -21,7 +21,7 @@ static kalman16_uc_t kf_orientation;
 /*!
 * \def KF_STATES Number of states
 */
-#define KF_STATES 9
+#define KF_STATES 12
 
 /*!
 * \brief The Kalman filter observation instance used to update the prediction with integrated difference DCM-only data
@@ -213,14 +213,17 @@ static void initialize_system()
         // gyro: omega_phi
         matrix_set(A, 3, 3, F16_ONE);
         matrix_set(A, 3, 6, dT(initial_dT));
+        matrix_set(A, 3, 9, dT(initial_dT));
 
         // gyro: omega_psi
         matrix_set(A, 4, 4, F16_ONE);
         matrix_set(A, 4, 7, dT(initial_dT));
+        matrix_set(A, 4, 10, dT(initial_dT));
 
         // gyro: omega_theta
         matrix_set(A, 5, 5, F16_ONE);
         matrix_set(A, 5, 8, dT(initial_dT));
+        matrix_set(A, 5, 11, dT(initial_dT));
 
 
         // discrete model
@@ -234,6 +237,18 @@ static void initialize_system()
 
         // gyro: alpha_theta
         matrix_set(A, 8, 8, F16_ONE);
+
+
+        // velocity offset
+
+        // gyro: alpha_phi
+        matrix_set(A, 9, 9, F16_ONE);
+
+        // gyro: alpha_psi
+        matrix_set(A, 10, 10, F16_ONE);
+
+        // gyro: alpha_theta
+        matrix_set(A, 11, 11, F16_ONE);
     }
 
     /************************************************************************/
@@ -256,6 +271,11 @@ static void initialize_system()
         matrix_set(P, 6, 6, F16(1));
         matrix_set(P, 7, 7, F16(1));
         matrix_set(P, 8, 8, F16(1));
+
+        // offsets
+        matrix_set(P, 9, 9, F16(1));
+        matrix_set(P, 10, 10, F16(1));
+        matrix_set(P, 11, 11, F16(1));
     }
 
     /************************************************************************/
@@ -327,6 +347,10 @@ static void initialize_observation_gyro_iddcm()
         matrix_set(H, 6, 3, F16_ONE);
         matrix_set(H, 7, 4, F16_ONE);
         matrix_set(H, 8, 5, F16_ONE);
+
+        matrix_set(H, 6, 9, F16_ONE);
+        matrix_set(H, 7, 10, F16_ONE);
+        matrix_set(H, 8, 11, F16_ONE);
     }
 
     /************************************************************************/
@@ -389,6 +413,10 @@ static void initialize_observation_gyroscope()
         matrix_set(H, 3, 3, F16_ONE);
         matrix_set(H, 4, 4, F16_ONE);
         matrix_set(H, 5, 5, F16_ONE);
+
+        matrix_set(H, 3, 9, F16_ONE);
+        matrix_set(H, 4, 10, F16_ONE);
+        matrix_set(H, 5, 11, F16_ONE);
     }
 
     /************************************************************************/
@@ -566,12 +594,15 @@ void fusion_predict(register const fix16_t deltaT)
         
         // gyro: omega_phi
         matrix_set(A, 3, 6, deltaT); 
+        matrix_set(A, 3, 9, -deltaT);
 
         // gyro: omega_psi
         matrix_set(A, 4, 7, deltaT);
+        matrix_set(A, 4, 10, -deltaT);
 
         // gyro: omega_theta
         matrix_set(A, 5, 8, deltaT);
+        matrix_set(A, 5, 11, -deltaT);
     }
 
 #if 0
@@ -601,13 +632,13 @@ void fusion_predict(register const fix16_t deltaT)
         /************************************************************************/
 
         // gyro: velocity phi
-        x->data[6][0] = fix16_add(omega_x, fix16_mul(alpha_x, deltaT));
+        x->data[6][0] = fix16_sub(fix16_add(omega_x, fix16_mul(alpha_x, deltaT)), fix16_mul(x->data[9][0], deltaT));
 
         // gyro: velocity psi
-        x->data[7][0] = fix16_add(omega_y, fix16_mul(alpha_y, deltaT));
+        x->data[7][0] = fix16_sub(fix16_add(omega_y, fix16_mul(alpha_y, deltaT)), fix16_mul(x->data[10][0], deltaT));
 
         // gyro: velocity theta
-        x->data[8][0] = fix16_add(omega_z, fix16_mul(alpha_z, deltaT));
+        x->data[8][0] = fix16_sub(fix16_add(omega_z, fix16_mul(alpha_z, deltaT)), fix16_mul(x->data[11][0], deltaT));
 
         /************************************************************************/
         /* Prepare ...                                                          */
@@ -789,11 +820,6 @@ void fusion_update_using_iddcm_only(register const fix16_t deltaT)
             state_previous_dcm.data[r][c] = dcm.data[r][c];
         }
     }
-
-    // convert to angle
-    om_roll = fix16_rad_to_deg(om_roll);
-    om_pitch = fix16_rad_to_deg(om_pitch);
-    om_yaw = fix16_rad_to_deg(om_yaw);
 
     // angle += velocity * dT
     // note that dT is already contained in the dDCM.
