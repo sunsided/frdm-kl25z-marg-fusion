@@ -33,7 +33,7 @@ static kalman16_observation_t kfm_iddcm;
 /*!
 * \def KFM_IDDCM Number of observation variables for integrated difference DCM-only updates
 */
-#define KFM_IDDCM 3
+#define KFM_IDDCM 6
 
 /*!
 * \brief The Kalman filter observation instance used to update the prediction with gyroscope-only data.
@@ -62,7 +62,7 @@ static kalman16_observation_t kfm_gyro_iddcm;
 /*!
 * \brief Lambda parameter for certainty tuning
 */
-static fix16_t lambda = F16(0.985);
+static fix16_t lambda = F16(1);
 
 /*!
 * \brief The current accelerometer measurements
@@ -213,17 +213,17 @@ static void initialize_system()
         // gyro: omega_phi
         matrix_set(A, 3, 3, F16_ONE);
         matrix_set(A, 3, 6, dT(initial_dT));
-        matrix_set(A, 3, 9, dT(initial_dT));
+        matrix_set(A, 3, 9, -dT(initial_dT));
 
         // gyro: omega_psi
         matrix_set(A, 4, 4, F16_ONE);
         matrix_set(A, 4, 7, dT(initial_dT));
-        matrix_set(A, 4, 10, dT(initial_dT));
+        matrix_set(A, 4, 10, -dT(initial_dT));
 
         // gyro: omega_theta
         matrix_set(A, 5, 5, F16_ONE);
         matrix_set(A, 5, 8, dT(initial_dT));
-        matrix_set(A, 5, 11, dT(initial_dT));
+        matrix_set(A, 5, 11, -dT(initial_dT));
 
 
         // discrete model
@@ -273,9 +273,9 @@ static void initialize_system()
         matrix_set(P, 8, 8, F16(1));
 
         // offsets
-        matrix_set(P, 9, 9, F16(1));
-        matrix_set(P, 10, 10, F16(1));
-        matrix_set(P, 11, 11, F16(1));
+        matrix_set(P, 9, 9, F16(.1));
+        matrix_set(P, 10, 10, F16(.1));
+        matrix_set(P, 11, 11, F16(.1));
     }
 
     /************************************************************************/
@@ -286,8 +286,45 @@ static void initialize_system()
     /************************************************************************/
     /* Set system process noise                                             */
     /************************************************************************/
-    // intentionally left blank, because the initialize function already set the matrix to zero
-    // zero is a rather bad estimate though, so fill this or use appropriate lambda tuning.
+    {
+        mf16 *const Q = &kf->Q;
+
+        // phi, psi and theta variances
+        matrix_set(Q, 0, 0, F16(0.2));
+        matrix_set(Q, 1, 1, F16(0.2));
+        matrix_set(Q, 2, 2, F16(0.2));
+
+        // omega_phi, omega_psi and omega_theta variances from direct gyro
+        matrix_set(Q, 3, 3, F16(.1));
+        matrix_set(Q, 4, 4, F16(.1));
+        matrix_set(Q, 5, 5, F16(.1));
+
+        // alpha_phi, alpha_psi and alpha_theta variances from direct gyro
+        matrix_set(Q, 6, 6, F16(.4));
+        matrix_set(Q, 7, 7, F16(.4));
+        matrix_set(Q, 8, 8, F16(.4));
+
+        // offsets
+        matrix_set(Q, 9, 9, F16(0.001));
+        matrix_set(Q, 10, 10, F16(0.001));
+        matrix_set(Q, 11, 11, F16(0.001));
+
+        matrix_set_symmetric(Q, 0, 3, F16(0.0061407));
+        matrix_set_symmetric(Q, 1, 4, F16(0.0061407));
+        matrix_set_symmetric(Q, 2, 5, F16(0.0061407));
+
+        matrix_set_symmetric(Q, 0, 6, F16(0.0001));
+        matrix_set_symmetric(Q, 1, 7, F16(0.0001));
+        matrix_set_symmetric(Q, 2, 8, F16(0.0001));
+
+        matrix_set_symmetric(Q, 3, 6, F16(0.01228));
+        matrix_set_symmetric(Q, 4, 7, F16(0.01228));
+        matrix_set_symmetric(Q, 5, 8, F16(0.01228));
+
+        matrix_set_symmetric(Q, 3, 9, F16(-0.000767));
+        matrix_set_symmetric(Q, 4, 10, F16(-0.000767));
+        matrix_set_symmetric(Q, 5, 11, F16(-0.000767));
+    }
 }
 
 /*!
@@ -308,6 +345,10 @@ static void initialize_observation_iddcm()
         matrix_set(H, 0, 0, F16_ONE);
         matrix_set(H, 1, 1, F16_ONE);
         matrix_set(H, 2, 2, F16_ONE);
+
+        matrix_set(H, 3, 3, F16_ONE);
+        matrix_set(H, 4, 4, F16_ONE);
+        matrix_set(H, 5, 5, F16_ONE);
     }
 
     /************************************************************************/
@@ -316,9 +357,13 @@ static void initialize_observation_iddcm()
     {
         mf16 *const R = &kfm->R;
 
-        matrix_set(R, 0, 0, F16(10.087));
-        matrix_set(R, 1, 1, F16(6.1297));
-        matrix_set(R, 2, 2, F16(8.8969));
+        matrix_set(R, 0, 0, F16(4));
+        matrix_set(R, 1, 1, F16(4));
+        matrix_set(R, 2, 2, F16(4));
+
+        matrix_set(R, 3, 3, F16(8));
+        matrix_set(R, 4, 4, F16(8));
+        matrix_set(R, 5, 5, F16(8));
     }
 }
 
@@ -836,8 +881,12 @@ void fusion_update_using_iddcm_only(register const fix16_t deltaT)
         matrix_set(z, 0, 0, state_ypr_from_iddcm.x);
         matrix_set(z, 1, 0, state_ypr_from_iddcm.y);
         matrix_set(z, 2, 0, state_ypr_from_iddcm.z);
-    }
 
+        matrix_set(z, 3, 0, om_roll);
+        matrix_set(z, 4, 0, om_pitch);
+        matrix_set(z, 5, 0, om_yaw);
+    }
+    
     /************************************************************************/
     /* Perform Kalman update                                                */
     /************************************************************************/

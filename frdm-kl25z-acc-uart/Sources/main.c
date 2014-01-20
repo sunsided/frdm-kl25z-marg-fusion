@@ -496,7 +496,7 @@ int main(void)
             IO_SendByteUncommited('\r');
             IO_SendByte('\n');
 #else
-            if (current_time - last_transmit_time >= 25)
+            if (current_time - last_transmit_time >= 100)
             {
                 /* write data */
                 uint8_t type = 0x01;
