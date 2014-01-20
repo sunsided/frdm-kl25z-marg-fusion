@@ -1,6 +1,21 @@
 #include "fixmath.h"
 #include "fusion/sensor_dcm.h"
 
+static v3d coordinate_system[3] = { { F16(1), 0, 0 }, { 0, F16(1), 0 }, { 0, 0, F16(1) } };
+
+/*!
+* \brief Gets the last calculated coordinate system
+* \param[out] x The X axis
+* \param[out] y The Y axis
+* \param[out] z The Z axis
+*/
+void sensor_get_csys(v3d *x, v3d *y, v3d *z) 
+{
+    *x = coordinate_system[0];
+    *y = coordinate_system[2];
+    *z = coordinate_system[3];
+}
+
 /*!
 * \brief Builds a DCM from the given calibrated sensor values
 * \param[out] dcm The DCM matrix to write to
@@ -39,21 +54,26 @@ void sensor_dcm(mf16 *const dcm,
     v3d_cross(&Z, &X, &Y);
     v3d_normalize(&Z, &Z);
 
+    coordinate_system[0] = X;
+    coordinate_system[1] = Y;
+    coordinate_system[2] = Z;
+
     /*
         The direction cosine matrix is defined as the matrix of dot products
         between all vector components.
 
         DCM = [ ...
-            dot(X, x),  dot(Y, x),  dot(Z, x);
-            dot(X, y),  dot(Y, y),  dot(Z, y);
-            dot(X, z),  dot(Y, z),  dot(Z, z);
-            ];
+        dot(X, x),  dot(Y, x),  dot(Z, x);
+        dot(X, y),  dot(Y, y),  dot(Z, y);
+        dot(X, z),  dot(Y, z),  dot(Z, z);
+        ];
 
         The interesting part for us is that the reference system is
         the world coordinate system in unit vectors, so the dot products
         essentially only select components.
-    */
+        */
 
+#if 1
     dcm->data[0][0] = X.x;
     dcm->data[0][1] = Y.x;
     dcm->data[0][2] = Z.x;
@@ -65,6 +85,19 @@ void sensor_dcm(mf16 *const dcm,
     dcm->data[2][0] = X.z;
     dcm->data[2][1] = Y.z;
     dcm->data[2][2] = Z.z;
+#else
+    dcm->data[0][0] = X.x;
+    dcm->data[1][0] = Y.x;
+    dcm->data[2][0] = Z.x;
+
+    dcm->data[0][1] = X.y;
+    dcm->data[1][1] = Y.y;
+    dcm->data[2][1] = Z.y;
+
+    dcm->data[0][2] = X.z;
+    dcm->data[1][2] = Y.z;
+    dcm->data[2][2] = Z.z;
+#endif
 
     dcm->rows = dcm->columns = 3;
 }
@@ -77,11 +110,17 @@ void sensor_dcm(mf16 *const dcm,
 */
 void sensor_dcm2rpy(const mf16 *RESTRICT const dcm, fix16_t *RESTRICT const roll, fix16_t *RESTRICT const pitch, fix16_t *RESTRICT const yaw)
 {
+#if 1
     // extract angles
     // see: William Premerlani, "Computing Euler Angles from Direction Cosines"
     *pitch = -fix16_asin(dcm->data[0][2]);
     *roll = fix16_atan2(dcm->data[1][2], dcm->data[2][2]);
     *yaw = fix16_atan2(dcm->data[0][1], dcm->data[0][0]);
+#else
+    *pitch = -fix16_asin(dcm->data[2][0]);
+    *roll = fix16_atan2(dcm->data[2][1], dcm->data[2][2]);
+    *yaw = fix16_atan2(dcm->data[1][0], dcm->data[0][0]);
+#endif
 }
 
 /*!
@@ -95,6 +134,6 @@ void sensor_dcm2rpy(const mf16 *RESTRICT const dcm, fix16_t *RESTRICT const roll
 void sensor_ddcm(const mf16 *RESTRICT const current_dcm, const mf16 *RESTRICT const previous_dcm, fix16_t *RESTRICT const omega_roll, fix16_t *RESTRICT const omega_pitch, fix16_t *RESTRICT const omega_yaw)
 {
     mf16 ddcm;
-    mf16_mul_at(&ddcm, current_dcm, previous_dcm);
+    mf16_mul_bt(&ddcm, current_dcm, previous_dcm);
     sensor_dcm2rpy(&ddcm, omega_roll, omega_pitch, omega_yaw);
 }

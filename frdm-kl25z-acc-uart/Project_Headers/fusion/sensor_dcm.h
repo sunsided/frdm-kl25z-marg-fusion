@@ -39,4 +39,12 @@ void sensor_dcm2rpy(const mf16 *RESTRICT const dcm, fix16_t *RESTRICT const roll
 */
 void sensor_ddcm(const mf16 *RESTRICT const current_dcm, const mf16 *RESTRICT const previous_dcm, fix16_t *RESTRICT const omega_roll, fix16_t *RESTRICT const omega_pitch, fix16_t *RESTRICT const omega_yaw) HOT NONNULL;
 
+/*!
+* \brief Gets the last calculated coordinate system
+* \param[out] x The X axis
+* \param[out] y The Y axis
+* \param[out] z The Z axis
+*/
+void sensor_get_csys(v3d *x, v3d *y, v3d *z);
+
 #endif // SENSOR_DDCM_H_

@@ -62,7 +62,7 @@ static kalman16_observation_t kfm_gyro_iddcm;
 /*!
 * \brief Lambda parameter for certainty tuning
 */
-static fix16_t lambda = F16(0.98);
+static fix16_t lambda = F16(0.985);
 
 /*!
 * \brief The current accelerometer measurements
@@ -335,17 +335,17 @@ static void initialize_observation_gyro_iddcm()
     {
         mf16 *const R = &kfm->R;
 
-        matrix_set(R, 0, 0, F16(10));
-        matrix_set(R, 1, 1, F16(10));
-        matrix_set(R, 2, 2, F16(10));
+        matrix_set(R, 0, 0, F16(5));
+        matrix_set(R, 1, 1, F16(5));
+        matrix_set(R, 2, 2, F16(5));
 
-        matrix_set(R, 3, 3, F16(3));
-        matrix_set(R, 4, 4, F16(3));
-        matrix_set(R, 5, 5, F16(3));
+        matrix_set(R, 3, 3, F16(2));
+        matrix_set(R, 4, 4, F16(2));
+        matrix_set(R, 5, 5, F16(2));
 
-        matrix_set(R, 6, 6, F16(5));
-        matrix_set(R, 7, 7, F16(5));
-        matrix_set(R, 8, 8, F16(5));
+        matrix_set(R, 6, 6, F16(.3));
+        matrix_set(R, 7, 7, F16(.3));
+        matrix_set(R, 8, 8, F16(.3));
 
         matrix_set_symmetric(R, 0, 3, F16_ONE);
         matrix_set_symmetric(R, 1, 4, F16_ONE);
@@ -752,7 +752,7 @@ void fusion_update_using_iddcm_only(register const fix16_t deltaT)
     fix16_t om_yaw, om_pitch, om_roll;
     if (true == state_has_previous_dcm)
     {
-        sensor_ddcm(&dcm, &state_previous_dcm, &om_yaw, &om_pitch, &om_roll);
+        sensor_ddcm(&dcm, &state_previous_dcm, &om_roll, &om_pitch, &om_yaw);
 
         // convert to angle
         om_yaw = fix16_rad_to_deg(om_yaw);
@@ -762,7 +762,7 @@ void fusion_update_using_iddcm_only(register const fix16_t deltaT)
     else
     {
         fix16_t yaw, pitch, roll;
-        sensor_dcm2rpy(&dcm, &yaw, &pitch, &roll);
+        sensor_dcm2rpy(&dcm, &roll, &pitch, &yaw);
 
         // convert to angle
         yaw = fix16_rad_to_deg(yaw);
@@ -770,14 +770,14 @@ void fusion_update_using_iddcm_only(register const fix16_t deltaT)
         roll = fix16_rad_to_deg(roll);
 
         // bootstrap iddcm state
-        state_ypr_from_iddcm.x = yaw;
+        state_ypr_from_iddcm.x = roll;
         state_ypr_from_iddcm.y = pitch;
-        state_ypr_from_iddcm.z = roll;
+        state_ypr_from_iddcm.z = yaw;
 
         // bootstrap gyro state
-        state_ypr_from_gyro.x = yaw;
+        state_ypr_from_gyro.x = roll;
         state_ypr_from_gyro.y = pitch;
-        state_ypr_from_gyro.z = roll;
+        state_ypr_from_gyro.z = yaw;
     }
 
     // save current DCM --> previous DCM
@@ -791,15 +791,15 @@ void fusion_update_using_iddcm_only(register const fix16_t deltaT)
     }
 
     // convert to angle
-    om_yaw = fix16_rad_to_deg(om_yaw);
-    om_pitch = fix16_rad_to_deg(om_pitch);
     om_roll = fix16_rad_to_deg(om_roll);
+    om_pitch = fix16_rad_to_deg(om_pitch);
+    om_yaw = fix16_rad_to_deg(om_yaw);
 
     // angle += velocity * dT
     // note that dT is already contained in the dDCM.
-    state_ypr_from_iddcm.x = fix16_add(state_ypr_from_iddcm.x, om_yaw);
+    state_ypr_from_iddcm.x = fix16_add(state_ypr_from_iddcm.x, om_roll);
     state_ypr_from_iddcm.y = fix16_add(state_ypr_from_iddcm.y, om_pitch);
-    state_ypr_from_iddcm.z = fix16_add(state_ypr_from_iddcm.z, om_roll);
+    state_ypr_from_iddcm.z = fix16_add(state_ypr_from_iddcm.z, om_yaw);
 
     /************************************************************************/
     /* Prepare measurement                                                  */
@@ -840,7 +840,7 @@ void fusion_update_using_gyro_and_iddcm(register const fix16_t deltaT)
     fix16_t om_yaw = 0, om_pitch = 0, om_roll = 0;
     if (true == state_has_previous_dcm)
     {
-        sensor_ddcm(&dcm, &state_previous_dcm, &om_yaw, &om_pitch, &om_roll);
+        sensor_ddcm(&dcm, &state_previous_dcm, &om_roll, &om_pitch, &om_yaw);
 
         // convert to angle
         om_yaw = fix16_rad_to_deg(om_yaw);
@@ -850,7 +850,7 @@ void fusion_update_using_gyro_and_iddcm(register const fix16_t deltaT)
     else
     {
         fix16_t yaw, pitch, roll;
-        sensor_dcm2rpy(&dcm, &yaw, &pitch, &roll);
+        sensor_dcm2rpy(&dcm, &roll, &pitch, &yaw);
 
         // convert to angle
         yaw = fix16_rad_to_deg(yaw);
@@ -858,14 +858,14 @@ void fusion_update_using_gyro_and_iddcm(register const fix16_t deltaT)
         roll = fix16_rad_to_deg(roll);
 
         // bootstrap iddcm state
-        state_ypr_from_iddcm.x = yaw;
+        state_ypr_from_iddcm.x = roll;
         state_ypr_from_iddcm.y = pitch;
-        state_ypr_from_iddcm.z = roll;
+        state_ypr_from_iddcm.z = yaw;
 
         // bootstrap gyro state
-        state_ypr_from_gyro.x = yaw;
+        state_ypr_from_gyro.x = roll;
         state_ypr_from_gyro.y = pitch;
-        state_ypr_from_gyro.z = roll;
+        state_ypr_from_gyro.z = yaw;
     }
     
     // save current DCM --> previous DCM
@@ -894,9 +894,9 @@ void fusion_update_using_gyro_and_iddcm(register const fix16_t deltaT)
 
     // angle += velocity * dT
     // note that dT is already contained in the dDCM.
-    state_ypr_from_iddcm.x = fix16_add(state_ypr_from_iddcm.x, om_yaw);
+    state_ypr_from_iddcm.x = fix16_add(state_ypr_from_iddcm.x, om_roll);
     state_ypr_from_iddcm.y = fix16_add(state_ypr_from_iddcm.y, om_pitch);
-    state_ypr_from_iddcm.z = fix16_add(state_ypr_from_iddcm.z, om_roll);
+    state_ypr_from_iddcm.z = fix16_add(state_ypr_from_iddcm.z, om_yaw);
 
     /************************************************************************/
     /* Prepare gyroscope data                                               */

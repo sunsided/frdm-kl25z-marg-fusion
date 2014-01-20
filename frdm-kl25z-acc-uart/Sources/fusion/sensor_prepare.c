@@ -68,16 +68,10 @@ void sensor_prepare_mpu6050_gyroscope_data(v3d *const out, int16_t rawx, int16_t
     // calibrate!
     mpu6050_calibrate_gyroscope_v3d(out);
 
-    // convert to angle
-    out->x = fix16_rad_to_deg(out->x);
-    out->y = fix16_rad_to_deg(out->y);
-    out->z = fix16_rad_to_deg(out->z);
+    // data is already in degree
 
-#if 0
-    float cx = fix16_to_float(out->x);
-    float cy = fix16_to_float(out->y);
-    float cz = fix16_to_float(out->z);
-#endif
+    out->x = -out->x;
+    out->y = -out->y;
 }
 
 /*!

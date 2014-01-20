@@ -263,6 +263,7 @@ int main(void)
 
 #if DATA_FUSE_MODE
 
+    uint32_t last_transmit_time = 0;
     uint32_t last_fusion_time = systemTime();
 
     fusion_initialize();
@@ -474,8 +475,8 @@ int main(void)
             FusionSignal_Clear();
 
             fix16_t yaw, pitch, roll;
-            fusion_fetch_angles(&yaw, &pitch, &roll);
-
+            fusion_fetch_angles(&roll, &pitch, &yaw);
+#if 0
             float yawf = fix16_to_float(yaw),
                 pitchf = fix16_to_float(pitch),
                 rollf = fix16_to_float(roll);
@@ -485,13 +486,26 @@ int main(void)
             float omyawf = fix16_to_float(yaw),
                 ompitchf = fix16_to_float(pitch),
                 omrollf = fix16_to_float(roll);
+#endif
 
+#if 0
             IO_SendInt16((int16_t)yawf);
             IO_SendInt16((int16_t)pitchf);
             IO_SendInt16((int16_t)rollf);
 
             IO_SendByteUncommited('\r');
             IO_SendByte('\n');
+#else
+            if (current_time - last_transmit_time >= 25)
+            {
+                /* write data */
+                uint8_t type = 0x01;
+                fix16_t buffer[3] = { roll, pitch, yaw };
+                P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)buffer, sizeof(buffer), IO_SendByte);
+
+                last_transmit_time = current_time;
+            }
+#endif
         }
 
 #endif // DATA_FUSE_MODE
