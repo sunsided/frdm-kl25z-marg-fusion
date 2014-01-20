@@ -21,7 +21,7 @@ static kalman16_uc_t kf_orientation;
 /*!
 * \def KF_STATES Number of states
 */
-#define KF_STATES 12
+#define KF_STATES 9
 
 /*!
 * \brief The Kalman filter observation instance used to update the prediction with integrated difference DCM-only data
@@ -45,7 +45,7 @@ static kalman16_observation_t kfm_gyro;
 /*!
 * \def KFM_GYRO Number of observation variables for gyroscope-only updates
 */
-#define KFM_GYRO 6
+#define KFM_GYRO 3
 
 /*!
 * \brief The Kalman filter observation instance used to update the prediction with gyroscope and iddcm data.
@@ -57,12 +57,12 @@ static kalman16_observation_t kfm_gyro_iddcm;
 /*!
 * \def KFM_GYRO Number of observation variables for gyroscope-only updates
 */
-#define KFM_GYROIDDCM 9
+#define KFM_GYROIDDCM 12
 
 /*!
 * \brief Lambda parameter for certainty tuning
 */
-static fix16_t lambda = F16(1);
+static fix16_t lambda = F16(0.99);
 
 /*!
 * \brief The current accelerometer measurements
@@ -213,17 +213,14 @@ static void initialize_system()
         // gyro: omega_phi
         matrix_set(A, 3, 3, F16_ONE);
         matrix_set(A, 3, 6, dT(initial_dT));
-        matrix_set(A, 3, 9, -dT(initial_dT));
 
         // gyro: omega_psi
         matrix_set(A, 4, 4, F16_ONE);
         matrix_set(A, 4, 7, dT(initial_dT));
-        matrix_set(A, 4, 10, -dT(initial_dT));
 
         // gyro: omega_theta
         matrix_set(A, 5, 5, F16_ONE);
         matrix_set(A, 5, 8, dT(initial_dT));
-        matrix_set(A, 5, 11, -dT(initial_dT));
 
 
         // discrete model
@@ -237,18 +234,6 @@ static void initialize_system()
 
         // gyro: alpha_theta
         matrix_set(A, 8, 8, F16_ONE);
-
-
-        // velocity offset
-
-        // gyro: alpha_phi
-        matrix_set(A, 9, 9, F16_ONE);
-
-        // gyro: alpha_psi
-        matrix_set(A, 10, 10, F16_ONE);
-
-        // gyro: alpha_theta
-        matrix_set(A, 11, 11, F16_ONE);
     }
 
     /************************************************************************/
@@ -271,17 +256,13 @@ static void initialize_system()
         matrix_set(P, 6, 6, F16(1));
         matrix_set(P, 7, 7, F16(1));
         matrix_set(P, 8, 8, F16(1));
-
-        // offsets
-        matrix_set(P, 9, 9, F16(.1));
-        matrix_set(P, 10, 10, F16(.1));
-        matrix_set(P, 11, 11, F16(.1));
     }
 
     /************************************************************************/
     /* Set state covariances                                                */
     /************************************************************************/
-    // intentionally left blank
+    {
+    }
 
     /************************************************************************/
     /* Set system process noise                                             */
@@ -290,25 +271,20 @@ static void initialize_system()
         mf16 *const Q = &kf->Q;
 
         // phi, psi and theta variances
-        matrix_set(Q, 0, 0, F16(0.2));
-        matrix_set(Q, 1, 1, F16(0.2));
-        matrix_set(Q, 2, 2, F16(0.2));
+        matrix_set(Q, 0, 0, F16(0.05));
+        matrix_set(Q, 1, 1, F16(0.05));
+        matrix_set(Q, 2, 2, F16(0.05));
 
         // omega_phi, omega_psi and omega_theta variances from direct gyro
-        matrix_set(Q, 3, 3, F16(.1));
-        matrix_set(Q, 4, 4, F16(.1));
-        matrix_set(Q, 5, 5, F16(.1));
+        matrix_set(Q, 3, 3, F16(.02));
+        matrix_set(Q, 4, 4, F16(.02));
+        matrix_set(Q, 5, 5, F16(0.2));
 
         // alpha_phi, alpha_psi and alpha_theta variances from direct gyro
-        matrix_set(Q, 6, 6, F16(.4));
-        matrix_set(Q, 7, 7, F16(.4));
-        matrix_set(Q, 8, 8, F16(.4));
-
-        // offsets
-        matrix_set(Q, 9, 9, F16(0.001));
-        matrix_set(Q, 10, 10, F16(0.001));
-        matrix_set(Q, 11, 11, F16(0.001));
-
+        matrix_set(Q, 6, 6, F16(.04));
+        matrix_set(Q, 7, 7, F16(.04));
+        matrix_set(Q, 8, 8, F16(.04));
+        
         matrix_set_symmetric(Q, 0, 3, F16(0.0061407));
         matrix_set_symmetric(Q, 1, 4, F16(0.0061407));
         matrix_set_symmetric(Q, 2, 5, F16(0.0061407));
@@ -320,10 +296,6 @@ static void initialize_system()
         matrix_set_symmetric(Q, 3, 6, F16(0.01228));
         matrix_set_symmetric(Q, 4, 7, F16(0.01228));
         matrix_set_symmetric(Q, 5, 8, F16(0.01228));
-
-        matrix_set_symmetric(Q, 3, 9, F16(-0.000767));
-        matrix_set_symmetric(Q, 4, 10, F16(-0.000767));
-        matrix_set_symmetric(Q, 5, 11, F16(-0.000767));
     }
 }
 
@@ -342,10 +314,12 @@ static void initialize_observation_iddcm()
     {
         mf16 *const H = &kfm->H;
 
+        // angles
         matrix_set(H, 0, 0, F16_ONE);
         matrix_set(H, 1, 1, F16_ONE);
         matrix_set(H, 2, 2, F16_ONE);
 
+        // angular velocity
         matrix_set(H, 3, 3, F16_ONE);
         matrix_set(H, 4, 4, F16_ONE);
         matrix_set(H, 5, 5, F16_ONE);
@@ -357,13 +331,13 @@ static void initialize_observation_iddcm()
     {
         mf16 *const R = &kfm->R;
 
-        matrix_set(R, 0, 0, F16(4));
-        matrix_set(R, 1, 1, F16(4));
-        matrix_set(R, 2, 2, F16(4));
+        matrix_set(R, 0, 0, F16(0.5));
+        matrix_set(R, 1, 1, F16(0.5));
+        matrix_set(R, 2, 2, F16(0.5));
 
-        matrix_set(R, 3, 3, F16(8));
-        matrix_set(R, 4, 4, F16(8));
-        matrix_set(R, 5, 5, F16(8));
+        matrix_set(R, 3, 3, F16(2));
+        matrix_set(R, 4, 4, F16(2));
+        matrix_set(R, 5, 5, F16(2));
     }
 }
 
@@ -381,21 +355,26 @@ static void initialize_observation_gyro_iddcm()
     /************************************************************************/
     {
         mf16 *const H = &kfm->H;
+
+        // angles iddcm
         matrix_set(H, 0, 0, F16_ONE);
         matrix_set(H, 1, 1, F16_ONE);
         matrix_set(H, 2, 2, F16_ONE);
 
+        // angles gyro
         matrix_set(H, 3, 0, F16_ONE);
         matrix_set(H, 4, 1, F16_ONE);
         matrix_set(H, 5, 2, F16_ONE);
 
+        // angular velocity ddcm
         matrix_set(H, 6, 3, F16_ONE);
         matrix_set(H, 7, 4, F16_ONE);
         matrix_set(H, 8, 5, F16_ONE);
-
-        matrix_set(H, 6, 9, F16_ONE);
-        matrix_set(H, 7, 10, F16_ONE);
-        matrix_set(H, 8, 11, F16_ONE);
+        
+        // angular velocity gyro
+        matrix_set(H, 9, 3, F16_ONE);
+        matrix_set(H, 10, 4, F16_ONE);
+        matrix_set(H, 11, 5, F16_ONE);
     }
 
     /************************************************************************/
@@ -404,35 +383,49 @@ static void initialize_observation_gyro_iddcm()
     {
         mf16 *const R = &kfm->R;
 
-        matrix_set(R, 0, 0, F16(5));
-        matrix_set(R, 1, 1, F16(5));
-        matrix_set(R, 2, 2, F16(5));
+        matrix_set(R, 0, 0, F16(0.1));
+        matrix_set(R, 1, 1, F16(0.1));
+        matrix_set(R, 2, 2, F16(0.1));
 
-        matrix_set(R, 3, 3, F16(2));
-        matrix_set(R, 4, 4, F16(2));
-        matrix_set(R, 5, 5, F16(2));
+        matrix_set(R, 3, 3, F16(2.5));
+        matrix_set(R, 4, 4, F16(2.2));
+        matrix_set(R, 5, 5, F16(1.9));
 
         matrix_set(R, 6, 6, F16(.3));
         matrix_set(R, 7, 7, F16(.3));
         matrix_set(R, 8, 8, F16(.3));
 
-        matrix_set_symmetric(R, 0, 3, F16_ONE);
-        matrix_set_symmetric(R, 1, 4, F16_ONE);
-        matrix_set_symmetric(R, 2, 5, F16_ONE);
+        matrix_set(R, 9, 9, F16(.5));
+        matrix_set(R, 10, 10, F16(.45));
+        matrix_set(R, 11, 11, F16(.4));
 
-        /*
-        matrix_set_symmetric(R, 0, 3, F16(0.1));
-        matrix_set_symmetric(R, 0, 4, F16(0.67));
-        matrix_set_symmetric(R, 0, 5, F16(1.24));
+        matrix_set_symmetric(R, 0, 3, F16(0.4));
+        matrix_set_symmetric(R, 1, 4, F16(0.4));
+        matrix_set_symmetric(R, 2, 5, F16(0.4));
 
-        matrix_set_symmetric(R, 1, 3, F16(0.18));
-        matrix_set_symmetric(R, 1, 4, F16(0.065));
-        matrix_set_symmetric(R, 1, 5, F16(0.43));
+        matrix_set_symmetric(R, 6, 9, F16(.05));
+        matrix_set_symmetric(R, 7, 10, F16(.05));
+        matrix_set_symmetric(R, 8, 11, F16(.05));
 
-        matrix_set_symmetric(R, 2, 3, F16(0.26));
-        matrix_set_symmetric(R, 2, 4, F16(0.05));
-        matrix_set_symmetric(R, 2, 5, F16(1.02));
-        */
+#if 0
+
+        matrix_set_symmetric(R, 0, 6, F16(0.004));
+        matrix_set_symmetric(R, 1, 7, F16(0.004));
+        matrix_set_symmetric(R, 2, 8, F16(0.004));
+
+        matrix_set_symmetric(R, 0, 9, F16(0.003));
+        matrix_set_symmetric(R, 1, 10, F16(0.003));
+        matrix_set_symmetric(R, 2, 11, F16(0.003));
+
+        matrix_set_symmetric(R, 3, 6, F16(0.004));
+        matrix_set_symmetric(R, 4, 7, F16(0.004));
+        matrix_set_symmetric(R, 5, 8, F16(0.004));
+
+        matrix_set_symmetric(R, 3, 9, F16(0.003));
+        matrix_set_symmetric(R, 4, 10, F16(0.003));
+        matrix_set_symmetric(R, 5, 11, F16(0.003));
+
+#endif
     }
 }
 
@@ -451,17 +444,10 @@ static void initialize_observation_gyroscope()
     {
         mf16 *const H = &kfm->H;
         
-        matrix_set(H, 0, 0, F16_ONE);
-        matrix_set(H, 1, 1, F16_ONE);
-        matrix_set(H, 2, 2, F16_ONE);
-
-        matrix_set(H, 3, 3, F16_ONE);
-        matrix_set(H, 4, 4, F16_ONE);
-        matrix_set(H, 5, 5, F16_ONE);
-
-        matrix_set(H, 3, 9, F16_ONE);
-        matrix_set(H, 4, 10, F16_ONE);
-        matrix_set(H, 5, 11, F16_ONE);
+        // angular velocity
+        matrix_set(H, 0, 3, F16_ONE);
+        matrix_set(H, 1, 4, F16_ONE);
+        matrix_set(H, 2, 5, F16_ONE);
     }
 
     /************************************************************************/
@@ -470,13 +456,9 @@ static void initialize_observation_gyroscope()
     {
         mf16 *const R = &kfm->R;
 
-        matrix_set(R, 0, 0, F16(2));
-        matrix_set(R, 1, 1, F16(2));
-        matrix_set(R, 2, 2, F16(2));
-
-        matrix_set(R, 3, 3, F16(0.3));
-        matrix_set(R, 4, 4, F16(0.3));
-        matrix_set(R, 5, 5, F16(0.3));
+        matrix_set(R, 0, 0, F16(0.5));
+        matrix_set(R, 1, 1, F16(0.4));
+        matrix_set(R, 2, 2, F16(0.3));
     }
 }
 
@@ -639,15 +621,12 @@ void fusion_predict(register const fix16_t deltaT)
         
         // gyro: omega_phi
         matrix_set(A, 3, 6, deltaT); 
-        matrix_set(A, 3, 9, -deltaT);
 
         // gyro: omega_psi
         matrix_set(A, 4, 7, deltaT);
-        matrix_set(A, 4, 10, -deltaT);
 
         // gyro: omega_theta
         matrix_set(A, 5, 8, deltaT);
-        matrix_set(A, 5, 11, -deltaT);
     }
 
 #if 0
@@ -677,13 +656,13 @@ void fusion_predict(register const fix16_t deltaT)
         /************************************************************************/
 
         // gyro: velocity phi
-        x->data[6][0] = fix16_sub(fix16_add(omega_x, fix16_mul(alpha_x, deltaT)), fix16_mul(x->data[9][0], deltaT));
+        x->data[6][0] = fix16_add(omega_x, fix16_mul(alpha_x, deltaT));
 
         // gyro: velocity psi
-        x->data[7][0] = fix16_sub(fix16_add(omega_y, fix16_mul(alpha_y, deltaT)), fix16_mul(x->data[10][0], deltaT));
+        x->data[7][0] = fix16_add(omega_y, fix16_mul(alpha_y, deltaT));
 
         // gyro: velocity theta
-        x->data[8][0] = fix16_sub(fix16_add(omega_z, fix16_mul(alpha_z, deltaT)), fix16_mul(x->data[11][0], deltaT));
+        x->data[8][0] = fix16_add(omega_z, fix16_mul(alpha_z, deltaT));
 
         /************************************************************************/
         /* Prepare ...                                                          */
@@ -776,28 +755,14 @@ HOT
 void fusion_update_using_gyro_only(register const fix16_t deltaT)
 {
     /************************************************************************/
-    /* Prepare gyroscope data                                               */
-    /************************************************************************/
-
-    v3d scaled_velocity;
-    v3d_mul_s(&scaled_velocity, &m_gyroscope, deltaT);
-
-    // angle += velocity * dT
-    v3d_add(&state_ypr_from_gyro, &state_ypr_from_gyro, &scaled_velocity);
-
-    /************************************************************************/
     /* Prepare measurement                                                  */
     /************************************************************************/
     {
         mf16 *const z = &kfm_gyro.z;
 
-        matrix_set(z, 0, 0, state_ypr_from_gyro.x);
-        matrix_set(z, 1, 0, state_ypr_from_gyro.y);
-        matrix_set(z, 2, 0, state_ypr_from_gyro.z);
-
-        matrix_set(z, 3, 0, m_gyroscope.x);
-        matrix_set(z, 4, 0, m_gyroscope.y);
-        matrix_set(z, 5, 0, m_gyroscope.z);
+        matrix_set(z, 0, 0, m_gyroscope.x);
+        matrix_set(z, 1, 0, m_gyroscope.y);
+        matrix_set(z, 2, 0, m_gyroscope.z);
     }
 
     /************************************************************************/
@@ -997,9 +962,13 @@ void fusion_update_using_gyro_and_iddcm(register const fix16_t deltaT)
         matrix_set(z, 4, 0, state_ypr_from_gyro.y);
         matrix_set(z, 5, 0, state_ypr_from_gyro.z);
 
-        matrix_set(z, 6, 0, m_gyroscope.x);
-        matrix_set(z, 7, 0, m_gyroscope.y);
-        matrix_set(z, 8, 0, m_gyroscope.z);
+        matrix_set(z, 6, 0, om_roll);
+        matrix_set(z, 7, 0, om_pitch);
+        matrix_set(z, 8, 0, om_yaw);
+
+        matrix_set(z, 9, 0, m_gyroscope.x);
+        matrix_set(z, 10, 0, m_gyroscope.y);
+        matrix_set(z, 11, 0, m_gyroscope.z);
     }
 
     /************************************************************************/
