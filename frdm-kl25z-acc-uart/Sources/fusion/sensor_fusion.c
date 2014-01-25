@@ -97,6 +97,20 @@ static bool m_have_gyroscope = false;
 static bool m_have_magnetometer = false;
 
 /************************************************************************/
+/* Filter bootstrapping                                                 */
+/************************************************************************/
+
+/*!
+* \brief Determines if the attitude filter was already bootstrapped
+*/
+static bool m_attitude_bootstrapped = false;
+
+/*!
+* \brief Determines if the orientation filter was already bootstrapped
+*/
+static bool m_orientation_bootstrapped = false;
+
+/************************************************************************/
 /* Helper macros                                                        */
 /************************************************************************/
 
@@ -244,6 +258,15 @@ static void initialize_system()
 {
     initialize_system_filter(&kf_orientation, KF_ORIENTATION_STATES);
     initialize_system_filter(&kf_attitude, KF_ATTITUDE_STATES);
+
+    // set intial state estimate
+    kf_attitude.x.data[0][0] = 0;
+    kf_attitude.x.data[1][0] = 0;
+    kf_attitude.x.data[2][0] = 1;
+
+    kf_orientation.x.data[0][0] = 0;
+    kf_orientation.x.data[1][0] = 1;
+    kf_orientation.x.data[2][0] = 0;
 }
 
 /*!
@@ -547,9 +570,10 @@ void fusion_predict(register const fix16_t deltaT)
 */
 void fusion_set_accelerometer(register const fix16_t *const ax, register const fix16_t *const ay, register const fix16_t *const az)
 {
-    m_accelerometer.x = *ax;
-    m_accelerometer.y = *ay;
-    m_accelerometer.z = *az;
+    // invert to show up instead of down
+    m_accelerometer.x = -*ax;
+    m_accelerometer.y = -*ay;
+    m_accelerometer.z = -*az;
     m_have_accelerometer = true;
 }
 
@@ -597,13 +621,13 @@ void fusion_update_attitude(register const fix16_t deltaT)
     {
         mf16 *const z = &kfm_accel.z;
 
-        matrix_set(z, 0, 0, -m_accelerometer.x);
-        matrix_set(z, 1, 0, -m_accelerometer.y);
-        matrix_set(z, 2, 0, -m_accelerometer.z);
+        matrix_set(z, 0, 0, m_accelerometer.x);
+        matrix_set(z, 1, 0, m_accelerometer.y);
+        matrix_set(z, 2, 0, m_accelerometer.z);
 
-        matrix_set(z, 3, 0, fix16_deg_to_rad(m_gyroscope.x));
-        matrix_set(z, 4, 0, fix16_deg_to_rad(m_gyroscope.y));
-        matrix_set(z, 5, 0, fix16_deg_to_rad(m_gyroscope.z));
+        matrix_set(z, 3, 0, m_gyroscope.x);
+        matrix_set(z, 4, 0, m_gyroscope.y);
+        matrix_set(z, 5, 0, m_gyroscope.z);
     }
 
     /************************************************************************/
@@ -687,9 +711,9 @@ void fusion_update_orientation(register const fix16_t deltaT)
         matrix_set(z, 1, 0, my);
         matrix_set(z, 2, 0, mz);
 
-        matrix_set(z, 3, 0, fix16_deg_to_rad(m_gyroscope.x));
-        matrix_set(z, 4, 0, fix16_deg_to_rad(m_gyroscope.y));
-        matrix_set(z, 5, 0, fix16_deg_to_rad(m_gyroscope.z));
+        matrix_set(z, 3, 0, m_gyroscope.x);
+        matrix_set(z, 4, 0, m_gyroscope.y);
+        matrix_set(z, 5, 0, m_gyroscope.z);
     }
 
     /************************************************************************/
@@ -717,6 +741,18 @@ void fusion_update(register const fix16_t deltaT)
         // perform roll and pitch updates
         if (true == m_have_accelerometer)
         {
+            // bootstrap filter
+            if (false == m_attitude_bootstrapped)
+            {
+                fix16_t norm = v3d_norm(&m_accelerometer);
+
+                kf_attitude.x.data[0][0] = fix16_div(m_accelerometer.x, norm);
+                kf_attitude.x.data[1][0] = fix16_div(m_accelerometer.y, norm);
+                kf_attitude.x.data[2][0] = fix16_div(m_accelerometer.z, norm);
+
+                m_attitude_bootstrapped = true;
+            }
+
             fusion_update_attitude(deltaT);
             m_have_accelerometer = false;
         }
@@ -724,6 +760,19 @@ void fusion_update(register const fix16_t deltaT)
         // perform yaw updates
         if (true == m_have_magnetometer)
         {
+            // bootstrap filter
+            if (false == m_orientation_bootstrapped)
+            {
+                // these are horribly bad estimates, but still better than none
+                fix16_t norm = v3d_norm(&m_magnetometer);
+
+                kf_orientation.x.data[0][0] = fix16_div(m_magnetometer.x, norm);
+                kf_orientation.x.data[1][0] = fix16_div(m_magnetometer.y, norm);
+                kf_orientation.x.data[2][0] = fix16_div(m_magnetometer.z, norm);
+
+                m_orientation_bootstrapped = true;
+            }
+
             fusion_update_orientation(deltaT);
             m_have_magnetometer = false;
         }
