@@ -6,12 +6,26 @@
 #include "fixvector3d.h"
 #include "fixmatrix.h"
 
-#if !defined(FIXMATRIX_MAX_SIZE) || (FIXMATRIX_MAX_SIZE < 9)
-#error FIXMATRIX_MAX_SIZE must be defined to value greater or equal 12.
+#if !defined(FIXMATRIX_MAX_SIZE) || (FIXMATRIX_MAX_SIZE < 6)
+#error FIXMATRIX_MAX_SIZE must be defined to value greater or equal 6.
 #endif
 
 #include "fusion/sensor_dcm.h"
 #include "fusion/sensor_fusion.h"
+
+/************************************************************************/
+/* Kalman filter structure definition                                   */
+/************************************************************************/
+
+/*!
+* \brief The Kalman filter instance used to predict the orientation.
+*/
+static kalman16_uc_t kf_attitude;
+
+/*!
+* \def KF_STATES Number of states
+*/
+#define KF_ATTITUDE_STATES 6
 
 /*!
 * \brief The Kalman filter instance used to predict the orientation.
@@ -21,48 +35,36 @@ static kalman16_uc_t kf_orientation;
 /*!
 * \def KF_STATES Number of states
 */
-#define KF_STATES 9
+#define KF_ORIENTATION_STATES 6
 
 /*!
-* \brief The Kalman filter observation instance used to update the prediction with integrated difference DCM-only data
-*
-* Measured values are: phi, psi, theta from integrated difference DCM
+* \brief The Kalman filter observation instance used to update the prediction with integrated accelerometer data
 */
-static kalman16_observation_t kfm_iddcm;
+static kalman16_observation_t kfm_accel;
 
 /*!
 * \def KFM_IDDCM Number of observation variables for integrated difference DCM-only updates
 */
-#define KFM_IDDCM 3
+#define KFM_ACCEL 6
 
 /*!
-* \brief The Kalman filter observation instance used to update the prediction with gyroscope-only data.
-*
-* Measured values are: phi, psi, theta from integrated gyro, as well as omega_phi, omega_psi, omega_theta from direct gyro
+* \brief The Kalman filter observation instance used to update the prediction with magnetometer data
 */
-static kalman16_observation_t kfm_gyro;
+static kalman16_observation_t kfm_magneto;
 
 /*!
-* \def KFM_GYRO Number of observation variables for gyroscope-only updates
+* \def KFM_IDDCM Number of observation variables for integrated difference DCM-only updates
 */
-#define KFM_GYRO 6
-
-/*!
-* \brief The Kalman filter observation instance used to update the prediction with gyroscope and iddcm data.
-*
-* Measured values are: phi, psi, theta from integrated difference DCM, phi, psi, theta from integrated gyro, as well as omega_phi, omega_psi, omega_theta from direct gyro
-*/
-static kalman16_observation_t kfm_gyro_iddcm;
-
-/*!
-* \def KFM_GYRO Number of observation variables for gyroscope-only updates
-*/
-#define KFM_GYROIDDCM 9
+#define KFM_MAGNETO 6
 
 /*!
 * \brief Lambda parameter for certainty tuning
 */
-static fix16_t lambda = F16(0.985);
+static fix16_t lambda = F16(1);
+
+/************************************************************************/
+/* Sensor data buffers                                                  */
+/************************************************************************/
 
 /*!
 * \brief The current accelerometer measurements
@@ -94,25 +96,9 @@ static bool m_have_gyroscope = false;
 */
 static bool m_have_magnetometer = false;
 
-/*!
-* \brief yaw/pitch/roll from gyroscope integration
-*/
-static v3d state_ypr_from_gyro = { 0, 0, 0 };
-
-/*!
-* \brief yaw/pitch/roll from difference DCM integration
-*/
-static v3d state_ypr_from_iddcm = { 0, 0, 0 };
-
-/*!
-* \brief DCM from previous loop
-*/
-static mf16 state_previous_dcm = { 3, 3, 0, 0 };
-
-/*!
-* \brief Determines if a previous DCM exists
-*/
-static bool state_has_previous_dcm = false;
+/************************************************************************/
+/* Helper macros                                                        */
+/************************************************************************/
 
 /*!
 * \def matrix_set Helper macro to set a value in a specific matrix field
@@ -165,14 +151,43 @@ static bool state_has_previous_dcm = false;
 */
 #define initial_dT          (F16_ONE)
 
+/************************************************************************/
+/* System initialization                                                */
+/************************************************************************/
+
 /*!
-* \brief Initialization of the filter
+* \brief Initializes the state matrix of a specific filter based on its state
 */
-COLD
-static void initialize_system()
+HOT NONNULL LEAF
+STATIC_INLINE void update_state_matrix_from_state(kalman16_uc_t *const kf)
 {
-    kalman16_uc_t *const kf = &kf_orientation;
-    kalman_filter_initialize_uc(kf, KF_STATES);
+    mf16 *const A = &kf->A;
+    const mf16 *const x = &kf->x;
+
+    fix16_t c1 = x->data[0][0];
+    fix16_t c2 = x->data[1][0];
+    fix16_t c3 = x->data[2][0];
+
+    //matrix_set(A, 0, 3,   0);
+    matrix_set(A, 0, 4, -c3);
+    matrix_set(A, 0, 5,  c2);
+
+    matrix_set(A, 1, 3,  c3);
+    //matrix_set(A, 1, 4,   0);
+    matrix_set(A, 1, 5, -c1);
+
+    matrix_set(A, 2, 3, -c2);
+    matrix_set(A, 2, 4,  c1);
+    //matrix_set(A, 2, 5,   0);
+}
+
+/*!
+* \brief Initialization of a specific filter
+*/
+COLD NONNULL
+static void initialize_system_filter(kalman16_uc_t *const kf, const uint_fast8_t states)
+{
+    kalman_filter_initialize_uc(kf, states);
 
     /************************************************************************/
     /* Prepare initial state estimation                                     */
@@ -182,59 +197,7 @@ static void initialize_system()
     /************************************************************************/
     /* Set state transition model                                           */
     /************************************************************************/
-    {
-        mf16 *const A = &kf->A;
-
-        // discrete model
-        // angle_next = (1) * angle_current 
-        //            + (dT * angular_velocity) 
-        //            + (0.5*dT^2 * angular_acceleration)
-
-
-        // phi
-        matrix_set(A, 0, 0, F16_ONE);
-        matrix_set(A, 0, 3, dT(initial_dT));
-        matrix_set(A, 0, 6, half_dT_square(initial_dT));
-
-        // psi
-        matrix_set(A, 1, 1, F16_ONE);
-        matrix_set(A, 1, 4, dT(initial_dT));
-        matrix_set(A, 1, 7, half_dT_square(initial_dT));
-
-        // theta
-        matrix_set(A, 2, 2, F16_ONE);
-        matrix_set(A, 2, 5, dT(initial_dT));
-        matrix_set(A, 2, 8, half_dT_square(initial_dT));
-        
-        // discrete model
-        // angular_velocity_next = (1) * angular_velocity_current 
-        //                       + (dT * angular_acceleration) 
-
-        // gyro: omega_phi
-        matrix_set(A, 3, 3, F16_ONE);
-        matrix_set(A, 3, 6, dT(initial_dT));
-
-        // gyro: omega_psi
-        matrix_set(A, 4, 4, F16_ONE);
-        matrix_set(A, 4, 7, dT(initial_dT));
-
-        // gyro: omega_theta
-        matrix_set(A, 5, 5, F16_ONE);
-        matrix_set(A, 5, 8, dT(initial_dT));
-
-
-        // discrete model
-        // angular_acceleration_next = (1) * angular_acceleration_current 
-
-        // gyro: alpha_phi
-        matrix_set(A, 6, 6, F16_ONE);
-
-        // gyro: alpha_psi
-        matrix_set(A, 7, 7, F16_ONE);
-
-        // gyro: alpha_theta
-        matrix_set(A, 8, 8, F16_ONE);
-    }
+    update_state_matrix_from_state(kf);
 
     /************************************************************************/
     /* Set state variances                                                  */
@@ -242,42 +205,71 @@ static void initialize_system()
     {
         mf16 *const P = &kf->P;
 
-        // phi, psi and theta variances
-        matrix_set(P, 0, 0, F16(1.9));
-        matrix_set(P, 1, 1, F16(1.9));
-        matrix_set(P, 2, 2, F16(1.9));
+        // initial axis (accelerometer/magnetometer) variances
+        matrix_set(P, 0, 0, F16(5));
+        matrix_set(P, 1, 1, F16(5));
+        matrix_set(P, 2, 2, F16(5));
 
-        // omega_phi, omega_psi and omega_theta variances from direct gyro
+        // initial gyro variances
         matrix_set(P, 3, 3, F16(1));
         matrix_set(P, 4, 4, F16(1));
         matrix_set(P, 5, 5, F16(1));
-
-        // alpha_phi, alpha_psi and alpha_theta variances from direct gyro
-        matrix_set(P, 6, 6, F16(1));
-        matrix_set(P, 7, 7, F16(1));
-        matrix_set(P, 8, 8, F16(1));
     }
-
-    /************************************************************************/
-    /* Set state covariances                                                */
-    /************************************************************************/
-    // intentionally left blank
-
+    
     /************************************************************************/
     /* Set system process noise                                             */
     /************************************************************************/
-    // intentionally left blank, because the initialize function already set the matrix to zero
-    // zero is a rather bad estimate though, so fill this or use appropriate lambda tuning.
+    {
+        mf16 *const Q = &kf->Q;
+
+        // axis process noise
+        const fix16_t q_axis = F16(0);
+        matrix_set(Q, 0, 0, q_axis);
+        matrix_set(Q, 1, 1, q_axis);
+        matrix_set(Q, 2, 2, q_axis);
+
+        // gyro process noise
+        const fix16_t q_gyro = F16(1);
+        matrix_set(Q, 3, 3, q_gyro);
+        matrix_set(Q, 4, 4, q_gyro);
+        matrix_set(Q, 5, 5, q_gyro);
+    }
 }
 
 /*!
-* \brief Initialization of integrated difference DCM-only updates
+* \brief Initialization of the filter
 */
 COLD
-static void initialize_observation_iddcm()
+static void initialize_system()
 {
-    kalman16_observation_t *const kfm = &kfm_iddcm;
-    kalman_observation_initialize(kfm, KF_STATES, KFM_IDDCM);
+    initialize_system_filter(&kf_orientation, KF_ORIENTATION_STATES);
+    initialize_system_filter(&kf_attitude, KF_ATTITUDE_STATES);
+}
+
+/*!
+* \brief Initializes the state matrix of a specific filter based on its state
+*/
+HOT NONNULL
+STATIC_INLINE void update_measurement_noise(kalman16_observation_t *const kfm, register const fix16_t axisXYZ, register const fix16_t gyroXYZ)
+{
+    mf16 *const R = &kfm->R;
+
+    matrix_set(R, 0, 0, axisXYZ);
+    matrix_set(R, 1, 1, axisXYZ);
+    matrix_set(R, 2, 2, axisXYZ);
+
+    matrix_set(R, 3, 3, gyroXYZ);
+    matrix_set(R, 4, 4, gyroXYZ);
+    matrix_set(R, 5, 5, gyroXYZ);
+}
+
+/*!
+* \brief Initialization of a specific measurement
+*/
+COLD
+static void initialize_observation(kalman16_observation_t *const kfm, const uint_fast8_t states, const uint_fast8_t observations)
+{
+    kalman_observation_initialize(kfm, states, observations);
 
     /************************************************************************/
     /* Set observation model                                                */
@@ -285,107 +277,12 @@ static void initialize_observation_iddcm()
     {
         mf16 *const H = &kfm->H;
 
-        matrix_set(H, 0, 0, F16_ONE);
-        matrix_set(H, 1, 1, F16_ONE);
-        matrix_set(H, 2, 2, F16_ONE);
-    }
-
-    /************************************************************************/
-    /* Set observation process noise covariance                             */
-    /************************************************************************/
-    {
-        mf16 *const R = &kfm->R;
-
-        matrix_set(R, 0, 0, F16(10.087));
-        matrix_set(R, 1, 1, F16(6.1297));
-        matrix_set(R, 2, 2, F16(8.8969));
-    }
-}
-
-/*!
-* \brief Initialization of gyroscope and iddcm updates
-*/
-COLD
-static void initialize_observation_gyro_iddcm()
-{
-    kalman16_observation_t *const kfm = &kfm_gyro_iddcm;
-    kalman_observation_initialize(kfm, KF_STATES, KFM_GYROIDDCM);
-
-    /************************************************************************/
-    /* Set observation model                                                */
-    /************************************************************************/
-    {
-        mf16 *const H = &kfm->H;
+        // axes
         matrix_set(H, 0, 0, F16_ONE);
         matrix_set(H, 1, 1, F16_ONE);
         matrix_set(H, 2, 2, F16_ONE);
 
-        matrix_set(H, 3, 0, F16_ONE);
-        matrix_set(H, 4, 1, F16_ONE);
-        matrix_set(H, 5, 2, F16_ONE);
-
-        matrix_set(H, 6, 3, F16_ONE);
-        matrix_set(H, 7, 4, F16_ONE);
-        matrix_set(H, 8, 5, F16_ONE);
-    }
-
-    /************************************************************************/
-    /* Set observation process noise covariance                             */
-    /************************************************************************/
-    {
-        mf16 *const R = &kfm->R;
-
-        matrix_set(R, 0, 0, F16(5));
-        matrix_set(R, 1, 1, F16(5));
-        matrix_set(R, 2, 2, F16(5));
-
-        matrix_set(R, 3, 3, F16(2));
-        matrix_set(R, 4, 4, F16(2));
-        matrix_set(R, 5, 5, F16(2));
-
-        matrix_set(R, 6, 6, F16(.3));
-        matrix_set(R, 7, 7, F16(.3));
-        matrix_set(R, 8, 8, F16(.3));
-
-        matrix_set_symmetric(R, 0, 3, F16_ONE);
-        matrix_set_symmetric(R, 1, 4, F16_ONE);
-        matrix_set_symmetric(R, 2, 5, F16_ONE);
-
-        /*
-        matrix_set_symmetric(R, 0, 3, F16(0.1));
-        matrix_set_symmetric(R, 0, 4, F16(0.67));
-        matrix_set_symmetric(R, 0, 5, F16(1.24));
-
-        matrix_set_symmetric(R, 1, 3, F16(0.18));
-        matrix_set_symmetric(R, 1, 4, F16(0.065));
-        matrix_set_symmetric(R, 1, 5, F16(0.43));
-
-        matrix_set_symmetric(R, 2, 3, F16(0.26));
-        matrix_set_symmetric(R, 2, 4, F16(0.05));
-        matrix_set_symmetric(R, 2, 5, F16(1.02));
-        */
-    }
-}
-
-/*!
-* \brief Initialization of gyroscope-only updates
-*/
-COLD
-static void initialize_observation_gyroscope()
-{
-    kalman16_observation_t *const kfm = &kfm_gyro;
-    kalman_observation_initialize(kfm, KF_STATES, KFM_GYRO);
-
-    /************************************************************************/
-    /* Set observation model                                                */
-    /************************************************************************/
-    {
-        mf16 *const H = &kfm->H;
-        
-        matrix_set(H, 0, 0, F16_ONE);
-        matrix_set(H, 1, 1, F16_ONE);
-        matrix_set(H, 2, 2, F16_ONE);
-
+        // gyro
         matrix_set(H, 3, 3, F16_ONE);
         matrix_set(H, 4, 4, F16_ONE);
         matrix_set(H, 5, 5, F16_ONE);
@@ -394,17 +291,29 @@ static void initialize_observation_gyroscope()
     /************************************************************************/
     /* Set observation process noise covariance                             */
     /************************************************************************/
-    {
-        mf16 *const R = &kfm->R;
+    const fix16_t initial_r_axis = F16(0.02);
+    const fix16_t initial_r_gyro = F16(0.001);
+    update_measurement_noise(kfm, initial_r_axis, initial_r_gyro);
+}
 
-        matrix_set(R, 0, 0, F16(2));
-        matrix_set(R, 1, 1, F16(2));
-        matrix_set(R, 2, 2, F16(2));
+/*!
+* \brief Initialization of accelerometer updates
+*/
+COLD
+static void initialize_observation_accel()
+{
+    kalman16_observation_t *const kfm = &kfm_accel;
+    initialize_observation(kfm, KF_ATTITUDE_STATES, KFM_ACCEL);
+}
 
-        matrix_set(R, 3, 3, F16(0.3));
-        matrix_set(R, 4, 4, F16(0.3));
-        matrix_set(R, 5, 5, F16(0.3));
-    }
+/*!
+* \brief Initialization of magnetometer updates
+*/
+COLD
+static void initialize_observation_magneto()
+{
+    kalman16_observation_t *const kfm = &kfm_magneto;
+    initialize_observation(kfm, KF_ORIENTATION_STATES, KFM_MAGNETO);
 }
 
 /*!
@@ -413,76 +322,120 @@ static void initialize_observation_gyroscope()
 void fusion_initialize()
 {
     initialize_system();
-    initialize_observation_iddcm();
-    initialize_observation_gyroscope();
-    initialize_observation_gyro_iddcm();
+    initialize_observation_accel();
+    initialize_observation_magneto();
 }
 
-/*!
-* \brief Corrects an angle to be within +/- 180°
-*/
-HOT CONST
-STATIC_INLINE fix16_t fusion_clampangle(register fix16_t angle)
-{
-    while (angle > F16(180)) {
-        angle = fix16_sub(angle, F16(360));
-    }
-
-    while (angle < F16(-180)) {
-        angle = fix16_add(angle, F16(360));
-    }
-
-    return angle;
-}
+/************************************************************************/
+/* State calculation helpers                                            */
+/************************************************************************/
 
 /*!
 * \brief Sanitizes the state variables
 */
-HOT
-void fusion_sanitize_state()
+HOT NONNULL
+STATIC_INLINE void fusion_sanitize_state(kalman16_uc_t *const kf)
 {
-    mf16 *const x = kalman_get_state_vector_uc(&kf_orientation);
+    mf16 *const A = &kf->A;
+    mf16 *const x = &kf->x;
 
-    // angles
-    x->data[0][0] = fusion_clampangle(x->data[0][0]);
-    x->data[1][0] = fusion_clampangle(x->data[1][0]);
-    x->data[2][0] = fusion_clampangle(x->data[2][0]);
+    // fetch axes
+    fix16_t c1 = x->data[0][0];
+    fix16_t c2 = x->data[1][0];
+    fix16_t c3 = x->data[2][0];
 
-    // gyro
-    state_ypr_from_gyro.x = fusion_clampangle(state_ypr_from_gyro.x);
-    state_ypr_from_gyro.y = fusion_clampangle(state_ypr_from_gyro.y);
-    state_ypr_from_gyro.z = fusion_clampangle(state_ypr_from_gyro.z);
+    // calculate vector norm
+    fix16_t norm = fix16_sqrt(
+                        fix16_add(
+                            fix16_add(
+                                fix16_sq(c1), 
+                                fix16_sq(c2)),
+                            fix16_sq(c3))
+                    );
 
-    // iddcm
-    state_ypr_from_iddcm.x = fusion_clampangle(state_ypr_from_iddcm.x);
-    state_ypr_from_iddcm.y = fusion_clampangle(state_ypr_from_iddcm.y);
-    state_ypr_from_iddcm.z = fusion_clampangle(state_ypr_from_iddcm.z);
+    // normalize vectors
+    c1 = fix16_div(c1, norm);
+    c2 = fix16_div(c2, norm);
+    c3 = fix16_div(c3, norm);
+
+    // re-set to state and state matrix
+    x->data[0][0] = c1;
+    x->data[1][0] = c2;
+    x->data[2][0] = c3;
+    update_state_matrix_from_state(kf);
 }
 
 /*!
-* \brief Calculate the weighted sum of two values based on their variance
-* \param[in] a The first value
-* \param[in] var_a The first value's variance
-* \param[in] b The second value
-* \param[in] var_b The second value's variance
-* \return The sum
+* \brief Fetches the sign of a variable
 */
 HOT CONST
-STATIC_INLINE fix16_t variance_weighted_sum(register const fix16_t a, register const fix16_t var_a, register const fix16_t b, register const fix16_t var_b)
+STATIC_INLINE int32_t fix16_sign(const fix16_t value)
 {
-    // create variance weighting factor
-    const fix16_t variance_sum = fix16_add(var_a, var_b);
-    const fix16_t inv_variance_sum = fix16_div(F16_ONE, variance_sum);
-
-    // create weighting factors based on variances
-    // Note that the variance of B defines the weight for A. Lower variances
-    // mean better results, so if B's variance is higher, it gets a lower weight.
-    const fix16_t weight_a = fix16_mul(var_b, inv_variance_sum);
-    const fix16_t weight_b = fix16_mul(var_a, inv_variance_sum);
-
-    // build weighted sum
-    return fix16_add(fix16_mul(a, weight_a), fix16_mul(b, weight_b));
+    return value >= 0 ? 1 : -1;
 }
+
+/*!
+* \brief Fetches the values without any modification
+* \param[out] roll The roll angle in radians.
+* \param[out] pitch The pitch (elevation) angle in radians.
+*/
+HOT NONNULL LEAF
+STATIC_INLINE void calculate_roll_pitch(register fix16_t *RESTRICT const roll, register fix16_t *RESTRICT const pitch)
+{
+    const mf16 *const x = kalman_get_state_vector_uc(&kf_attitude);
+
+    // fetch axes
+    const fix16_t c31 = x->data[0][0];
+    const fix16_t c32 = x->data[1][0];
+    const fix16_t c33 = x->data[2][0];
+
+    // calculate roll
+    const fix16_t c1sq     = fix16_sq(c31);
+    const fix16_t c3sq     = fix16_sq(c33);
+    const fix16_t c1c3sq   = fix16_add(c1sq, c3sq);
+    const fix16_t c1c3norm = fix16_sqrt(c1c3sq);
+    *roll = fix16_atan2(c32, fix16_sign(c33)*c1c3norm);
+
+    // calculate pitch
+    *pitch = -fix16_asin(c31);
+}
+
+/*!
+* \brief Fetches the values without any modification
+* \param[in] roll The roll angle in radians.
+* \param[in] pitch The pitch (elevation) angle in radians.
+* \param[out] yaw The yaw angle in radians
+*/
+HOT NONNULL LEAF
+STATIC_INLINE void calculate_yaw(register const fix16_t roll, register const fix16_t pitch, register fix16_t *RESTRICT const yaw)
+{
+    const mf16 *const x2 = kalman_get_state_vector_uc(&kf_orientation);
+    const mf16 *const x3 = kalman_get_state_vector_uc(&kf_attitude);
+
+    // fetch axes
+    const fix16_t c21 = x2->data[0][0];
+    const fix16_t c22 = x2->data[1][0];
+    const fix16_t c23 = x2->data[2][0];
+
+    const fix16_t c31 = x3->data[0][0];
+    const fix16_t c32 = x3->data[1][0];
+    const fix16_t c33 = x3->data[2][0];
+
+    // calculate partial cross product for C11
+    // C1  = cross([C21 C22 C23], [C31 C32 C33])
+    // -->
+    //      C11 = C22*C33 - C23*C32
+    //      C12 = C23*C31 - C21*C33
+    //      C13 = C21*C32 - C22*C31
+    fix16_t c11 = fix16_sub(fix16_mul(c22, c33), fix16_mul(c23, c32));
+
+    // calculate pitch
+    *yaw = -fix16_atan2(c21, c11);
+}
+
+/************************************************************************/
+/* Convenience functions                                                */
+/************************************************************************/
 
 /*!
 * \brief Fetches the values without any modification
@@ -491,42 +444,69 @@ STATIC_INLINE fix16_t variance_weighted_sum(register const fix16_t a, register c
 * \param[out] yaw The yaw (heading, azimuth) angle in degree.
 */
 HOT NONNULL LEAF
-void fusion_fetch_angles(register fix16_t *const roll, register fix16_t *const pitch, register fix16_t *const yaw)
+void fusion_fetch_angles(register fix16_t *RESTRICT const roll, register fix16_t *RESTRICT const pitch, register fix16_t *RESTRICT const yaw)
 {
-    // fetch state vector and covariance reference
-    const mf16 *const x = kalman_get_state_vector_uc(&kf_orientation);
+    // calculate roll and pitch
+    calculate_roll_pitch(roll, pitch);
 
-    // fetch yaw
-    *roll = x->data[0][0];
-
-    // fetch pitch
-    *pitch = x->data[1][0];
-
-    // fetch yaw
-    *yaw = x->data[2][0];
+    // calculate yaw
+    calculate_yaw(*roll, *pitch, yaw);
 }
 
 /*!
-* \brief Fetches the values without any modification
-* \param[out] roll The roll angle velocity in degree/2.
-* \param[out] pitch The pitch (elevation) angle velocity in degree/2.
-* \param[out] yaw The yaw (heading, azimuth) angle velocity in degree/2.
+* \brief Copies one matrix to another
+* \param[out] dest The destination matrix
+* \param[in] source The source matrix
 */
 HOT NONNULL LEAF
-void fusion_fetch_angular_velocities(register fix16_t *const roll, register fix16_t *const pitch, register fix16_t *const yaw)
+STATIC_INLINE void mf16_copy(mf16 *RESTRICT const dest, const mf16 *RESTRICT const source)
 {
-    // fetch state vector and covariance reference
-    const mf16 *const x = kalman_get_state_vector_uc(&kf_orientation);
+    const uint_fast8_t columns = source->columns;
+    const uint_fast8_t rows = source->rows;
 
-    // fetch yaw
-    *roll = x->data[3][0];
-
-    // fetch pitch
-    *pitch = x->data[4][0];
-
-    // fetch yaw
-    *yaw = x->data[5][0];
+    dest->columns = columns;
+    dest->rows = rows;
+    for (int i = 0; i < rows - 1; ++i)
+    {
+        for (int j = 0; j < columns - 1; ++j)
+        {
+            dest->data[i][j] = source->data[i][j];
+        }
+    }
 }
+
+// Calculates dest = A + B * s
+HOT NONNULL
+STATIC_INLINE void mf16_add_scaled(mf16 *dest, const mf16 *RESTRICT a, const mf16 *RESTRICT b, const fix16_t s)
+{
+    int row, column;
+
+    if (dest->columns != a->columns || dest->rows != a->rows)
+        dest->errors |= FIXMATRIX_DIMERR;
+    
+    if (a->columns != b->columns || a->rows != b->rows)
+        dest->errors |= FIXMATRIX_DIMERR;
+
+    for (row = 0; row < dest->rows; row++)
+    {
+        for (column = 0; column < dest->columns; column++)
+        {
+            register const fix16_t scaled = fix16_mul(b->data[row][column], s);
+            register fix16_t sum = fix16_add(a->data[row][column], scaled);
+
+#ifndef FIXMATH_NO_OVERFLOW
+            if (sum == fix16_overflow)
+                dest->errors |= FIXMATRIX_OVERFLOW;
+#endif
+
+            dest->data[row][column] = sum;
+        }
+    }
+}
+
+/************************************************************************/
+/* State prediction                                                     */
+/************************************************************************/
 
 /*!
 * \brief Performs a prediction of the current Euler angles based on the time difference to the previous prediction/update iteration.
@@ -535,118 +515,57 @@ void fusion_fetch_angular_velocities(register fix16_t *const roll, register fix1
 HOT
 void fusion_predict(register const fix16_t deltaT)
 {
-    register const fix16_t hdt2q = half_dT_square(deltaT);
+    mf16 *const x2 = kalman_get_state_vector_uc(&kf_orientation);
+    mf16 *const x3 = kalman_get_state_vector_uc(&kf_attitude);
+    
+    mf16 *const P2 = kalman_get_system_covariance_uc(&kf_orientation);
+    mf16 *const P3 = kalman_get_system_covariance_uc(&kf_attitude);
 
-    // set state transition based on deltaT
-    {
-        mf16 *const A = &kf_orientation.A;
+    // fetch old state for integration
+    const fix16_t c31 = x3->data[0][0];
+    const fix16_t c32 = x3->data[1][0];
+    const fix16_t c33 = x3->data[2][0];
 
-        // discrete model
-        // angle_next = (1) * angle_current 
-        //            + (dT * angular_velocity) 
-        //            + (0.5*dT^2 * angular_acceleration)
+    const fix16_t c21 = x2->data[0][0];
+    const fix16_t c22 = x2->data[1][0];
+    const fix16_t c23 = x2->data[2][0];
 
-
-        // integrated difference DCM: phi
-        matrix_set(A, 0, 3, deltaT);
-        matrix_set(A, 0, 6, hdt2q);
-
-        // integrated difference DCM: psi
-        matrix_set(A, 1, 4, deltaT);
-        matrix_set(A, 1, 7, hdt2q);
-
-        // integrated difference DCM: theta
-        matrix_set(A, 2, 5, deltaT);
-        matrix_set(A, 2, 8, hdt2q);
-        
-
-        // discrete model
-        // angular_velocity_next = (1) * angular_velocity_current 
-        //                       + (dT * angular_acceleration) 
-        
-        // gyro: omega_phi
-        matrix_set(A, 3, 6, deltaT); 
-
-        // gyro: omega_psi
-        matrix_set(A, 4, 7, deltaT);
-
-        // gyro: omega_theta
-        matrix_set(A, 5, 8, deltaT);
-    }
-
-#if 0
+    // fetch old covariance matrices for integration
+    mf16 P_attitude = { KF_ATTITUDE_STATES, KF_ATTITUDE_STATES, 0, 0 },
+        P_orientation = { KF_ORIENTATION_STATES, KF_ORIENTATION_STATES, 0, 0 };
+    mf16_copy(&P_attitude, P3);
+    mf16_copy(&P_orientation, P2);
 
     // predict.
+#if 0
+    kalman_predict_tuned_uc(&kf_attitude, lambda);
     kalman_predict_tuned_uc(&kf_orientation, lambda);
-
 #else
-    {
-        // set x
-        mf16 *const x = &kf_orientation.A;
-        
-        /************************************************************************/
-        /* Prepare ...                                                          */
-        /************************************************************************/
-
-        register const fix16_t omega_x = x->data[3][0];
-        register const fix16_t omega_y = x->data[4][0];
-        register const fix16_t omega_z = x->data[5][0];
-
-        register const fix16_t alpha_x = x->data[6][0];
-        register const fix16_t alpha_y = x->data[7][0];
-        register const fix16_t alpha_z = x->data[8][0];
-
-        /************************************************************************/
-        /* Calculate gyro transition first because of caching                   */
-        /************************************************************************/
-
-        // gyro: velocity phi
-        x->data[6][0] = fix16_add(omega_x, fix16_mul(alpha_x, deltaT));
-
-        // gyro: velocity psi
-        x->data[7][0] = fix16_add(omega_y, fix16_mul(alpha_y, deltaT));
-
-        // gyro: velocity theta
-        x->data[8][0] = fix16_add(omega_z, fix16_mul(alpha_z, deltaT));
-
-        /************************************************************************/
-        /* Prepare ...                                                          */
-        /************************************************************************/
-
-        register const fix16_t omega_x_dt = fix16_mul(omega_x, deltaT);
-        register const fix16_t omega_y_dt = fix16_mul(omega_y, deltaT);
-        register const fix16_t omega_z_dt = fix16_mul(omega_z, deltaT);
-
-        register const fix16_t alpha_x_hdtsq = fix16_mul(alpha_x, hdt2q);
-        register const fix16_t alpha_y_hdtsq = fix16_mul(alpha_y, hdt2q);
-        register const fix16_t alpha_z_hdtsq = fix16_mul(alpha_z, hdt2q);
-
-        /************************************************************************/
-        /* Calculate angle transition                                           */
-        /************************************************************************/
-
-        // phi
-        const register fix16_t temp1 = fix16_add(x->data[0][0], omega_x_dt);
-        x->data[0][0] = fix16_add(temp1, alpha_x_hdtsq);
-
-        // psi
-        const register fix16_t temp2 = fix16_add(x->data[1][0], omega_y_dt);
-        x->data[1][0] = fix16_add(temp2, alpha_y_hdtsq);
-
-        // theta
-        const register fix16_t temp3 = fix16_add(x->data[2][0], omega_z_dt);
-        x->data[2][0] = fix16_add(temp3, alpha_z_hdtsq);
-
-        
-        /************************************************************************/
-        /* Predict covariances                                                  */
-        /************************************************************************/
-
-        // predict.
-        kalman_predict_P_tuned_uc(&kf_orientation, lambda);
-    }
+    kalman_predict_uc(&kf_attitude);
+    kalman_predict_uc(&kf_orientation);
 #endif
+
+    // integrate state
+    x3->data[0][0] = fix16_add(c31, fix16_mul(x3->data[0][0], deltaT));
+    x3->data[1][0] = fix16_add(c32, fix16_mul(x3->data[1][0], deltaT));
+    x3->data[2][0] = fix16_add(c33, fix16_mul(x3->data[2][0], deltaT));
+
+    x2->data[0][0] = fix16_add(c21, fix16_mul(x2->data[0][0], deltaT));
+    x2->data[1][0] = fix16_add(c22, fix16_mul(x2->data[1][0], deltaT));
+    x2->data[2][0] = fix16_add(c23, fix16_mul(x2->data[2][0], deltaT));
+
+    // integrate covariance matrices
+    mf16_add_scaled(P3, &P_attitude, P3, deltaT);
+    mf16_add_scaled(P2, &P_orientation, P2, deltaT);
+
+    // re-orthogonalize and update state matrix
+    fusion_sanitize_state(&kf_attitude);
+    fusion_sanitize_state(&kf_orientation);
 }
+
+/************************************************************************/
+/* Setters for sensor data                                              */
+/************************************************************************/
 
 /*!
 * \brief Registers accelerometer measurements for the next update
@@ -690,249 +609,130 @@ void fusion_set_magnetometer(register const fix16_t *const mx, register const fi
     m_have_magnetometer = true;
 }
 
+/************************************************************************/
+/* State udpate                                                         */
+/************************************************************************/
+
 /*!
-* \brief Updates the current prediction with gyroscope measurements
-* \param[in] gx The x-axis gyroscope value.
-* \param[in] gy The y-axis gyroscope value.
-* \param[in] gz The z-axis gyroscope value.
+* \brief Updates the current prediction with accelerometer data
 */
 HOT
-void fusion_update_using_gyro_only(register const fix16_t deltaT)
+void fusion_update_attitude(register const fix16_t deltaT)
 {
-    /************************************************************************/
-    /* Prepare gyroscope data                                               */
-    /************************************************************************/
-
-    v3d scaled_velocity;
-    v3d_mul_s(&scaled_velocity, &m_gyroscope, deltaT);
-
-    // angle += velocity * dT
-    v3d_add(&state_ypr_from_gyro, &state_ypr_from_gyro, &scaled_velocity);
-
     /************************************************************************/
     /* Prepare measurement                                                  */
     /************************************************************************/
     {
-        mf16 *const z = &kfm_gyro.z;
+        mf16 *const z = &kfm_accel.z;
 
-        matrix_set(z, 0, 0, state_ypr_from_gyro.x);
-        matrix_set(z, 1, 0, state_ypr_from_gyro.y);
-        matrix_set(z, 2, 0, state_ypr_from_gyro.z);
+        matrix_set(z, 0, 0, -m_accelerometer.x);
+        matrix_set(z, 1, 0, -m_accelerometer.y);
+        matrix_set(z, 2, 0, -m_accelerometer.z);
 
-        matrix_set(z, 3, 0, m_gyroscope.x);
-        matrix_set(z, 4, 0, m_gyroscope.y);
-        matrix_set(z, 5, 0, m_gyroscope.z);
+        matrix_set(z, 3, 0, fix16_deg_to_rad(m_gyroscope.x));
+        matrix_set(z, 4, 0, fix16_deg_to_rad(m_gyroscope.y));
+        matrix_set(z, 5, 0, fix16_deg_to_rad(m_gyroscope.z));
     }
 
     /************************************************************************/
     /* Perform Kalman update                                                */
     /************************************************************************/
 
-    kalman_correct_uc(&kf_orientation, &kfm_gyro);
+    kalman_correct_uc(&kf_attitude, &kfm_accel);
+
+    /************************************************************************/
+    /* Re-orthogonalize and update state matrix                             */
+    /************************************************************************/
+
+    fusion_sanitize_state(&kf_attitude);
 }
 
 /*!
-* \brief Updates the current prediction with magnetometer and/or accelerometer measurements
-* \param[in] gx The x-axis gyroscope value.
-* \param[in] gy The y-axis gyroscope value.
-* \param[in] gz The z-axis gyroscope value.
+* \brief Updates the current prediction with magnetometer data
 */
 HOT
-void fusion_update_using_iddcm_only(register const fix16_t deltaT)
+void fusion_update_orientation(register const fix16_t deltaT)
 {
     /************************************************************************/
-    /* Prepare DCM data                                                     */
+    /* Calculate metrics required for update                                */
     /************************************************************************/
 
-    // fetch current DCM
-    mf16 dcm = { 3, 3, 0, 0 };
-    sensor_dcm(&dcm, &m_accelerometer, &m_magnetometer);
+    fix16_t roll, pitch;
+    calculate_roll_pitch(&roll, &pitch);
 
-    // build difference DCM
-    fix16_t om_yaw, om_pitch, om_roll;
-    if (true == state_has_previous_dcm)
-    {
-        sensor_ddcm(&dcm, &state_previous_dcm, &om_roll, &om_pitch, &om_yaw);
+    // calculate pitch sine and cosine
+    register const fix16_t cos_pitch = fix16_cos(pitch);
+    register const fix16_t sin_pitch = fix16_sin(pitch);
 
-        // convert to angle
-        om_yaw = fix16_rad_to_deg(om_yaw);
-        om_pitch = fix16_rad_to_deg(om_pitch);
-        om_roll = fix16_rad_to_deg(om_roll);
-    }
-    else
-    {
-        fix16_t yaw, pitch, roll;
-        sensor_dcm2rpy(&dcm, &roll, &pitch, &yaw);
+    // calculate roll sine and cosine
+    register const fix16_t cos_roll = fix16_cos(roll);
+    register const fix16_t sin_roll = fix16_sin(roll);
 
-        // convert to angle
-        yaw = fix16_rad_to_deg(yaw);
-        pitch = fix16_rad_to_deg(pitch);
-        roll = fix16_rad_to_deg(roll);
+    // calculate intermediate values
+    register const fix16_t sin_roll_sin_pitch = fix16_mul(sin_roll, sin_pitch);
+    register const fix16_t cos_roll_sin_pitch = fix16_mul(cos_roll, sin_pitch);
 
-        // bootstrap iddcm state
-        state_ypr_from_iddcm.x = roll;
-        state_ypr_from_iddcm.y = pitch;
-        state_ypr_from_iddcm.z = yaw;
+    // tilt-compensate magnetometer readings into horizontal (X-Y) plane
+    register const fix16_t Xh = fix16_add(fix16_mul(m_magnetometer.x, cos_pitch),
+                                          fix16_add(fix16_mul(m_magnetometer.y, sin_roll_sin_pitch),
+                                                    fix16_mul(m_magnetometer.z, cos_roll_sin_pitch)
+                                                    )
+                                         );
 
-        // bootstrap gyro state
-        state_ypr_from_gyro.x = roll;
-        state_ypr_from_gyro.y = pitch;
-        state_ypr_from_gyro.z = yaw;
-    }
+    register const fix16_t Yh = fix16_sub(fix16_mul(m_magnetometer.y, cos_roll),
+                                          fix16_mul(m_magnetometer.z, sin_roll)
+                                          );
 
-    // save current DCM --> previous DCM
-    state_has_previous_dcm = true;
-    for (uint_fast8_t r = 0; r < 3; ++r)
-    {
-        for (uint_fast8_t c = 0; c < 3; ++c)
-        {
-            state_previous_dcm.data[r][c] = dcm.data[r][c];
-        }
-    }
+    // calculate 2D vector norm
+    register const fix16_t pnorm = fix16_sqrt(fix16_add(fix16_sq(Xh), 
+                                                        fix16_sq(Yh)
+                                                        )
+                                             );
 
-    // convert to angle
-    om_roll = fix16_rad_to_deg(om_roll);
-    om_pitch = fix16_rad_to_deg(om_pitch);
-    om_yaw = fix16_rad_to_deg(om_yaw);
+    // calculate yaw sine and cosine from components
+    register const fix16_t sin_yaw = fix16_div(Yh, pnorm);
+    register const fix16_t cos_yaw = fix16_div(Xh, pnorm);
 
-    // angle += velocity * dT
-    // note that dT is already contained in the dDCM.
-    state_ypr_from_iddcm.x = fix16_add(state_ypr_from_iddcm.x, om_roll);
-    state_ypr_from_iddcm.y = fix16_add(state_ypr_from_iddcm.y, om_pitch);
-    state_ypr_from_iddcm.z = fix16_add(state_ypr_from_iddcm.z, om_yaw);
+    /************************************************************************/
+    /* Calculate tilt-compensated readings                                  */
+    /************************************************************************/
+
+    const fix16_t mx = fix16_mul(cos_pitch, sin_yaw);
+    const fix16_t my = fix16_add(fix16_mul(cos_roll, cos_yaw),
+                                 fix16_mul(sin_roll_sin_pitch, sin_yaw)
+                       );
+    const fix16_t mz = fix16_add(fix16_mul(-sin_roll, cos_yaw),
+                                 fix16_mul(cos_roll_sin_pitch, sin_yaw)
+                       );
 
     /************************************************************************/
     /* Prepare measurement                                                  */
     /************************************************************************/
     {
-        mf16 *const z = &kfm_iddcm.z;
+        mf16 *const z = &kfm_magneto.z;
 
-        matrix_set(z, 0, 0, state_ypr_from_iddcm.x);
-        matrix_set(z, 1, 0, state_ypr_from_iddcm.y);
-        matrix_set(z, 2, 0, state_ypr_from_iddcm.z);
+        matrix_set(z, 0, 0, mx);
+        matrix_set(z, 1, 0, my);
+        matrix_set(z, 2, 0, mz);
+
+        matrix_set(z, 3, 0, fix16_deg_to_rad(m_gyroscope.x));
+        matrix_set(z, 4, 0, fix16_deg_to_rad(m_gyroscope.y));
+        matrix_set(z, 5, 0, fix16_deg_to_rad(m_gyroscope.z));
     }
 
     /************************************************************************/
     /* Perform Kalman update                                                */
     /************************************************************************/
 
-    kalman_correct_uc(&kf_orientation, &kfm_iddcm);
+    kalman_correct_uc(&kf_orientation, &kfm_magneto);
+
+    /************************************************************************/
+    /* Re-orthogonalize and update state matrix                             */
+    /************************************************************************/
+
+    fusion_sanitize_state(&kf_orientation);
 }
 
-/*!
-* \brief Updates the current prediction with gyroscope and iddcm measurements
-* \param[in] gx The x-axis gyroscope value.
-* \param[in] gy The y-axis gyroscope value.
-* \param[in] gz The z-axis gyroscope value.
-*/
-HOT
-void fusion_update_using_gyro_and_iddcm(register const fix16_t deltaT)
-{
-    /************************************************************************/
-    /* Prepare DCM data                                                     */
-    /************************************************************************/
-    
-    // fetch current DCM
-    mf16 dcm = { 3, 3, 0, 0 };
-    sensor_dcm(&dcm, &m_accelerometer, &m_magnetometer);
-
-    // build difference DCM
-    fix16_t om_yaw = 0, om_pitch = 0, om_roll = 0;
-    if (true == state_has_previous_dcm)
-    {
-        sensor_ddcm(&dcm, &state_previous_dcm, &om_roll, &om_pitch, &om_yaw);
-
-        // convert to angle
-        om_yaw = fix16_rad_to_deg(om_yaw);
-        om_pitch = fix16_rad_to_deg(om_pitch);
-        om_roll = fix16_rad_to_deg(om_roll);
-    }
-    else
-    {
-        fix16_t yaw, pitch, roll;
-        sensor_dcm2rpy(&dcm, &roll, &pitch, &yaw);
-
-        // convert to angle
-        yaw = fix16_rad_to_deg(yaw);
-        pitch = fix16_rad_to_deg(pitch);
-        roll = fix16_rad_to_deg(roll);
-
-        // bootstrap iddcm state
-        state_ypr_from_iddcm.x = roll;
-        state_ypr_from_iddcm.y = pitch;
-        state_ypr_from_iddcm.z = yaw;
-
-        // bootstrap gyro state
-        state_ypr_from_gyro.x = roll;
-        state_ypr_from_gyro.y = pitch;
-        state_ypr_from_gyro.z = yaw;
-    }
-    
-    // save current DCM --> previous DCM
-    state_has_previous_dcm = true;
-#if 1
-    for (uint_fast8_t r = 0; r < 3; ++r)
-    {
-        for (uint_fast8_t c = 0; c < 3; ++c)
-        {
-            state_previous_dcm.data[r][c] = dcm.data[r][c];
-        }
-    }
-#else
-    state_previous_dcm.data[0][0] = dcm.data[0][0];
-    state_previous_dcm.data[0][1] = dcm.data[0][1];
-    state_previous_dcm.data[0][2] = dcm.data[0][2];
-
-    state_previous_dcm.data[1][0] = dcm.data[1][0];
-    state_previous_dcm.data[1][1] = dcm.data[1][1];
-    state_previous_dcm.data[1][2] = dcm.data[1][2];
-
-    state_previous_dcm.data[2][0] = dcm.data[2][0];
-    state_previous_dcm.data[2][1] = dcm.data[2][1];
-    state_previous_dcm.data[2][2] = dcm.data[2][2];
-#endif
-
-    // angle += velocity * dT
-    // note that dT is already contained in the dDCM.
-    state_ypr_from_iddcm.x = fix16_add(state_ypr_from_iddcm.x, om_roll);
-    state_ypr_from_iddcm.y = fix16_add(state_ypr_from_iddcm.y, om_pitch);
-    state_ypr_from_iddcm.z = fix16_add(state_ypr_from_iddcm.z, om_yaw);
-
-    /************************************************************************/
-    /* Prepare gyroscope data                                               */
-    /************************************************************************/
-
-    v3d scaled_velocity;
-    v3d_mul_s(&scaled_velocity, &m_gyroscope, deltaT);
-
-    // angle += velocity * dT
-    v3d_add(&state_ypr_from_gyro, &state_ypr_from_gyro, &scaled_velocity);
-
-    /************************************************************************/
-    /* Prepare measurement                                                  */
-    /************************************************************************/
-    {
-        mf16 *const z = &kfm_gyro_iddcm.z;
-
-        matrix_set(z, 0, 0, state_ypr_from_iddcm.x);
-        matrix_set(z, 1, 0, state_ypr_from_iddcm.y);
-        matrix_set(z, 2, 0, state_ypr_from_iddcm.z);
-
-        matrix_set(z, 3, 0, state_ypr_from_gyro.x);
-        matrix_set(z, 4, 0, state_ypr_from_gyro.y);
-        matrix_set(z, 5, 0, state_ypr_from_gyro.z);
-
-        matrix_set(z, 6, 0, m_gyroscope.x);
-        matrix_set(z, 7, 0, m_gyroscope.y);
-        matrix_set(z, 8, 0, m_gyroscope.z);
-    }
-
-    /************************************************************************/
-    /* Perform Kalman update                                                */
-    /************************************************************************/
-
-    kalman_correct_uc(&kf_orientation, &kfm_gyro_iddcm);
-}
 
 /*!
 * \brief Updates the current prediction with the set measurements.
@@ -940,57 +740,33 @@ void fusion_update_using_gyro_and_iddcm(register const fix16_t deltaT)
 */
 void fusion_update(register const fix16_t deltaT)
 {
-    uint_fast8_t strategy = 0;
-
-    // integrate gyroscope if required
     if (true == m_have_gyroscope)
     {
-        // in this case, we need to integrate the gyro and either update
-        // using kfm_gyro_iddcm or kfm_gyro, depending on the other values
-        strategy = 2; // 0b10;
-    }
+        // perform roll and pitch updates
+        if (true == m_have_accelerometer)
+        {
+            fusion_update_attitude(deltaT);
+            m_have_accelerometer = false;
+        }
 
-    // integrate difference DCM if required
-    if (true == m_have_accelerometer || true == m_have_magnetometer)
+        // perform yaw updates
+        if (true == m_have_magnetometer)
+        {
+            fusion_update_orientation(deltaT);
+            m_have_magnetometer = false;
+        }
+
+        // only rotational updates may be performed.
+        if ((false == m_have_accelerometer) && (false == m_have_magnetometer))
+        {
+            // nothing for now.
+        }
+    }
+    else
     {
-        // in this case, we need to build the difference DCM either update
-        // using kfm_iddcm or kfm_gyro_iddcm, depending on m_have_gyroscope
-        strategy |= 1; // 0b01;
+        // nothing for now.
     }
 
-    // select strategy
-    switch (strategy)
-    {
-        case 3: // 0b11 -- if (use_gyro && use_iddcm)
-        {
-            // this is the second-most probable case: gyro observation is available, 
-            // and either accelerometer or magnetometer observations is available
-            fusion_update_using_gyro_and_iddcm(deltaT);
-            break;
-        }
-        case 2: // 0b10 -- if (use_gyro && !use_iddcm)      
-        {
-            // this is the most probable case: gyro observation is available, 
-            // but accelerometer and magnetometer observations are missing
-            fusion_update_using_gyro_only(deltaT);
-            break;
-        }
-        case 1: // 0b01 -- (!use_gyro && use_iddcm)
-        {
-            // this is the least probable case: and either accelerometer or 
-            // magnetometer observations is available, but gyro observation is missing
-            fusion_update_using_iddcm_only(deltaT);
-            break;
-        }
-        default: // 0b00 -- (!use_gyro && !use_iddcm)
-        {
-            // in any other case, do nothing.
-            break;
-        }
-    }
-   
-
-    m_have_accelerometer = false;
-    m_have_gyroscope = false;
-    m_have_magnetometer = false;
+    // For now, let's assume gyro readings are always valid
+    // m_have_gyroscope = false;
 }

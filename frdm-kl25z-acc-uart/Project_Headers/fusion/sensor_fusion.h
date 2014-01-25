@@ -14,7 +14,8 @@
 /*!
 * \brief Initializes the sensor fusion mechanism.
 */
-void fusion_initialize() COLD;
+COLD
+void fusion_initialize();
 
 /*!
 * \brief Fetches the values without any modification
@@ -22,16 +23,8 @@ void fusion_initialize() COLD;
 * \param[out] pitch The pitch (elevation) angle in degree.
 * \param[out] yaw The yaw (heading, azimuth) angle in degree.
 */
-void fusion_fetch_angles(register fix16_t *const roll, register fix16_t *const pitch, register fix16_t *const yaw) HOT NONNULL LEAF;
-
-/*!
-* \brief Fetches the values without any modification
-* \param[out] roll The roll angle velocity in degree/2.
-* \param[out] pitch The pitch (elevation) angle velocity in degree/2.
-* \param[out] yaw The yaw (heading, azimuth) angle velocity in degree/2.
-*/
 HOT NONNULL LEAF
-void fusion_fetch_angular_velocities(register fix16_t *const roll, register fix16_t *const pitch, register fix16_t *const yaw);
+void fusion_fetch_angles(register fix16_t *RESTRICT const roll, register fix16_t *RESTRICT const pitch, register fix16_t *RESTRICT const yaw);
 
 /*!
 * \brief Performs a prediction of the current Euler angles based on the time difference to the prediction or observation update call.
@@ -95,10 +88,5 @@ STATIC_INLINE void fusion_set_magnetometer_v3d(register const v3d *const data)
 * \param[in] deltaT The time difference in seconds to the last prediction or observation update call.
 */
 void fusion_update(register const fix16_t deltaT) HOT;
-
-/*!
-* \brief Sanitizes the state variables
-*/
-void fusion_sanitize_state() HOT;
 
 #endif // SENSOR_FUNCTION_H_

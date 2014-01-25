@@ -469,26 +469,17 @@ int main(void)
             // correct the measurements
             fusion_update(deltaT);
 
-            // sanitize state data
-            fusion_sanitize_state();
-
+            
             FusionSignal_Clear();
 
             fix16_t yaw, pitch, roll;
             fusion_fetch_angles(&roll, &pitch, &yaw);
+
 #if 0
             float yawf = fix16_to_float(yaw),
                 pitchf = fix16_to_float(pitch),
                 rollf = fix16_to_float(roll);
-            
-            fusion_fetch_angular_velocities(&yaw, &pitch, &roll);
 
-            float omyawf = fix16_to_float(yaw),
-                ompitchf = fix16_to_float(pitch),
-                omrollf = fix16_to_float(roll);
-#endif
-
-#if 0
             IO_SendInt16((int16_t)yawf);
             IO_SendInt16((int16_t)pitchf);
             IO_SendInt16((int16_t)rollf);
@@ -496,7 +487,7 @@ int main(void)
             IO_SendByteUncommited('\r');
             IO_SendByte('\n');
 #else
-            if (current_time - last_transmit_time >= 25)
+            if (current_time - last_transmit_time >= 100)
             {
                 /* write data */
                 uint8_t type = 0x01;
