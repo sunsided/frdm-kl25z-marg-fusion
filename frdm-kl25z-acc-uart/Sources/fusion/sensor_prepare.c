@@ -68,10 +68,11 @@ void sensor_prepare_mpu6050_gyroscope_data(v3d *const out, int16_t rawx, int16_t
     // calibrate!
     mpu6050_calibrate_gyroscope_v3d(out);
 
-    // data is already in degree
+    // data in degree, so convert to radians
 
-    out->x = -out->x;
-    out->y = -out->y;
+    out->x = fix16_deg_to_rad(-out->x);
+    out->y = fix16_deg_to_rad(-out->y);
+    out->z = fix16_deg_to_rad( out->z);
 }
 
 /*!
