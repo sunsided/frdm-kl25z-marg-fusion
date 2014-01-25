@@ -99,13 +99,13 @@ function serial_orientation2
                    
                     % Decode MMA8451Q data
                     sensorDataCount(RPY) = sensorDataCount(RPY) + 1;
-                    scaling = 65535;
+                    scaling = (1/65535) * 180 / pi;
                     
                     rpy = [
                         double(typecast(data(2:5), 'int32'));
                         double(typecast(data(6:9), 'int32'));
                         double(typecast(data(10:13), 'int32'));
-                        ] / scaling;
+                        ] * scaling;
 
                     % attach data to buffer
                     if mod(sensorDataCount(RPY), BUFFER_STEP_SIZE) == 0
