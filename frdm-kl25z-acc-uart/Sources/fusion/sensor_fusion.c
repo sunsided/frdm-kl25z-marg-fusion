@@ -548,6 +548,49 @@ STATIC_INLINE void mf16_copy(mf16 *RESTRICT const dest, const mf16 *RESTRICT con
 /************************************************************************/
 
 /*!
+* \brief Performs a fast state update by using knowledge about the matrix structure
+* \param[in] kf The filter whose state to update
+* \param[in] deltaT The time differential
+*/
+HOT NONNULL
+STATIC_INLINE void fusion_fastpredict_X(kalman16_uc_t *const kf, const register fix16_t deltaT)
+{
+    mf16 *const x = kalman_get_state_vector_uc(kf);
+
+    /*
+        Transition matrix layout:
+
+        A_rp = [0 0 0,     0 -Cn3  Cn2;
+                0 0 0,   Cn3    0 -Cn1;
+                0 0 0,  -Cn2  Cn1    0;
+
+                0 0 0,     0 0 0;
+                0 0 0,     0 0 0;
+                0 0 0,     0 0 0];
+    */
+
+    // fetch estimated DCM components
+    register const fix16_t c1 = x->data[0][0];
+    register const fix16_t c2 = x->data[1][0];
+    register const fix16_t c3 = x->data[2][0];
+
+    // fetch estimated angular velocities
+    register const fix16_t gx = x->data[3][0];
+    register const fix16_t gy = x->data[4][0];
+    register const fix16_t gz = x->data[5][0];
+    
+    // solve differential equations
+    register const d_c1 = fix16_sub(fix16_mul(c2, gz), fix16_mul(c3, gy)); //    0*gx  + (-c3*gy) +   c2*gz  = c2*gz - c3*gy
+    register const d_c2 = fix16_sub(fix16_mul(c3, gx), fix16_mul(c1, gz)); //   c3*gx  +    0*gy  + (-c1*gz) = c3*gx - c1*gz
+    register const d_c3 = fix16_sub(fix16_mul(c1, gy), fix16_mul(c2, gx)); // (-c2*gx) +  (c1*gy) +    0*gz  = c1*gy - c2*gx
+
+    // integrate
+    x->data[0][0] = fix16_add(c1, fix16_mul(d_c1, deltaT));
+    x->data[1][0] = fix16_add(c2, fix16_mul(d_c2, deltaT));
+    x->data[2][0] = fix16_add(c3, fix16_mul(d_c3, deltaT));
+}
+
+/*!
 * \brief Performs a prediction of the current Euler angles based on the time difference to the previous prediction/update iteration.
 * \param[in] deltaT The time difference in seconds to the last prediction or observation update call.
 */
@@ -593,9 +636,17 @@ void fusion_predict(register const fix16_t deltaT)
     mf16_add_scaled(P3, &P_attitude, P3, deltaT);
     mf16_add_scaled(P2, &P_orientation, P2, deltaT);
     
-#else
+#elseif 0
     kalman_cpredict_uc(&kf_attitude, deltaT);
     kalman_cpredict_uc(&kf_orientation, deltaT);
+#else
+    // predict state
+    fusion_fastpredict_X(&kf_attitude, deltaT);
+    fusion_fastpredict_X(&kf_orientation, deltaT);
+
+    // predict covariance
+    kalman_cpredict_P_uc(&kf_attitude, deltaT);
+    kalman_cpredict_P_uc(&kf_orientation, deltaT);
 #endif
 
     // re-orthogonalize and update state matrix
