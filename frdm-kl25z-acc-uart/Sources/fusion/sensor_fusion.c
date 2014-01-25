@@ -158,7 +158,7 @@ static bool m_have_magnetometer = false;
 /*!
 * \brief Initializes the state matrix of a specific filter based on its state
 */
-HOT NONNULL
+HOT NONNULL LEAF
 STATIC_INLINE void update_state_matrix_from_state(kalman16_uc_t *const kf)
 {
     mf16 *const A = &kf->A;
@@ -184,7 +184,7 @@ STATIC_INLINE void update_state_matrix_from_state(kalman16_uc_t *const kf)
 /*!
 * \brief Initialization of a specific filter
 */
-COLD
+COLD NONNULL
 static void initialize_system_filter(kalman16_uc_t *const kf, const uint_fast8_t states)
 {
     kalman_filter_initialize_uc(kf, states);
@@ -333,7 +333,7 @@ void fusion_initialize()
 /*!
 * \brief Sanitizes the state variables
 */
-HOT
+HOT NONNULL
 STATIC_INLINE void fusion_sanitize_state(kalman16_uc_t *const kf)
 {
     mf16 *const A = &kf->A;
@@ -380,7 +380,7 @@ STATIC_INLINE int32_t fix16_sign(const fix16_t value)
 * \param[out] pitch The pitch (elevation) angle in radians.
 */
 HOT NONNULL LEAF
-void calculate_roll_pitch(register fix16_t *RESTRICT const roll, register fix16_t *RESTRICT const pitch)
+STATIC_INLINE void calculate_roll_pitch(register fix16_t *RESTRICT const roll, register fix16_t *RESTRICT const pitch)
 {
     const mf16 *const x = kalman_get_state_vector_uc(&kf_attitude);
 
@@ -407,7 +407,7 @@ void calculate_roll_pitch(register fix16_t *RESTRICT const roll, register fix16_
 * \param[out] yaw The yaw angle in radians
 */
 HOT NONNULL LEAF
-void calculate_yaw(register const fix16_t roll, register const fix16_t pitch, register fix16_t *RESTRICT const yaw)
+STATIC_INLINE void calculate_yaw(register const fix16_t roll, register const fix16_t pitch, register fix16_t *RESTRICT const yaw)
 {
     const mf16 *const x2 = kalman_get_state_vector_uc(&kf_orientation);
     const mf16 *const x3 = kalman_get_state_vector_uc(&kf_attitude);
@@ -453,6 +453,57 @@ void fusion_fetch_angles(register fix16_t *RESTRICT const roll, register fix16_t
     calculate_yaw(*roll, *pitch, yaw);
 }
 
+/*!
+* \brief Copies one matrix to another
+* \param[out] dest The destination matrix
+* \param[in] source The source matrix
+*/
+HOT NONNULL LEAF
+STATIC_INLINE void mf16_copy(mf16 *RESTRICT const dest, const mf16 *RESTRICT const source)
+{
+    const uint_fast8_t columns = source->columns;
+    const uint_fast8_t rows = source->rows;
+
+    dest->columns = columns;
+    dest->rows = rows;
+    for (int i = 0; i < rows - 1; ++i)
+    {
+        for (int j = 0; j < columns - 1; ++j)
+        {
+            dest->data[i][j] = source->data[i][j];
+        }
+    }
+}
+
+// Calculates dest = A + B * s
+HOT NONNULL
+STATIC_INLINE void mf16_add_scaled(mf16 *dest, const mf16 *RESTRICT a, const mf16 *RESTRICT b, const fix16_t s)
+{
+    int row, column;
+
+    if (dest->columns != a->columns || dest->rows != a->rows)
+        dest->errors |= FIXMATRIX_DIMERR;
+    
+    if (a->columns != b->columns || a->rows != b->rows)
+        dest->errors |= FIXMATRIX_DIMERR;
+
+    for (row = 0; row < dest->rows; row++)
+    {
+        for (column = 0; column < dest->columns; column++)
+        {
+            register const fix16_t scaled = fix16_mul(b->data[row][column], s);
+            register fix16_t sum = fix16_add(a->data[row][column], scaled);
+
+#ifndef FIXMATH_NO_OVERFLOW
+            if (sum == fix16_overflow)
+                dest->errors |= FIXMATRIX_OVERFLOW;
+#endif
+
+            dest->data[row][column] = sum;
+        }
+    }
+}
+
 /************************************************************************/
 /* State prediction                                                     */
 /************************************************************************/
@@ -467,6 +518,9 @@ void fusion_predict(register const fix16_t deltaT)
     mf16 *const x2 = kalman_get_state_vector_uc(&kf_orientation);
     mf16 *const x3 = kalman_get_state_vector_uc(&kf_attitude);
     
+    mf16 *const P2 = kalman_get_system_covariance_uc(&kf_orientation);
+    mf16 *const P3 = kalman_get_system_covariance_uc(&kf_attitude);
+
     // fetch old state for integration
     const fix16_t c31 = x3->data[0][0];
     const fix16_t c32 = x3->data[1][0];
@@ -475,6 +529,12 @@ void fusion_predict(register const fix16_t deltaT)
     const fix16_t c21 = x2->data[0][0];
     const fix16_t c22 = x2->data[1][0];
     const fix16_t c23 = x2->data[2][0];
+
+    // fetch old covariance matrices for integration
+    mf16 P_attitude = { KF_ATTITUDE_STATES, KF_ATTITUDE_STATES, 0, 0 },
+        P_orientation = { KF_ORIENTATION_STATES, KF_ORIENTATION_STATES, 0, 0 };
+    mf16_copy(&P_attitude, P3);
+    mf16_copy(&P_orientation, P2);
 
     // predict.
 #if 0
@@ -493,6 +553,10 @@ void fusion_predict(register const fix16_t deltaT)
     x2->data[0][0] = fix16_add(c21, fix16_mul(x2->data[0][0], deltaT));
     x2->data[1][0] = fix16_add(c22, fix16_mul(x2->data[1][0], deltaT));
     x2->data[2][0] = fix16_add(c23, fix16_mul(x2->data[2][0], deltaT));
+
+    // integrate covariance matrices
+    mf16_add_scaled(P3, &P_attitude, P3, deltaT);
+    mf16_add_scaled(P2, &P_orientation, P2, deltaT);
 
     // re-orthogonalize and update state matrix
     fusion_sanitize_state(&kf_attitude);
