@@ -475,35 +475,6 @@ STATIC_INLINE void mf16_copy(mf16 *RESTRICT const dest, const mf16 *RESTRICT con
     }
 }
 
-// Calculates dest = A + B * s
-HOT NONNULL
-STATIC_INLINE void mf16_add_scaled(mf16 *dest, const mf16 *RESTRICT a, const mf16 *RESTRICT b, const fix16_t s)
-{
-    int row, column;
-
-    if (dest->columns != a->columns || dest->rows != a->rows)
-        dest->errors |= FIXMATRIX_DIMERR;
-    
-    if (a->columns != b->columns || a->rows != b->rows)
-        dest->errors |= FIXMATRIX_DIMERR;
-
-    for (row = 0; row < dest->rows; row++)
-    {
-        for (column = 0; column < dest->columns; column++)
-        {
-            register const fix16_t scaled = fix16_mul(b->data[row][column], s);
-            register fix16_t sum = fix16_add(a->data[row][column], scaled);
-
-#ifndef FIXMATH_NO_OVERFLOW
-            if (sum == fix16_overflow)
-                dest->errors |= FIXMATRIX_OVERFLOW;
-#endif
-
-            dest->data[row][column] = sum;
-        }
-    }
-}
-
 /************************************************************************/
 /* State prediction                                                     */
 /************************************************************************/
@@ -520,7 +491,9 @@ void fusion_predict(register const fix16_t deltaT)
     
     mf16 *const P2 = kalman_get_system_covariance_uc(&kf_orientation);
     mf16 *const P3 = kalman_get_system_covariance_uc(&kf_attitude);
-
+    
+    // predict.
+#if 0
     // fetch old state for integration
     const fix16_t c31 = x3->data[0][0];
     const fix16_t c32 = x3->data[1][0];
@@ -532,19 +505,13 @@ void fusion_predict(register const fix16_t deltaT)
 
     // fetch old covariance matrices for integration
     mf16 P_attitude = { KF_ATTITUDE_STATES, KF_ATTITUDE_STATES, 0, 0 },
-        P_orientation = { KF_ORIENTATION_STATES, KF_ORIENTATION_STATES, 0, 0 };
+    P_orientation = { KF_ORIENTATION_STATES, KF_ORIENTATION_STATES, 0, 0 };
     mf16_copy(&P_attitude, P3);
     mf16_copy(&P_orientation, P2);
 
-    // predict.
-#if 0
     kalman_predict_tuned_uc(&kf_attitude, lambda);
     kalman_predict_tuned_uc(&kf_orientation, lambda);
-#else
-    kalman_predict_uc(&kf_attitude);
-    kalman_predict_uc(&kf_orientation);
-#endif
-
+    
     // integrate state
     x3->data[0][0] = fix16_add(c31, fix16_mul(x3->data[0][0], deltaT));
     x3->data[1][0] = fix16_add(c32, fix16_mul(x3->data[1][0], deltaT));
@@ -557,6 +524,11 @@ void fusion_predict(register const fix16_t deltaT)
     // integrate covariance matrices
     mf16_add_scaled(P3, &P_attitude, P3, deltaT);
     mf16_add_scaled(P2, &P_orientation, P2, deltaT);
+    
+#else
+    kalman_cpredict_uc(&kf_attitude, deltaT);
+    kalman_cpredict_uc(&kf_orientation, deltaT);
+#endif
 
     // re-orthogonalize and update state matrix
     fusion_sanitize_state(&kf_attitude);
