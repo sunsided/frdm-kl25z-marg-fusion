@@ -38,12 +38,12 @@ static kalman16_uc_t kf_orientation;
 #define KF_ORIENTATION_STATES 6
 
 /*!
-* \brief The Kalman filter observation instance used to update the prediction with integrated accelerometer data
+* \brief The Kalman filter observation instance used to update the prediction with accelerometer data
 */
 static kalman16_observation_t kfm_accel;
 
 /*!
-* \def KFM_IDDCM Number of observation variables for integrated difference DCM-only updates
+* \def KFM_ACCEL Number of observation variables for accelerometer updates
 */
 #define KFM_ACCEL 6
 
@@ -53,9 +53,19 @@ static kalman16_observation_t kfm_accel;
 static kalman16_observation_t kfm_magneto;
 
 /*!
-* \def KFM_IDDCM Number of observation variables for integrated difference DCM-only updates
+* \def KFM_MAGNETO Number of observation variables for magnetometer updates
 */
 #define KFM_MAGNETO 6
+
+/*!
+* \brief The Kalman filter observation instance used to update the prediction with magnetometer data
+*/
+static kalman16_observation_t kfm_gyro;
+
+/*!
+* \def KFM_GYRO Number of observation variables for gyroscope-only updates
+*/
+#define KFM_GYRO 3
 
 /*!
 * \brief Lambda parameter for certainty tuning
@@ -340,11 +350,46 @@ static void initialize_observation_magneto()
 }
 
 /*!
+* \brief Initialization of a specific measurement
+*/
+COLD
+static void initialize_observation_gyro()
+{
+    kalman_observation_initialize(&kfm_gyro, KF_ORIENTATION_STATES, KFM_GYRO);
+
+    /************************************************************************/
+    /* Set observation model                                                */
+    /************************************************************************/
+    {
+        mf16 *const H = &kfm_gyro.H;
+
+        // gyro
+        matrix_set(H, 0, 3, F16_ONE);
+        matrix_set(H, 1, 4, F16_ONE);
+        matrix_set(H, 2, 5, F16_ONE);
+    }
+
+    /************************************************************************/
+    /* Set observation process noise covariance                             */
+    /************************************************************************/
+    const fix16_t initial_r_gyro = F16(0.001);
+    {
+        mf16 *const R = &kfm_gyro.R;
+
+        matrix_set(R, 0, 0, initial_r_gyro);
+        matrix_set(R, 1, 1, initial_r_gyro);
+        matrix_set(R, 2, 2, initial_r_gyro);
+    }
+
+}
+
+/*!
 * \brief Initializes the sensor fusion mechanism.
 */
 void fusion_initialize()
 {
     initialize_system();
+    initialize_observation_gyro();
     initialize_observation_accel();
     initialize_observation_magneto();
 }
@@ -644,6 +689,36 @@ void fusion_update_attitude(register const fix16_t deltaT)
 }
 
 /*!
+* \brief Updates the current prediction with gyroscope data
+*/
+HOT
+void fusion_update_attitude_gyro(register const fix16_t deltaT)
+{
+    /************************************************************************/
+    /* Prepare measurement                                                  */
+    /************************************************************************/
+    {
+        mf16 *const z = &kfm_gyro.z;
+
+        matrix_set(z, 0, 0, m_gyroscope.x);
+        matrix_set(z, 1, 0, m_gyroscope.y);
+        matrix_set(z, 2, 0, m_gyroscope.z);
+    }
+
+    /************************************************************************/
+    /* Perform Kalman update                                                */
+    /************************************************************************/
+
+    kalman_correct_uc(&kf_attitude, &kfm_gyro);
+
+    /************************************************************************/
+    /* Re-orthogonalize and update state matrix                             */
+    /************************************************************************/
+
+    fusion_sanitize_state(&kf_attitude);
+}
+
+/*!
 * \brief Updates the current prediction with magnetometer data
 */
 HOT
@@ -729,6 +804,35 @@ void fusion_update_orientation(register const fix16_t deltaT)
     fusion_sanitize_state(&kf_orientation);
 }
 
+/*!
+* \brief Updates the current prediction with gyroscope data
+*/
+HOT
+void fusion_update_orientation_gyro(register const fix16_t deltaT)
+{
+    /************************************************************************/
+    /* Prepare measurement                                                  */
+    /************************************************************************/
+    {
+        mf16 *const z = &kfm_gyro.z;
+
+        matrix_set(z, 0, 0, m_gyroscope.x);
+        matrix_set(z, 1, 0, m_gyroscope.y);
+        matrix_set(z, 2, 0, m_gyroscope.z);
+    }
+
+    /************************************************************************/
+    /* Perform Kalman update                                                */
+    /************************************************************************/
+
+    kalman_correct_uc(&kf_orientation, &kfm_gyro);
+
+    /************************************************************************/
+    /* Re-orthogonalize and update state matrix                             */
+    /************************************************************************/
+
+    fusion_sanitize_state(&kf_orientation);
+}
 
 /*!
 * \brief Updates the current prediction with the set measurements.
@@ -756,6 +860,11 @@ void fusion_update(register const fix16_t deltaT)
             fusion_update_attitude(deltaT);
             m_have_accelerometer = false;
         }
+        else
+        {
+            // perform only rotational update
+            fusion_update_attitude_gyro(deltaT);
+        }
 
         // perform yaw updates
         if (true == m_have_magnetometer)
@@ -776,11 +885,10 @@ void fusion_update(register const fix16_t deltaT)
             fusion_update_orientation(deltaT);
             m_have_magnetometer = false;
         }
-
-        // only rotational updates may be performed.
-        if ((false == m_have_accelerometer) && (false == m_have_magnetometer))
+        else
         {
-            // nothing for now.
+            // perform only rotational update
+            fusion_update_orientation_gyro(deltaT);
         }
     }
     else
