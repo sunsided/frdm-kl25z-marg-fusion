@@ -10,6 +10,8 @@
 
 #include "compiler.h"
 #include "fixmath.h"
+#include "fixmatrix.h"
+#include "fixquat.h"
 
 /*!
 * \brief Initializes the sensor fusion mechanism.
@@ -25,6 +27,13 @@ void fusion_initialize();
 */
 HOT NONNULL LEAF
 void fusion_fetch_angles(register fix16_t *RESTRICT const roll, register fix16_t *RESTRICT const pitch, register fix16_t *RESTRICT const yaw);
+
+/*!
+* \brief Fetches the orientation quaternion.
+* \param[out] quat The orientation quaternion
+*/
+HOT NONNULL LEAF
+void fusion_fetch_quaternion(register qf16 *RESTRICT const quat);
 
 /*!
 * \brief Performs a prediction of the current Euler angles based on the time difference to the prediction or observation update call.

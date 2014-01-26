@@ -472,6 +472,11 @@ int main(void)
             
             FusionSignal_Clear();
 
+            qf16 orientation;
+            fusion_fetch_quaternion(&orientation);
+
+#if 0
+
             fix16_t yaw, pitch, roll;
             fusion_fetch_angles(&roll, &pitch, &yaw);
 
@@ -490,13 +495,25 @@ int main(void)
             if (current_time - last_transmit_time >= 100)
             {
                 /* write data */
-                uint8_t type = 0x01;
+                uint8_t type = 42;
                 fix16_t buffer[3] = { roll, pitch, yaw };
                 P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)buffer, sizeof(buffer), IO_SendByte);
 
                 last_transmit_time = current_time;
             }
 #endif
+#else
+            if (current_time - last_transmit_time >= 100)
+            {
+                /* write data */
+                uint8_t type = 43;
+                fix16_t buffer[4] = { orientation.a, orientation.b, orientation.c, orientation.d };
+                P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)buffer, sizeof(buffer), IO_SendByte);
+
+                last_transmit_time = current_time;
+            }
+#endif
+
         }
 
 #endif // DATA_FUSE_MODE
