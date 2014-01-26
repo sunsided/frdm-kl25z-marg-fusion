@@ -20,7 +20,7 @@
 static const fix16_t initial_r_axis = F16(0.02);
 static const fix16_t initial_r_gyro = F16(0.001);
 
-static const fix16_t q_axis = F16(0.5);
+static const fix16_t q_axis = F16(5);
 static const fix16_t q_gyro = F16(.1);
 
 static const fix16_t alpha1 = F16(100);
