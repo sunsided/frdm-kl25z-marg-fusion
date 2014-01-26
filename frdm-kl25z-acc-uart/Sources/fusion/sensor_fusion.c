@@ -14,6 +14,13 @@
 #include "fusion/sensor_fusion.h"
 
 /************************************************************************/
+/* Measurement covariance definitions                                   */
+/************************************************************************/
+
+static const fix16_t initial_r_axis = F16(0.01);
+static const fix16_t initial_r_gyro = F16(0.01);
+
+/************************************************************************/
 /* Kalman filter structure definition                                   */
 /************************************************************************/
 
@@ -176,6 +183,39 @@ static bool m_orientation_bootstrapped = false;
 #define initial_dT          (F16_ONE)
 
 /************************************************************************/
+/* Helper functions                                                     */
+/************************************************************************/
+
+// Calculates dest = A + B * s
+HOT NONNULL
+STATIC_INLINE void mf16_add_scaled(mf16 *dest, const mf16 *RESTRICT a, const mf16 *RESTRICT b, const fix16_t s)
+{
+    int row, column;
+
+    if (dest->columns != a->columns || dest->rows != a->rows)
+        dest->errors |= FIXMATRIX_DIMERR;
+
+    if (a->columns != b->columns || a->rows != b->rows)
+        dest->errors |= FIXMATRIX_DIMERR;
+
+    for (row = 0; row < dest->rows; row++)
+    {
+        for (column = 0; column < dest->columns; column++)
+        {
+            register const fix16_t scaled = fix16_mul(b->data[row][column], s);
+            register fix16_t sum = fix16_add(a->data[row][column], scaled);
+
+#ifndef FIXMATH_NO_OVERFLOW
+            if (sum == fix16_overflow)
+                dest->errors |= FIXMATRIX_OVERFLOW;
+#endif
+
+            dest->data[row][column] = sum;
+        }
+    }
+}
+
+/************************************************************************/
 /* System initialization                                                */
 /************************************************************************/
 
@@ -324,8 +364,6 @@ static void initialize_observation(kalman16_observation_t *const kfm, const uint
     /************************************************************************/
     /* Set observation process noise covariance                             */
     /************************************************************************/
-    const fix16_t initial_r_axis = F16(0.02);
-    const fix16_t initial_r_gyro = F16(0.001);
     update_measurement_noise(kfm, initial_r_axis, initial_r_gyro);
 }
 
@@ -372,7 +410,6 @@ static void initialize_observation_gyro()
     /************************************************************************/
     /* Set observation process noise covariance                             */
     /************************************************************************/
-    const fix16_t initial_r_gyro = F16(0.001);
     {
         mf16 *const R = &kfm_gyro.R;
 
@@ -435,11 +472,22 @@ STATIC_INLINE void fusion_sanitize_state(kalman16_uc_t *const kf)
 
 /*!
 * \brief Fetches the sign of a variable
+* \return -1 if value is negative, +1 otherwise
 */
 HOT CONST
 STATIC_INLINE int32_t fix16_sign(const fix16_t value)
 {
     return value >= 0 ? 1 : -1;
+}
+
+/*!
+* \brief Fetches the sign of a variable, 
+* \return -1 if value is negative, +1 if value is positive, 0 otherwise
+*/
+HOT CONST
+STATIC_INLINE int32_t fix16_sign_ex(const fix16_t value)
+{
+    return (value > 0) ? 1 : (value < 0) ? -1 : 0;
 }
 
 /*!
@@ -522,25 +570,120 @@ void fusion_fetch_angles(register fix16_t *RESTRICT const roll, register fix16_t
 }
 
 /*!
-* \brief Copies one matrix to another
-* \param[out] dest The destination matrix
-* \param[in] source The source matrix
+* \brief  Returns the maximum value of two 
+*/
+HOT CONST LEAF
+STATIC_INLINE const fix16_t zero_or_value(register const fix16_t value)
+{
+    return value >= 0 ? value : 0;
+}
+
+/*!
+* \brief Fetches the orientation quaternion.
+* \param[out] quat The orientation quaternion
 */
 HOT NONNULL LEAF
-STATIC_INLINE void mf16_copy(mf16 *RESTRICT const dest, const mf16 *RESTRICT const source)
-{
-    const uint_fast8_t columns = source->columns;
-    const uint_fast8_t rows = source->rows;
+void fusion_fetch_quaternion(register qf16 *RESTRICT const quat)
+{   
+    const register mf16 *const x2 = kalman_get_state_vector_uc(&kf_orientation);
+    const register mf16 *const x3 = kalman_get_state_vector_uc(&kf_attitude);
 
-    dest->columns = columns;
-    dest->rows = rows;
-    for (int i = 0; i < rows - 1; ++i)
-    {
-        for (int j = 0; j < columns - 1; ++j)
-        {
-            dest->data[i][j] = source->data[i][j];
-        }
-    }
+    // m00 = R(1, 1);    m01 = R(1, 2);    m02 = R(1, 3);
+    // m10 = R(2, 1);    m11 = R(2, 2);    m12 = R(2, 3);
+    // m20 = R(3, 1);    m21 = R(3, 2);    m22 = R(3, 3);
+
+    const register fix16_t m10 = x2->data[0][0];
+    const register fix16_t m11 = x2->data[1][0];
+    const register fix16_t m12 = x2->data[2][0];
+
+    const register fix16_t m20 = x3->data[0][0];
+    const register fix16_t m21 = x3->data[1][0];
+    const register fix16_t m22 = x3->data[2][0];
+
+    // calculate cross product for C1
+    // m0 = cross([m10 m11 m12], [m20 m21 m22])
+    // -->
+    //      m00 = m11*m22 - m12*m21
+    //      m01 = m12*m20 - m10*m22
+    //      m02 = m10*m21 - m11*m20
+    register fix16_t m00 = fix16_sub(fix16_mul(m11, m22), fix16_mul(m12, m21));
+    register fix16_t m01 = fix16_sub(fix16_mul(m12, m20), fix16_mul(m10, m22));
+    register fix16_t m02 = fix16_sub(fix16_mul(m10, m21), fix16_mul(m11, m20));
+
+    // normalize C1 
+    const register fix16_t norm = fix16_sqrt(fix16_add(fix16_sq(m00), fix16_add(fix16_sq(m01), fix16_sq(m02))));
+    m00 = fix16_div(m00, norm);
+    m01 = fix16_div(m01, norm);
+    m02 = fix16_div(m02, norm);
+
+    /*
+    From MATLAB code:
+
+    qw = sqrt(max(0, 1 + m00 + m11 + m22)) / 2;
+    qx = sqrt(max(0, 1 + m00 - m11 - m22)) / 2;
+    qy = sqrt(max(0, 1 - m00 + m11 - m22)) / 2;
+    qz = sqrt(max(0, 1 - m00 - m11 + m22)) / 2;
+
+    % patch the signs
+    qx = copysign(qx, m21 - m12);
+    qy = copysign(qy, m02 - m20);
+    qz = copysign(qz, m10 - m01);
+
+    q = [qw qx qy qz];
+    */
+
+    // qw = sqrt(max(0, 1 + m00 + m11 + m22)) / 2;
+    fix16_t qw = fix16_mul(F16(0.5), fix16_sqrt(zero_or_value(fix16_add(F16(1), fix16_add(m00, fix16_add(m11, m22))))));
+
+    // qx = sqrt(max(0, 1 + m00 - m11 - m22)) / 2;
+    //                  1 + m00 - m11 - m22 
+    //               =  1 + m00 - (m11 + m22)
+    fix16_t qx = fix16_mul(F16(0.5), fix16_sqrt(zero_or_value(fix16_add(F16(1), fix16_sub(m00, fix16_add(m11, m22))))));
+
+    // qy = sqrt(max(0, 1 - m00 + m11 - m22)) / 2;
+    //                  1 - m00 + m11 - m22
+    //               =  1 - (m00 - m11 + m22)
+    //               =  1 - (m00 - (m11 - m22))
+    fix16_t qy = fix16_mul(F16(0.5), fix16_sqrt(zero_or_value(fix16_sub(F16(1), fix16_sub(m00, fix16_sub(m11, m22))))));
+
+    // qz = sqrt(max(0, 1 - m00 - m11 + m22)) / 2;
+    //                  1 - m00 - m11 + m22 
+    //               =  1 - (m00 + m11 - m22)
+    //               =  1 - (m00 + (m11 - m22))
+    fix16_t qz = fix16_mul(F16(0.5), fix16_sqrt(zero_or_value(fix16_sub(F16(1), fix16_add(m00, fix16_sub(m11, m22))))));
+    
+#if 1
+
+    // qx = copysign(qx, m21 - m12);
+    qx *= fix16_sign_ex(fix16_sub(m21, m12));
+
+    // qy = copysign(qy, m02 - m20);
+    qy *= fix16_sign_ex(fix16_sub(m02, m20));
+
+    //  qz = copysign(qz, m10 - m01);
+    qz *= fix16_sign_ex(fix16_sub(m10, m01));
+
+#else
+
+    // qx = copysign(qx, m21 - m12);
+    qx *= fix16_sign_ex(fix16_sub(m12, m21));
+
+    // qy = copysign(qy, m02 - m20);
+    qy *= fix16_sign_ex(fix16_sub(m20, m02));
+
+    //  qz = copysign(qz, m10 - m01);
+    qz *= fix16_sign_ex(fix16_sub(m01, m10));
+
+#endif
+    
+    // compose quaternion
+    quat->a = qw;
+    quat->b = qx;
+    quat->c = qy;
+    quat->d = qz;
+
+    // normalizify
+    qf16_normalize(quat, quat);
 }
 
 /************************************************************************/
@@ -580,9 +723,9 @@ STATIC_INLINE void fusion_fastpredict_X(kalman16_uc_t *const kf, const register 
     register const fix16_t gz = x->data[5][0];
     
     // solve differential equations
-    register const d_c1 = fix16_sub(fix16_mul(c2, gz), fix16_mul(c3, gy)); //    0*gx  + (-c3*gy) +   c2*gz  = c2*gz - c3*gy
-    register const d_c2 = fix16_sub(fix16_mul(c3, gx), fix16_mul(c1, gz)); //   c3*gx  +    0*gy  + (-c1*gz) = c3*gx - c1*gz
-    register const d_c3 = fix16_sub(fix16_mul(c1, gy), fix16_mul(c2, gx)); // (-c2*gx) +  (c1*gy) +    0*gz  = c1*gy - c2*gx
+    register const fix16_t d_c1 = fix16_sub(fix16_mul(c2, gz), fix16_mul(c3, gy)); //    0*gx  + (-c3*gy) +   c2*gz  = c2*gz - c3*gy
+    register const fix16_t d_c2 = fix16_sub(fix16_mul(c3, gx), fix16_mul(c1, gz)); //   c3*gx  +    0*gy  + (-c1*gz) = c3*gx - c1*gz
+    register const fix16_t d_c3 = fix16_sub(fix16_mul(c1, gy), fix16_mul(c2, gx)); // (-c2*gx) +  (c1*gy) +    0*gz  = c1*gy - c2*gx
 
     // integrate
     x->data[0][0] = fix16_add(c1, fix16_mul(d_c1, deltaT));
@@ -603,43 +746,6 @@ void fusion_predict(register const fix16_t deltaT)
     mf16 *const P2 = kalman_get_system_covariance_uc(&kf_orientation);
     mf16 *const P3 = kalman_get_system_covariance_uc(&kf_attitude);
     
-    // predict.
-#if 0
-    // fetch old state for integration
-    const fix16_t c31 = x3->data[0][0];
-    const fix16_t c32 = x3->data[1][0];
-    const fix16_t c33 = x3->data[2][0];
-
-    const fix16_t c21 = x2->data[0][0];
-    const fix16_t c22 = x2->data[1][0];
-    const fix16_t c23 = x2->data[2][0];
-
-    // fetch old covariance matrices for integration
-    mf16 P_attitude = { KF_ATTITUDE_STATES, KF_ATTITUDE_STATES, 0, 0 },
-    P_orientation = { KF_ORIENTATION_STATES, KF_ORIENTATION_STATES, 0, 0 };
-    mf16_copy(&P_attitude, P3);
-    mf16_copy(&P_orientation, P2);
-
-    kalman_predict_tuned_uc(&kf_attitude, lambda);
-    kalman_predict_tuned_uc(&kf_orientation, lambda);
-    
-    // integrate state
-    x3->data[0][0] = fix16_add(c31, fix16_mul(x3->data[0][0], deltaT));
-    x3->data[1][0] = fix16_add(c32, fix16_mul(x3->data[1][0], deltaT));
-    x3->data[2][0] = fix16_add(c33, fix16_mul(x3->data[2][0], deltaT));
-
-    x2->data[0][0] = fix16_add(c21, fix16_mul(x2->data[0][0], deltaT));
-    x2->data[1][0] = fix16_add(c22, fix16_mul(x2->data[1][0], deltaT));
-    x2->data[2][0] = fix16_add(c23, fix16_mul(x2->data[2][0], deltaT));
-
-    // integrate covariance matrices
-    mf16_add_scaled(P3, &P_attitude, P3, deltaT);
-    mf16_add_scaled(P2, &P_orientation, P2, deltaT);
-    
-#elseif 0
-    kalman_cpredict_uc(&kf_attitude, deltaT);
-    kalman_cpredict_uc(&kf_orientation, deltaT);
-#else
     // predict state
     fusion_fastpredict_X(&kf_attitude, deltaT);
     fusion_fastpredict_X(&kf_orientation, deltaT);
@@ -647,7 +753,6 @@ void fusion_predict(register const fix16_t deltaT)
     // predict covariance
     kalman_cpredict_P_uc(&kf_attitude, deltaT);
     kalman_cpredict_P_uc(&kf_orientation, deltaT);
-#endif
 
     // re-orthogonalize and update state matrix
     fusion_sanitize_state(&kf_attitude);
@@ -770,18 +875,16 @@ void fusion_update_attitude_gyro(register const fix16_t deltaT)
 }
 
 /*!
-* \brief Updates the current prediction with magnetometer data
+* \brief Projects the current magnetometer readings in m_magnetometer into the X/Y plane
+*  \param[in] roll The roll angle
+*  \param[in] pitch The pitch angle
+*  \param[out] mx The projected x component
+*  \param[out] my The projected y component
+*  \param[out] mz The projected z component
 */
-HOT
-void fusion_update_orientation(register const fix16_t deltaT)
+HOT LEAF NONNULL
+STATIC_INLINE void magnetometer_project_ex(const fix16_t roll, const fix16_t pitch, fix16_t *RESTRICT const mx, fix16_t *RESTRICT const my, fix16_t *RESTRICT const mz)
 {
-    /************************************************************************/
-    /* Calculate metrics required for update                                */
-    /************************************************************************/
-
-    fix16_t roll, pitch;
-    calculate_roll_pitch(&roll, &pitch);
-
     // calculate pitch sine and cosine
     register const fix16_t cos_pitch = fix16_cos(pitch);
     register const fix16_t sin_pitch = fix16_sin(pitch);
@@ -799,17 +902,14 @@ void fusion_update_orientation(register const fix16_t deltaT)
                                           fix16_add(fix16_mul(m_magnetometer.y, sin_roll_sin_pitch),
                                                     fix16_mul(m_magnetometer.z, cos_roll_sin_pitch)
                                                     )
-                                         );
+                                          );
 
     register const fix16_t Yh = fix16_sub(fix16_mul(m_magnetometer.y, cos_roll),
                                           fix16_mul(m_magnetometer.z, sin_roll)
                                           );
 
     // calculate 2D vector norm
-    register const fix16_t pnorm = fix16_sqrt(fix16_add(fix16_sq(Xh), 
-                                                        fix16_sq(Yh)
-                                                        )
-                                             );
+    register const fix16_t pnorm = fix16_sqrt(fix16_add(fix16_sq(Xh), fix16_sq(Yh)));
 
     // calculate yaw sine and cosine from components
     register const fix16_t sin_yaw = fix16_div(Yh, pnorm);
@@ -819,13 +919,44 @@ void fusion_update_orientation(register const fix16_t deltaT)
     /* Calculate tilt-compensated readings                                  */
     /************************************************************************/
 
-    const fix16_t mx = fix16_mul(cos_pitch, sin_yaw);
-    const fix16_t my = fix16_add(fix16_mul(cos_roll, cos_yaw),
-                                 fix16_mul(sin_roll_sin_pitch, sin_yaw)
-                       );
-    const fix16_t mz = fix16_add(fix16_mul(-sin_roll, cos_yaw),
-                                 fix16_mul(cos_roll_sin_pitch, sin_yaw)
-                       );
+    *mx = fix16_mul(cos_pitch, sin_yaw);
+    *my = fix16_add(fix16_mul(cos_roll, cos_yaw),
+                    fix16_mul(sin_roll_sin_pitch, sin_yaw)
+                    );
+    *mz = fix16_add(fix16_mul(-sin_roll, cos_yaw),
+                    fix16_mul(cos_roll_sin_pitch, sin_yaw)
+                    );
+}
+
+/*!
+* \brief Projects the current magnetometer readings in m_magnetometer into the X/Y plane. Takes the required roll and pitch angles from the estimated state vector.
+*        In case of bootstrapping use, update using the accelerometer measurement first.
+*  \param[out] mx The projected x component
+*  \param[out] my The projected y component
+*  \param[out] mz The projected z component
+*/
+HOT NONNULL
+STATIC_INLINE void magnetometer_project(fix16_t *const mx, fix16_t *const my, fix16_t *const mz)
+{
+    fix16_t roll, pitch;
+    calculate_roll_pitch(&roll, &pitch);
+
+    // projectify!
+    magnetometer_project_ex(roll, pitch, mx, my, mz);
+}
+
+/*!
+* \brief Updates the current prediction with magnetometer data
+*/
+HOT
+void fusion_update_orientation(register const fix16_t deltaT)
+{
+    /************************************************************************/
+    /* Calculate metrics required for update                                */
+    /************************************************************************/
+    fix16_t mx, my, mz;
+    magnetometer_project(&mx, &my, &mz);
+    
 
     /************************************************************************/
     /* Prepare measurement                                                  */
@@ -891,62 +1022,56 @@ void fusion_update_orientation_gyro(register const fix16_t deltaT)
 */
 void fusion_update(register const fix16_t deltaT)
 {
-    if (true == m_have_gyroscope)
+    // perform roll and pitch updates
+    if (true == m_have_accelerometer)
     {
-        // perform roll and pitch updates
-        if (true == m_have_accelerometer)
+        // bootstrap filter
+        if (false == m_attitude_bootstrapped)
         {
-            // bootstrap filter
-            if (false == m_attitude_bootstrapped)
-            {
-                fix16_t norm = v3d_norm(&m_accelerometer);
+            fix16_t norm = v3d_norm(&m_accelerometer);
 
-                kf_attitude.x.data[0][0] = fix16_div(m_accelerometer.x, norm);
-                kf_attitude.x.data[1][0] = fix16_div(m_accelerometer.y, norm);
-                kf_attitude.x.data[2][0] = fix16_div(m_accelerometer.z, norm);
+            kf_attitude.x.data[0][0] = fix16_div(m_accelerometer.x, norm);
+            kf_attitude.x.data[1][0] = fix16_div(m_accelerometer.y, norm);
+            kf_attitude.x.data[2][0] = fix16_div(m_accelerometer.z, norm);
 
-                m_attitude_bootstrapped = true;
-            }
-
-            fusion_update_attitude(deltaT);
-            m_have_accelerometer = false;
-        }
-        else
-        {
-            // perform only rotational update
-            fusion_update_attitude_gyro(deltaT);
+            m_attitude_bootstrapped = true;
         }
 
-        // perform yaw updates
-        if (true == m_have_magnetometer)
-        {
-            // bootstrap filter
-            if (false == m_orientation_bootstrapped)
-            {
-                // these are horribly bad estimates, but still better than none
-                fix16_t norm = v3d_norm(&m_magnetometer);
-
-                kf_orientation.x.data[0][0] = fix16_div(m_magnetometer.x, norm);
-                kf_orientation.x.data[1][0] = fix16_div(m_magnetometer.y, norm);
-                kf_orientation.x.data[2][0] = fix16_div(m_magnetometer.z, norm);
-
-                m_orientation_bootstrapped = true;
-            }
-
-            fusion_update_orientation(deltaT);
-            m_have_magnetometer = false;
-        }
-        else
-        {
-            // perform only rotational update
-            fusion_update_orientation_gyro(deltaT);
-        }
+        fusion_update_attitude(deltaT);
     }
     else
     {
-        // nothing for now.
+        // perform only rotational update
+        fusion_update_attitude_gyro(deltaT);
     }
 
-    // For now, let's assume gyro readings are always valid
-    // m_have_gyroscope = false;
+    // perform yaw updates
+    if (true == m_have_magnetometer)
+    {
+        // bootstrap filter
+        // make sure that the attitude filter was already bootstrapped in order to be able to project the
+        // magnetometer readings
+        if ((false == m_orientation_bootstrapped) && (true == m_attitude_bootstrapped))
+        {
+            fix16_t mx, my, mz;
+            magnetometer_project(&mx, &my, &mz);
+
+            kf_orientation.x.data[0][0] = mx;
+            kf_orientation.x.data[1][0] = my;
+            kf_orientation.x.data[2][0] = mz;
+
+            m_orientation_bootstrapped = true;
+        }
+
+        fusion_update_orientation(deltaT);
+    }
+    else
+    {
+        // perform only rotational update
+        fusion_update_orientation_gyro(deltaT);
+    }
+    
+    // reset information
+    m_have_accelerometer = false;
+    m_have_magnetometer = false;
 }
