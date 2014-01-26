@@ -184,6 +184,9 @@
     <ClCompile Include="Sources\init_sensors.c">
       <Filter>Source files</Filter>
     </ClCompile>
+    <ClCompile Include="libraries\libfixmatrix\fixquat.c">
+      <Filter>libraries\libfixmatrix</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
@@ -314,6 +317,9 @@
     </ClInclude>
     <ClInclude Include="Project_Headers\init_sensors.h">
       <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\libfixmatrix\fixquat.h">
+      <Filter>libraries\libfixmatrix</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

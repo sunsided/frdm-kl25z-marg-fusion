@@ -5,7 +5,7 @@
 BINARYDIR := Debug
 
 #Additional flags
-PREPROCESSOR_MACROS := DEBUG FIXMATRIX_MAX_SIZE=12 KALMAN_DISABLE_C FIXMATH_NO_CACHE
+PREPROCESSOR_MACROS := DEBUG FIXMATRIX_MAX_SIZE=6 KALMAN_DISABLE_C FIXMATH_NO_CACHE
 INCLUDE_DIRS :=$(SourceDir)\Project_Headers $(SourceDir)\drivers C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include $(SourceDir)\libraries\libfixmath $(SourceDir)\libraries\libfixmatrix $(SourceDir)\libraries\libfixkalman
 LIBRARY_DIRS :=
 LIBRARY_NAMES :=

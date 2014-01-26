@@ -75,6 +75,7 @@
     <ClCompile Include="libraries\libfixmath\uint32.c" />
     <ClCompile Include="libraries\libfixmatrix\fixarray.c" />
     <ClCompile Include="libraries\libfixmatrix\fixmatrix.c" />
+    <ClCompile Include="libraries\libfixmatrix\fixquat.c" />
     <ClCompile Include="libraries\libfixmatrix\fixvector3d.c" />
     <ClCompile Include="Sources\comm\buffer.c" />
     <ClCompile Include="Sources\comm\io.c" />
@@ -118,6 +119,7 @@
     <ClInclude Include="libraries\libfixmath\uint32.h" />
     <ClInclude Include="libraries\libfixmatrix\fixarray.h" />
     <ClInclude Include="libraries\libfixmatrix\fixmatrix.h" />
+    <ClInclude Include="libraries\libfixmatrix\fixquat.h" />
     <ClInclude Include="libraries\libfixmatrix\fixvector3d.h" />
     <ClInclude Include="Project_Headers\ARMCM0plus.h" />
     <ClInclude Include="Project_Headers\bme.h" />
