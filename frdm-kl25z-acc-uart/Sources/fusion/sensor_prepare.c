@@ -26,6 +26,11 @@ void sensor_prepare_mpu6050_accelerometer_data(v3d *const out, int16_t rawx, int
 
     // calibrate!
     mpu6050_calibrate_accelerometer_v3d(out);
+
+    value = *out;
+    out->x =  value.x;
+    out->y = -value.y;
+    out->z =  value.z;
 }
 
 /*!
@@ -100,7 +105,8 @@ void sensor_prepare_hmc5883l_data(v3d *const out, int16_t rawx, int16_t rawy, in
     // calibrate!
     hmc5883l_calibrate_v3d(out);
 
-    out->x = out->y;
-    out->y = out->x;
-    out->z = out->z;
+    v3d value = *out;
+    out->x = value.x;
+    out->y = value.y;
+    out->z = value.z;
 }

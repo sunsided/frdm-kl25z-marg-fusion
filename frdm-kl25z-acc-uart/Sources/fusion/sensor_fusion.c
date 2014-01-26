@@ -20,10 +20,10 @@
 static const fix16_t initial_r_axis = F16(0.02);
 static const fix16_t initial_r_gyro = F16(0.001);
 
-static const fix16_t q_axis = F16(0.4);
-static const fix16_t q_gyro = F16(1);
+static const fix16_t q_axis = F16(0.5);
+static const fix16_t q_gyro = F16(.1);
 
-static const fix16_t alpha1 = F16(10);
+static const fix16_t alpha1 = F16(100);
 static const fix16_t alpha2 = F16(0.4);
 
 /************************************************************************/
@@ -839,10 +839,9 @@ void fusion_predict(register const fix16_t deltaT)
 */
 void fusion_set_accelerometer(register const fix16_t *const ax, register const fix16_t *const ay, register const fix16_t *const az)
 {
-    // invert to show up instead of down
-    m_accelerometer.x = -*ax;
-    m_accelerometer.y = -*ay;
-    m_accelerometer.z = -*az;
+    m_accelerometer.x = *ax;
+    m_accelerometer.y = *ay;
+    m_accelerometer.z = *az;
 
 #if 0
     // check accelerometer norm and discard non-still accelerations
