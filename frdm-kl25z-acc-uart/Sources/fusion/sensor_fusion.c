@@ -566,15 +566,20 @@ STATIC_INLINE void calculate_roll_pitch(register fix16_t *RESTRICT const roll, r
     const fix16_t c33 =  x->data[2][0];
 
     // calculate pitch
+    const fix16_t c2sq = fix16_sq(c32);
+    const fix16_t c3sq = fix16_sq(c33);
+    const fix16_t c2c3sq = fix16_add(c2sq, c3sq);
+    const fix16_t c2c3norm = fix16_sqrt(c2c3sq);
+    //*pitch = fix16_atan2(c31, c2c3norm);
     *pitch = -fix16_asin(c31);
 
     // calculate roll
     const fix16_t c1sq = fix16_sq(c31);
-    const fix16_t c3sq = fix16_sq(c33);
     const fix16_t c1c3sq = fix16_add(c1sq, c3sq);
     const fix16_t c1c3norm = fix16_sqrt(c1c3sq);
-    *roll = fix16_atan2(c32, fix16_sign(c33)*c1c3norm);
-    //*roll = fix16_atan2(c32, c33);
+    //*roll = fix16_atan2(c32, fix16_sign(c33)*c1c3norm);
+    //*roll = fix16_atan2(c32, fix16_sign(c33)*c1c3norm);
+    *roll = fix16_atan2(c32, c33);
 
 #endif
 }
@@ -1113,9 +1118,15 @@ static void fusion_update_orientation(register const fix16_t deltaT)
         matrix_set(z, 1, 0, my);
         matrix_set(z, 2, 0, mz);
 
+#if 1
         matrix_set(z, 3, 0, m_gyroscope.x);
         matrix_set(z, 4, 0, m_gyroscope.y);
         matrix_set(z, 5, 0, m_gyroscope.z);
+#else
+        matrix_set(z, 3, 0, kf_attitude.x.data[3][0]);
+        matrix_set(z, 4, 0, kf_attitude.x.data[4][0]);
+        matrix_set(z, 5, 0, kf_attitude.x.data[5][0]);
+#endif
     }
 
     /************************************************************************/
@@ -1137,7 +1148,7 @@ static void fusion_update_orientation(register const fix16_t deltaT)
 */
 void fusion_update(register const fix16_t deltaT)
 {
-#if 0
+#if 1
 #if 0 // force gyro-only
     if (m_attitude_bootstrapped && m_orientation_bootstrapped)
     {
