@@ -19,8 +19,12 @@
 
 static const fix16_t initial_r_axis = F16(0.02);
 static const fix16_t initial_r_gyro = F16(0.001);
-static const fix16_t q_axis = F16(0.00);
-static const fix16_t q_gyro = F16(0.01);
+
+static const fix16_t q_axis = F16(0.4);
+static const fix16_t q_gyro = F16(1);
+
+static const fix16_t alpha1 = F16(10);
+static const fix16_t alpha2 = F16(0.4);
 
 /************************************************************************/
 /* Kalman filter structure definition                                   */
@@ -314,8 +318,8 @@ static void initialize_system()
     kf_attitude.x.data[1][0] = 0;
     kf_attitude.x.data[2][0] = 1;
 
-    kf_orientation.x.data[0][0] = 0.707;
-    kf_orientation.x.data[1][0] = 0.707;
+    kf_orientation.x.data[0][0] = 0;
+    kf_orientation.x.data[1][0] = 1;
     kf_orientation.x.data[2][0] = 0;
 }
 
@@ -336,25 +340,39 @@ STATIC_INLINE void update_measurement_noise(kalman16_observation_t *const kfm, r
     matrix_set(R, 5, 5, gyroXYZ);
 }
 
+/*!
+* \brief Detects accelerations
+* \return 1 if an external acceleration was detected
+*/
+HOT
+STATIC_INLINE uint_fast8_t acceleration_detected()
+{
+    register fix16_t alpha = fix16_abs(fix16_sub(fix16_add(fix16_sq(m_accelerometer.x), fix16_add(fix16_sq(m_accelerometer.y), fix16_sq(m_accelerometer.z))), F16(1)));
+    const fix16_t threshold = F16(0.14);
+    if (alpha < threshold)
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+/*!
+* \brief Dynamic measurement noise updating
+*/
 HOT NONNULL
 STATIC_INLINE void tune_measurement_noise(kalman16_observation_t *const kfm)
 {
     mf16 *const R = &kfm->R;
-    register fix16_t alpha = fix16_abs(fix16_sub(fix16_add(fix16_sq(m_accelerometer.x), fix16_add(fix16_sq(m_accelerometer.y), fix16_sq(m_accelerometer.z))), F16(1)));
+  
 
-    const fix16_t threshold = F16(0.5);
-    if (alpha < threshold)
-    {
-        alpha = threshold;
-    }
+    matrix_set(R, 0, 0, fix16_mul(initial_r_axis, alpha1));
+    matrix_set(R, 1, 1, fix16_mul(initial_r_axis, alpha1));
+    matrix_set(R, 2, 2, fix16_mul(initial_r_axis, alpha1));
 
-    matrix_set(R, 0, 0, fix16_div(initial_r_axis, alpha));
-    matrix_set(R, 1, 1, fix16_div(initial_r_axis, alpha));
-    matrix_set(R, 2, 2, fix16_div(initial_r_axis, alpha));
-
-    matrix_set(R, 3, 3, fix16_mul(initial_r_gyro, alpha));
-    matrix_set(R, 4, 4, fix16_mul(initial_r_gyro, alpha));
-    matrix_set(R, 5, 5, fix16_mul(initial_r_gyro, alpha));
+    matrix_set(R, 3, 3, fix16_mul(initial_r_gyro, alpha2));
+    matrix_set(R, 4, 4, fix16_mul(initial_r_gyro, alpha2));
+    matrix_set(R, 5, 5, fix16_mul(initial_r_gyro, alpha2));
 }
 
 /*!
@@ -519,22 +537,46 @@ STATIC_INLINE int32_t fix16_sign_ex(const fix16_t value)
 HOT NONNULL LEAF
 STATIC_INLINE void calculate_roll_pitch(register fix16_t *RESTRICT const roll, register fix16_t *RESTRICT const pitch)
 {
-    const mf16 *const x = kalman_get_state_vector_uc(&kf_attitude);
+#if 0
 
+    const mf16 *const x = kalman_get_state_vector_uc(&kf_attitude);
+    
     // fetch axes
     const fix16_t c31 = x->data[0][0];
     const fix16_t c32 = x->data[1][0];
     const fix16_t c33 = x->data[2][0];
+    
+    // calculate pitch
+    *pitch = -fix16_asin(c31);
 
     // calculate roll
-    const fix16_t c1sq     = fix16_sq(c31);
-    const fix16_t c3sq     = fix16_sq(c33);
-    const fix16_t c1c3sq   = fix16_add(c1sq, c3sq);
+    const fix16_t c1sq = fix16_sq(c31);
+    const fix16_t c3sq = fix16_sq(c33);
+    const fix16_t c1c3sq = fix16_add(c1sq, c3sq);
     const fix16_t c1c3norm = fix16_sqrt(c1c3sq);
     *roll = fix16_atan2(c32, fix16_sign(c33)*c1c3norm);
+    //*roll = fix16_atan2(c32, c33);
+#else
+
+    const mf16 *const x = kalman_get_state_vector_uc(&kf_attitude);
+
+    // fetch axes
+    const fix16_t c31 =  x->data[0][0];
+    const fix16_t c32 =  x->data[1][0];
+    const fix16_t c33 =  x->data[2][0];
 
     // calculate pitch
     *pitch = -fix16_asin(c31);
+
+    // calculate roll
+    const fix16_t c1sq = fix16_sq(c31);
+    const fix16_t c3sq = fix16_sq(c33);
+    const fix16_t c1c3sq = fix16_add(c1sq, c3sq);
+    const fix16_t c1c3norm = fix16_sqrt(c1c3sq);
+    *roll = fix16_atan2(c32, fix16_sign(c33)*c1c3norm);
+    //*roll = fix16_atan2(c32, c33);
+
+#endif
 }
 
 /*!
@@ -802,6 +844,7 @@ void fusion_set_accelerometer(register const fix16_t *const ax, register const f
     m_accelerometer.y = -*ay;
     m_accelerometer.z = -*az;
 
+#if 0
     // check accelerometer norm and discard non-still accelerations
     // 1 - (x^2 + y^2 + z^2) == 0
     fix16_t norm = fix16_sub(F16(1), fix16_sqrt(fix16_add(fix16_sq(m_accelerometer.x), fix16_add(fix16_sq(m_accelerometer.y), fix16_sq(m_accelerometer.z)))));
@@ -810,6 +853,7 @@ void fusion_set_accelerometer(register const fix16_t *const ax, register const f
         m_have_accelerometer = false;
         return;
     }
+#endif
 
     m_have_accelerometer = true;
 }
@@ -847,46 +891,6 @@ void fusion_set_magnetometer(register const fix16_t *const mx, register const fi
 /************************************************************************/
 
 /*!
-* \brief Updates the current prediction with accelerometer data
-*/
-HOT
-void fusion_update_attitude(register const fix16_t deltaT)
-{
-    /************************************************************************/
-    /* Prepare measurement                                                  */
-    /************************************************************************/
-    {
-        mf16 *const z = &kfm_accel.z;
-
-        matrix_set(z, 0, 0, m_accelerometer.x);
-        matrix_set(z, 1, 0, m_accelerometer.y);
-        matrix_set(z, 2, 0, m_accelerometer.z);
-
-        matrix_set(z, 3, 0, m_gyroscope.x);
-        matrix_set(z, 4, 0, m_gyroscope.y);
-        matrix_set(z, 5, 0, m_gyroscope.z);
-    }
-
-    /************************************************************************/
-    /* Prepare noise                                                        */
-    /************************************************************************/
-
-    tune_measurement_noise(&kfm_accel);
-
-    /************************************************************************/
-    /* Perform Kalman update                                                */
-    /************************************************************************/
-
-    kalman_correct_uc(&kf_attitude, &kfm_accel);
-
-    /************************************************************************/
-    /* Re-orthogonalize and update state matrix                             */
-    /************************************************************************/
-
-    fusion_sanitize_state(&kf_attitude);
-}
-
-/*!
 * \brief Updates the current prediction with gyroscope data
 */
 HOT
@@ -908,6 +912,58 @@ void fusion_update_attitude_gyro(register const fix16_t deltaT)
     /************************************************************************/
 
     kalman_correct_uc(&kf_attitude, &kfm_gyro);
+
+    /************************************************************************/
+    /* Re-orthogonalize and update state matrix                             */
+    /************************************************************************/
+
+    fusion_sanitize_state(&kf_attitude);
+}
+
+/*!
+* \brief Updates the current prediction with accelerometer data
+*/
+HOT
+void fusion_update_attitude(register const fix16_t deltaT)
+{
+    /************************************************************************/
+    /* Perform acceleration detection                                       */
+    /************************************************************************/
+
+    if (acceleration_detected())
+    {
+        fusion_update_attitude_gyro(deltaT);
+        return;
+    }
+
+    /************************************************************************/
+    /* Prepare measurement                                                  */
+    /************************************************************************/
+    {
+        mf16 *const z = &kfm_accel.z;
+
+        fix16_t norm = v3d_norm(&m_accelerometer);
+        
+        matrix_set(z, 0, 0, fix16_div(m_accelerometer.x, norm));
+        matrix_set(z, 1, 0, fix16_div(m_accelerometer.y, norm));
+        matrix_set(z, 2, 0, fix16_div(m_accelerometer.z, norm));
+
+        matrix_set(z, 3, 0, m_gyroscope.x);
+        matrix_set(z, 4, 0, m_gyroscope.y);
+        matrix_set(z, 5, 0, m_gyroscope.z);
+    }
+
+    /************************************************************************/
+    /* Prepare noise                                                        */
+    /************************************************************************/
+
+    tune_measurement_noise(&kfm_accel);
+
+    /************************************************************************/
+    /* Perform Kalman update                                                */
+    /************************************************************************/
+
+    kalman_correct_uc(&kf_attitude, &kfm_accel);
 
     /************************************************************************/
     /* Re-orthogonalize and update state matrix                             */
@@ -1033,12 +1089,14 @@ static void fusion_update_orientation(register const fix16_t deltaT)
     fix16_t mx, my, mz;
     fix16_t cos_pitch = magnetometer_project(&mx, &my, &mz);
     
+#if 0
     // check for singularity
     if (cos_pitch < F16(0.17365))
     {
         fusion_update_orientation_gyro(deltaT);
         return;
     }
+#endif
 
     /************************************************************************/
     /* Prepare noise                                                        */
@@ -1080,12 +1138,18 @@ static void fusion_update_orientation(register const fix16_t deltaT)
 */
 void fusion_update(register const fix16_t deltaT)
 {
-#if 1 // force gyro-only
+#if 0
+#if 0 // force gyro-only
     if (m_attitude_bootstrapped && m_orientation_bootstrapped)
     {
         m_have_accelerometer = false;
         m_have_magnetometer = false;
     }
+#else // force axes only
+    m_gyroscope.x = 0;
+    m_gyroscope.y = 0;
+    m_gyroscope.z = 0;
+#endif
 #endif
 
     // perform roll and pitch updates
