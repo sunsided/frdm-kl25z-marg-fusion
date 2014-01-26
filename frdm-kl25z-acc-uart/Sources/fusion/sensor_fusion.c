@@ -20,7 +20,7 @@
 static const fix16_t initial_r_axis = F16(0.02);
 static const fix16_t initial_r_gyro = F16(0.001);
 
-static const fix16_t q_axis = F16(5);
+static const fix16_t q_axis = F16(0);
 static const fix16_t q_gyro = F16(.1);
 
 static const fix16_t alpha1 = F16(100);
@@ -1149,7 +1149,7 @@ static void fusion_update_orientation(register const fix16_t deltaT)
 void fusion_update(register const fix16_t deltaT)
 {
 #if 1
-#if 0 // force gyro-only
+#if 1 // force gyro-only
     if (m_attitude_bootstrapped && m_orientation_bootstrapped)
     {
         m_have_accelerometer = false;
