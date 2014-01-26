@@ -122,7 +122,11 @@ void InitMPU6050()
 
     /* read configuration and modify */
     MPU6050_FetchConfiguration(configuration);
+#if 1
     MPU6050_SetGyroscopeSampleRateDivider(configuration, 80); /* the gyro samples at 8kHz, so division by 40 --> 200Hz */
+#else
+    MPU6050_SetGyroscopeSampleRateDivider(configuration, 40); /* the gyro samples at 8kHz, so division by 40 --> 200Hz */
+#endif
     
     MPU6050_SetGyroscopeFullScale(configuration, MPU6050_GYRO_FS_250);
     mpu6050_gyroscope_scaler = fix16_from_int(131);         /* scaler value for GYRO_FS_250*/

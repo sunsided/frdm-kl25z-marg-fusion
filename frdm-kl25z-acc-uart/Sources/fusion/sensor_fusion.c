@@ -17,8 +17,10 @@
 /* Measurement covariance definitions                                   */
 /************************************************************************/
 
-static const fix16_t initial_r_axis = F16(0.01);
-static const fix16_t initial_r_gyro = F16(0.01);
+static const fix16_t initial_r_axis = F16(0.02);
+static const fix16_t initial_r_gyro = F16(0.001);
+static const fix16_t q_axis = F16(0.00);
+static const fix16_t q_gyro = F16(0.01);
 
 /************************************************************************/
 /* Kalman filter structure definition                                   */
@@ -287,13 +289,11 @@ static void initialize_system_filter(kalman16_uc_t *const kf, const uint_fast8_t
         mf16 *const Q = &kf->Q;
 
         // axis process noise
-        const fix16_t q_axis = F16(0);
         matrix_set(Q, 0, 0, q_axis);
         matrix_set(Q, 1, 1, q_axis);
         matrix_set(Q, 2, 2, q_axis);
 
         // gyro process noise
-        const fix16_t q_gyro = F16(1);
         matrix_set(Q, 3, 3, q_gyro);
         matrix_set(Q, 4, 4, q_gyro);
         matrix_set(Q, 5, 5, q_gyro);
@@ -314,8 +314,8 @@ static void initialize_system()
     kf_attitude.x.data[1][0] = 0;
     kf_attitude.x.data[2][0] = 1;
 
-    kf_orientation.x.data[0][0] = 0;
-    kf_orientation.x.data[1][0] = 1;
+    kf_orientation.x.data[0][0] = 0.707;
+    kf_orientation.x.data[1][0] = 0.707;
     kf_orientation.x.data[2][0] = 0;
 }
 
@@ -334,6 +334,27 @@ STATIC_INLINE void update_measurement_noise(kalman16_observation_t *const kfm, r
     matrix_set(R, 3, 3, gyroXYZ);
     matrix_set(R, 4, 4, gyroXYZ);
     matrix_set(R, 5, 5, gyroXYZ);
+}
+
+HOT NONNULL
+STATIC_INLINE void tune_measurement_noise(kalman16_observation_t *const kfm)
+{
+    mf16 *const R = &kfm->R;
+    register fix16_t alpha = fix16_abs(fix16_sub(fix16_add(fix16_sq(m_accelerometer.x), fix16_add(fix16_sq(m_accelerometer.y), fix16_sq(m_accelerometer.z))), F16(1)));
+
+    const fix16_t threshold = F16(0.5);
+    if (alpha < threshold)
+    {
+        alpha = threshold;
+    }
+
+    matrix_set(R, 0, 0, fix16_div(initial_r_axis, alpha));
+    matrix_set(R, 1, 1, fix16_div(initial_r_axis, alpha));
+    matrix_set(R, 2, 2, fix16_div(initial_r_axis, alpha));
+
+    matrix_set(R, 3, 3, fix16_mul(initial_r_gyro, alpha));
+    matrix_set(R, 4, 4, fix16_mul(initial_r_gyro, alpha));
+    matrix_set(R, 5, 5, fix16_mul(initial_r_gyro, alpha));
 }
 
 /*!
@@ -731,6 +752,11 @@ STATIC_INLINE void fusion_fastpredict_X(kalman16_uc_t *const kf, const register 
     x->data[0][0] = fix16_add(c1, fix16_mul(d_c1, deltaT));
     x->data[1][0] = fix16_add(c2, fix16_mul(d_c2, deltaT));
     x->data[2][0] = fix16_add(c3, fix16_mul(d_c3, deltaT));
+
+    // keep constant.
+    x->data[3][0] = gx;
+    x->data[4][0] = gy;
+    x->data[5][0] = gz;
 }
 
 /*!
@@ -775,6 +801,16 @@ void fusion_set_accelerometer(register const fix16_t *const ax, register const f
     m_accelerometer.x = -*ax;
     m_accelerometer.y = -*ay;
     m_accelerometer.z = -*az;
+
+    // check accelerometer norm and discard non-still accelerations
+    // 1 - (x^2 + y^2 + z^2) == 0
+    fix16_t norm = fix16_sub(F16(1), fix16_sqrt(fix16_add(fix16_sq(m_accelerometer.x), fix16_add(fix16_sq(m_accelerometer.y), fix16_sq(m_accelerometer.z)))));
+    if (norm > F16(0.1) || norm < F16(-0.1))
+    {
+        m_have_accelerometer = false;
+        return;
+    }
+
     m_have_accelerometer = true;
 }
 
@@ -832,6 +868,12 @@ void fusion_update_attitude(register const fix16_t deltaT)
     }
 
     /************************************************************************/
+    /* Prepare noise                                                        */
+    /************************************************************************/
+
+    tune_measurement_noise(&kfm_accel);
+
+    /************************************************************************/
     /* Perform Kalman update                                                */
     /************************************************************************/
 
@@ -876,14 +918,15 @@ void fusion_update_attitude_gyro(register const fix16_t deltaT)
 
 /*!
 * \brief Projects the current magnetometer readings in m_magnetometer into the X/Y plane
-*  \param[in] roll The roll angle
-*  \param[in] pitch The pitch angle
-*  \param[out] mx The projected x component
-*  \param[out] my The projected y component
-*  \param[out] mz The projected z component
+* \param[in] roll The roll angle
+* \param[in] pitch The pitch angle
+* \param[out] mx The projected x component
+* \param[out] my The projected y component
+* \param[out] mz The projected z component
+* \return Cosine of pitch. Used to detect singularity.
 */
 HOT LEAF NONNULL
-STATIC_INLINE void magnetometer_project_ex(const fix16_t roll, const fix16_t pitch, fix16_t *RESTRICT const mx, fix16_t *RESTRICT const my, fix16_t *RESTRICT const mz)
+STATIC_INLINE fix16_t magnetometer_project_ex(const fix16_t roll, const fix16_t pitch, fix16_t *RESTRICT const mx, fix16_t *RESTRICT const my, fix16_t *RESTRICT const mz)
 {
     // calculate pitch sine and cosine
     register const fix16_t cos_pitch = fix16_cos(pitch);
@@ -926,37 +969,82 @@ STATIC_INLINE void magnetometer_project_ex(const fix16_t roll, const fix16_t pit
     *mz = fix16_add(fix16_mul(-sin_roll, cos_yaw),
                     fix16_mul(cos_roll_sin_pitch, sin_yaw)
                     );
+
+    return cos_pitch;
 }
 
 /*!
 * \brief Projects the current magnetometer readings in m_magnetometer into the X/Y plane. Takes the required roll and pitch angles from the estimated state vector.
 *        In case of bootstrapping use, update using the accelerometer measurement first.
-*  \param[out] mx The projected x component
-*  \param[out] my The projected y component
-*  \param[out] mz The projected z component
+* \param[out] mx The projected x component
+* \param[out] my The projected y component
+* \param[out] mz The projected z component
+* \return Cosine of pitch. Used to detect singularity.
 */
 HOT NONNULL
-STATIC_INLINE void magnetometer_project(fix16_t *const mx, fix16_t *const my, fix16_t *const mz)
+STATIC_INLINE fix16_t magnetometer_project(fix16_t *const mx, fix16_t *const my, fix16_t *const mz)
 {
     fix16_t roll, pitch;
     calculate_roll_pitch(&roll, &pitch);
 
     // projectify!
-    magnetometer_project_ex(roll, pitch, mx, my, mz);
+    return magnetometer_project_ex(roll, pitch, mx, my, mz);
+}
+
+/*!
+* \brief Updates the current prediction with gyroscope data
+*/
+HOT
+static void fusion_update_orientation_gyro(register const fix16_t deltaT)
+{
+    /************************************************************************/
+    /* Prepare measurement                                                  */
+    /************************************************************************/
+    {
+        mf16 *const z = &kfm_gyro.z;
+
+        matrix_set(z, 0, 0, m_gyroscope.x);
+        matrix_set(z, 1, 0, m_gyroscope.y);
+        matrix_set(z, 2, 0, m_gyroscope.z);
+    }
+
+    /************************************************************************/
+    /* Perform Kalman update                                                */
+    /************************************************************************/
+
+    kalman_correct_uc(&kf_orientation, &kfm_gyro);
+
+    /************************************************************************/
+    /* Re-orthogonalize and update state matrix                             */
+    /************************************************************************/
+
+    fusion_sanitize_state(&kf_orientation);
 }
 
 /*!
 * \brief Updates the current prediction with magnetometer data
 */
 HOT
-void fusion_update_orientation(register const fix16_t deltaT)
+static void fusion_update_orientation(register const fix16_t deltaT)
 {
     /************************************************************************/
     /* Calculate metrics required for update                                */
     /************************************************************************/
     fix16_t mx, my, mz;
-    magnetometer_project(&mx, &my, &mz);
+    fix16_t cos_pitch = magnetometer_project(&mx, &my, &mz);
     
+    // check for singularity
+    if (cos_pitch < F16(0.17365))
+    {
+        fusion_update_orientation_gyro(deltaT);
+        return;
+    }
+
+    /************************************************************************/
+    /* Prepare noise                                                        */
+    /************************************************************************/
+
+    tune_measurement_noise(&kfm_magneto);
 
     /************************************************************************/
     /* Prepare measurement                                                  */
@@ -987,41 +1075,19 @@ void fusion_update_orientation(register const fix16_t deltaT)
 }
 
 /*!
-* \brief Updates the current prediction with gyroscope data
-*/
-HOT
-void fusion_update_orientation_gyro(register const fix16_t deltaT)
-{
-    /************************************************************************/
-    /* Prepare measurement                                                  */
-    /************************************************************************/
-    {
-        mf16 *const z = &kfm_gyro.z;
-
-        matrix_set(z, 0, 0, m_gyroscope.x);
-        matrix_set(z, 1, 0, m_gyroscope.y);
-        matrix_set(z, 2, 0, m_gyroscope.z);
-    }
-
-    /************************************************************************/
-    /* Perform Kalman update                                                */
-    /************************************************************************/
-
-    kalman_correct_uc(&kf_orientation, &kfm_gyro);
-
-    /************************************************************************/
-    /* Re-orthogonalize and update state matrix                             */
-    /************************************************************************/
-
-    fusion_sanitize_state(&kf_orientation);
-}
-
-/*!
 * \brief Updates the current prediction with the set measurements.
 * \param[in] deltaT The time difference in seconds to the last prediction or observation update call.
 */
 void fusion_update(register const fix16_t deltaT)
 {
+#if 1 // force gyro-only
+    if (m_attitude_bootstrapped && m_orientation_bootstrapped)
+    {
+        m_have_accelerometer = false;
+        m_have_magnetometer = false;
+    }
+#endif
+
     // perform roll and pitch updates
     if (true == m_have_accelerometer)
     {

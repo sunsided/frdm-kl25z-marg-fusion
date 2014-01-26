@@ -26,6 +26,11 @@ void sensor_prepare_mpu6050_accelerometer_data(v3d *const out, int16_t rawx, int
 
     // calibrate!
     mpu6050_calibrate_accelerometer_v3d(out);
+
+    // distortify!
+    out->x =  out->x;
+    out->y = -out->y;
+    out->z =  out->z;
 }
 
 /*!
@@ -70,9 +75,15 @@ void sensor_prepare_mpu6050_gyroscope_data(v3d *const out, int16_t rawx, int16_t
 
     // data in degree, so convert to radians
 
+#if 0
     out->x = fix16_deg_to_rad(-out->x);
     out->y = fix16_deg_to_rad(-out->y);
     out->z = fix16_deg_to_rad(-out->z);
+#else
+    out->x = fix16_deg_to_rad( out->x);
+    out->y = fix16_deg_to_rad( out->y);
+    out->z = fix16_deg_to_rad( out->z);
+#endif
 }
 
 /*!

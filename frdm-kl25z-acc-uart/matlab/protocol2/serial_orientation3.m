@@ -45,7 +45,7 @@ function serial_orientation3
     sjobject = igetfield(s, 'jobject');
     
     % Prepare the plot
-    % preparePlotOrientation();    
+    preparePlotOrientation();    
     
     % Definitions
     global dataReady data
@@ -118,24 +118,15 @@ function serial_orientation3
                 duration = toc(graphicsTimer);
                 if duration > 1/30                    
 
+                    % Debugging                                    
+                    [roll, pitch, yaw] = quaternionToEuler(quat);
+                    fprintf('rpy: %+1.3f %+1.3f %+1.3f\n', roll, pitch, yaw);
+                    
                     % Quaternion to DCM
                     DCM = quaternionToRotation(quat);
-
-                    %{
-                    % extract angles
-                    % see: William Premerlani, "Computing Euler Angles from Direction Cosines"
-                    pitch = -asind(DCM(3, 1));
-                    roll  =  atan2d(DCM(3, 2), sign(DCM(3,3))*sqrt(DCM(3, 1)^2 + DCM(3, 3)^2));
-                    yaw   =  atan2d(DCM(2, 1), DCM(1, 1));
-                    %}
-                    
-                    [roll, pitch, yaw] = quaternionToEuler(quat);
-
-                    % Debugging
-                    fprintf('rpy: %+1.3f %+1.3f %+1.3f\n', roll, pitch, yaw);
                                 
                     % plot the orientation
-                    %plotOrientation(DCM', [NaN NaN NaN], [NaN NaN NaN]);
+                    plotOrientation(DCM, [NaN NaN NaN], [NaN NaN NaN]);
 
                     graphicsTimer = tic;
                 end;
