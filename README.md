@@ -1,8 +1,14 @@
-frdm-kl25z-acc-uart
-===================
+frdm-kl25z-acc-uart: Fuse...ify!
+================================
+
+### What it used to be ####
 
 Freescale FRDM-KL25Z bare metal foo - an attempt to bring the Kinetis KL25Z Freedom board
 to life without using Processor Expert, so just bare metal here. No CMSIS though at the time being.
+
+### What it is now ####
+
+A inertial measurement sensor fusion unit with 200 kHz observation frequency and 10 Hz orientation quaternion output over UART.
 
 ## Implemented so far ##
 
@@ -39,3 +45,10 @@ to life without using Processor Expert, so just bare metal here. No CMSIS though
 - MATLAB interfacing at up 800 Hz over serial port
   - serial protocol decoder
   - visual representation of the measured accelerations at 60 FPS with virtual horizon; for an older version https://www.youtube.com/watch?v=RunpaR2PdHQ
+
+### Sensor Fusion ###
+
+- Standard Kalman filter in Q16 fixed point using [libfixkalman](https://github.com/sunsided/libfixkalman)
+- Direct estimation of DCM axes as described in 	
+*A DCM Based Orientation Estimation Algorithm with an Inertial Measurement Unit and a Magnetic Compass* (Nguyen Ho Quoc Phuong et al., [J.UCS 15.4](http://www.jucs.org/jucs_15_4/a_dcm_based_orientation))
+- Quaternion conversion for transfer
