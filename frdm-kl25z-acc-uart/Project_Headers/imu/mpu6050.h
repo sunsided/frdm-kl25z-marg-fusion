@@ -335,11 +335,20 @@ void MPU6050_SetGyroscopeSampleRateDivider(mpu6050_confreg_t *const configuratio
  * @brief Scale configuration for the gyroscope
  */
 typedef enum {
-	MPU6050_GYRO_FS_250  = (0b00),	/*! +/-  250 °/s */
-	MPU6050_GYRO_FS_500  = (0b01),	/*! +/-  500 °/s */
-	MPU6050_GYRO_FS_1000 = (0b10),	/*! +/- 1000 °/s */
-	MPU6050_GYRO_FS_2000 = (0b11)	/*! +/- 2000 °/s */
+	MPU6050_GYRO_FS_250  = (0b00),	/*! +/-  250 °/s, 131 LSB/(°/s) */
+	MPU6050_GYRO_FS_500  = (0b01),	/*! +/-  500 °/s, 65.5 LSB/(°/s)  */
+	MPU6050_GYRO_FS_1000 = (0b10),	/*! +/- 1000 °/s, 32.8 LSB/(°/s)  */
+	MPU6050_GYRO_FS_2000 = (0b11)	/*! +/- 2000 °/s, 16.4 LSB/(°/s)  */
 } mpu6050_gyro_fs_t;
+
+/*!
+* \def MPU6050_GYRO_LSB Returns the LSB/(°/s) for a given {\ref mpu6050_gyro_fs_t} value or 0 if no valid value was given
+*/
+#define MPU6050_GYRO_LSB(x) \
+    ((x) == MPU6050_GYRO_FS_250) ? (131.0) : \
+    (((x) == MPU6050_GYRO_FS_500) ? (65.5) : \
+    (((x) == MPU6050_GYRO_FS_1000) ? (32.8) : \
+    (((x) == MPU6050_GYRO_FS_2000) ? (16.4) : (0))))
 
 /**
  * @brief Configures the gyroscope full scale range
