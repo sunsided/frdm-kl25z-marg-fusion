@@ -198,6 +198,7 @@ namespace WindowsFormsApplication1
                     DrawArrow(Color.Gray, Color.SlateGray);
 
                     // draw the coordinate system
+                    GL.Translate(0, 0, +0.02f);
                     DrawCoordinateSystem(1);
 
                     game.SwapBuffers();
