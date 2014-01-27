@@ -106,7 +106,7 @@ void sensor_prepare_hmc5883l_data(v3d *const out, int16_t rawx, int16_t rawy, in
     hmc5883l_calibrate_v3d(out);
 
     v3d value = *out;
-    out->x = value.x;
-    out->y = value.y;
-    out->z = value.z;
+    out->x =  value.x;
+    out->y = -value.y;
+    out->z =  value.z;
 }
