@@ -10,6 +10,15 @@
 #error FIXMATRIX_MAX_SIZE must be defined to value greater or equal 6.
 #endif
 
+#define TEST_ENABLED 1
+#define TEST_GYROS 0
+#define TEST_ACCEL !TEST_ONLY_GYROS
+
+#if !defined(TEST_ENABLED) || !TEST_ENABLED
+#undef TEST_GYROS
+#undef TEST_ACCEL
+#endif
+
 #include "fusion/sensor_dcm.h"
 #include "fusion/sensor_fusion.h"
 
@@ -20,7 +29,11 @@
 static const fix16_t initial_r_axis = F16(0.05);
 static const fix16_t initial_r_gyro = F16(0.02);
 
+#ifdef TEST_ACCEL
+static const fix16_t q_axis = F16(.1);
+#else
 static const fix16_t q_axis = F16(0);
+#endif
 static const fix16_t q_gyro = F16(100);
 
 static const fix16_t alpha1 = F16(10);
@@ -1310,14 +1323,14 @@ static void fusion_update_orientation(register const fix16_t deltaT)
 */
 void fusion_update(register const fix16_t deltaT)
 {
-#if 0
-#if 0 // force gyro-only
+#if TEST_ENABLED
+#if TEST_GYRO // force gyro-only
     if (m_attitude_bootstrapped && m_orientation_bootstrapped)
     {
         m_have_accelerometer = false;
         m_have_magnetometer = false;
     }
-#else // force axes only
+#else // TEST_ACCEL force axes only
     m_gyroscope.x = 0;
     m_gyroscope.y = 0;
     m_gyroscope.z = 0;
