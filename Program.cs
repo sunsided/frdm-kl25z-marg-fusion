@@ -62,20 +62,18 @@ namespace WindowsFormsApplication1
                                              float y = BitConverter.ToInt32(data, 9) / 65535.0f;
                                              float z = BitConverter.ToInt32(data, 13) / 65535.0f;
 
-                                             // flip axes from N-E-U to N-W-U
+                                             // compose quaternion
                                              var quat = new Quaternion(x, y, z, w);
 
                                              // invert quaternion for cake and profit
                                              if (!bootstrapped)
                                              {
                                                  bootstrapped = true;
-
-                                                 unrotate = quat;
-                                                 unrotate = Quaternion.Invert(unrotate);
+                                                 unrotate = Quaternion.Invert(quat);
                                              }
 
                                              // normalize
-                                             //quat = unrotate * quat;
+                                             quat = unrotate * quat;
 
                                              // store for rendering
                                              rotation = quat;
@@ -94,18 +92,16 @@ namespace WindowsFormsApplication1
                                              //Console.WriteLine("roll: {0:##0.00}, pitch: {1:##0.00}, yaw: {2:##0.00}", roll, pitch, yaw);
                                              game.Title = String.Format("roll: {0:##0.00}, pitch: {1:##0.00}, yaw: {2:##0.00}", roll, pitch, yaw);
 
-                                             // flip axes from N-E-U to N-W-U
+                                             // compose quaternion
                                              var quat = new Quaternion(x, y, z, w);
 
-                                             /*
-                                             Matrix3 quatMatrix = Matrix3.CreateFromQuaternion(quat);
+                                            /*
+                                             var quatMatrix = Matrix3.CreateFromQuaternion(quat);
+                                             var transform = new Matrix3(1, 0, 0,
+                                                                         0, 1, 0,
+                                                                         0, 0, 1);
 
-                                             Matrix3 transform = new Matrix3(1, 0, 0,
-                                                                             0, 1, 0,
-                                                                             0, 0, 1);
-
-                                             Matrix3 transformed = transform * quatMatrix * transform;
-
+                                             Matrix3 transformed = transform * quatMatrix * Matrix3.Transpose(transform);
                                              quat = Quaternion.FromMatrix(transformed);
                                               */
                                              
@@ -114,7 +110,6 @@ namespace WindowsFormsApplication1
                                              if (!bootstrapped)
                                              {
                                                  bootstrapped = true;
-
                                                  unrotate = Quaternion.Invert(quat);
                                              }
 
