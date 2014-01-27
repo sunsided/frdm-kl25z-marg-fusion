@@ -10,10 +10,22 @@
 #error FIXMATRIX_MAX_SIZE must be defined to value greater or equal 6.
 #endif
 
+/*! 
+* \def TEST_ENABLED Unit-globally enables or disables accelerometer/magnetometer or gyroscope testing
+*/
 #define TEST_ENABLED 1
-#define TEST_GYROS 0
-#define TEST_ACCEL !TEST_ONLY_GYROS
 
+/*!
+* \def TEST_GYROS If {\ref TEST_ENABLED} is nonzero, enables gyroscope-only testing
+*/
+#define TEST_GYROS 1
+
+/*!
+* \def TEST_ACCEL If {\ref TEST_ENABLED} is nonzero and {\ref TEST_GYROS} is zero, enables accelerometer-only testing
+*/
+#define TEST_ACCEL !TEST_GYROS
+
+// undefine test directives if testing is globally disabled
 #if !defined(TEST_ENABLED) || !TEST_ENABLED
 #undef TEST_GYROS
 #undef TEST_ACCEL
@@ -1324,7 +1336,7 @@ static void fusion_update_orientation(register const fix16_t deltaT)
 void fusion_update(register const fix16_t deltaT)
 {
 #if TEST_ENABLED
-#if TEST_GYRO // force gyro-only
+#if TEST_GYROS // force gyro-only
     if (m_attitude_bootstrapped && m_orientation_bootstrapped)
     {
         m_have_accelerometer = false;

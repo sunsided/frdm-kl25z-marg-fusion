@@ -78,7 +78,7 @@ void sensor_prepare_mpu6050_gyroscope_data(v3d *const out, int16_t rawx, int16_t
 #if 1
     out->x = fix16_deg_to_rad( out->x);
     out->y = fix16_deg_to_rad(-out->y);
-    out->z = fix16_deg_to_rad(-out->z);
+    out->z = fix16_deg_to_rad( out->z);
 #else
     out->x = fix16_deg_to_rad(-out->x);
     out->y = fix16_deg_to_rad(-out->y);
