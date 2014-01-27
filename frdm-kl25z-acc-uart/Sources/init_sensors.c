@@ -128,8 +128,8 @@ void InitMPU6050()
     MPU6050_SetGyroscopeSampleRateDivider(configuration, 40); /* the gyro samples at 8kHz, so division by 40 --> 200Hz */
 #endif
     
-    MPU6050_SetGyroscopeFullScale(configuration, MPU6050_GYRO_FS_1000);
-    mpu6050_gyroscope_scaler = fix16_from_float(MPU6050_GYRO_LSB(MPU6050_GYRO_FS_1000));
+    MPU6050_SetGyroscopeFullScale(configuration, MPU6050_GYRO_FS_2000);
+    mpu6050_gyroscope_scaler = fix16_from_float(MPU6050_GYRO_LSB(MPU6050_GYRO_FS_2000));
 
     MPU6050_SetAccelerometerFullScale(configuration, MPU6050_ACC_FS_4);
     mpu6050_accelerometer_scaler = fix16_from_int(8192);    /* scaler value for ACC_FS_4*/
