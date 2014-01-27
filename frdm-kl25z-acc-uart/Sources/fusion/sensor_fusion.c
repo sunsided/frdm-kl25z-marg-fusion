@@ -47,6 +47,7 @@ static const fix16_t q_axis = F16(.1);
 static const fix16_t q_axis = F16(0);
 #endif
 static const fix16_t q_gyro = F16(1);
+static const fix16_t q_drift = F16(0.0001);
 
 static const fix16_t alpha1 = F16(10);
 static const fix16_t alpha2 = F16(.4);
@@ -63,7 +64,7 @@ static kalman16_uc_t kf_attitude;
 /*!
 * \def KF_STATES Number of states
 */
-#define KF_ATTITUDE_STATES 6
+#define KF_ATTITUDE_STATES 9
 
 /*!
 * \brief The Kalman filter instance used to predict the orientation.
@@ -73,7 +74,7 @@ static kalman16_uc_t kf_orientation;
 /*!
 * \def KF_STATES Number of states
 */
-#define KF_ORIENTATION_STATES 6
+#define KF_ORIENTATION_STATES 9
 
 /*!
 * \brief The Kalman filter observation instance used to update the prediction with accelerometer data
@@ -261,6 +262,10 @@ STATIC_INLINE void update_state_matrix_from_state(kalman16_uc_t *const kf, regis
     mf16 *const A = &kf->A;
     const mf16 *const x = &kf->x;
 
+    /************************************************************************/
+    /* Set state                                                            */
+    /************************************************************************/
+
     fix16_t c1 = x->data[0][0];
     fix16_t c2 = x->data[1][0];
     fix16_t c3 = x->data[2][0];
@@ -276,6 +281,14 @@ STATIC_INLINE void update_state_matrix_from_state(kalman16_uc_t *const kf, regis
     matrix_set(A, 2, 3, -fix16_mul(c2, deltaT));
     matrix_set(A, 2, 4,  fix16_mul(c1, deltaT));
     //matrix_set(A, 2, 5,   0);
+
+    /************************************************************************/
+    /* Set coefficient for drift                                            */
+    /************************************************************************/
+
+    matrix_set(A, 0, 6, -deltaT);
+    matrix_set(A, 1, 7, -deltaT);
+    matrix_set(A, 2, 8, -deltaT);
 }
 
 /*!
@@ -315,6 +328,11 @@ static void initialize_system_filter(kalman16_uc_t *const kf, const uint_fast8_t
         matrix_set(P, 3, 3, F16(1));
         matrix_set(P, 4, 4, F16(1));
         matrix_set(P, 5, 5, F16(1));
+
+        // initial drift variances
+        matrix_set(P, 6, 6, F16(1));
+        matrix_set(P, 7, 7, F16(1));
+        matrix_set(P, 8, 8, F16(1));
     }
     
     /************************************************************************/
@@ -332,6 +350,11 @@ static void initialize_system_filter(kalman16_uc_t *const kf, const uint_fast8_t
         matrix_set(Q, 3, 3, q_gyro);
         matrix_set(Q, 4, 4, q_gyro);
         matrix_set(Q, 5, 5, q_gyro);
+
+        // drift process noise
+        matrix_set(Q, 6, 6, q_drift);
+        matrix_set(Q, 7, 7, q_drift);
+        matrix_set(Q, 8, 8, q_drift);
     }
 }
 
@@ -954,34 +977,43 @@ STATIC_INLINE void fusion_fastpredict_X(kalman16_uc_t *const kf, const register 
     /*
         Transition matrix layout:
 
-        A_rp = [0 0 0,     0 -Cn3  Cn2;
-                0 0 0,   Cn3    0 -Cn1;
-                0 0 0,  -Cn2  Cn1    0;
+        A_rp = [1 0 0,     0 -Cn3*T Cn2*T,  -T  0  0;
+                0 1 0,   Cn3*T    0 -Cn1*T,  0 -T  0;
+                0 0 1,  -Cn2*T  Cn1*T    0,  0  0 -T;
 
-                0 0 0,     0 0 0;
-                0 0 0,     0 0 0;
-                0 0 0,     0 0 0];
+                0 0 0,     1 0 0,            0  0  0;
+                0 0 0,     0 1 0,            0  0  0;
+                0 0 0,     0 0 1,            0  0  0;
+
+                0 0 0,     0 0 0,            1  0  0;
+                0 0 0,     0 0 0,            0  1  0;
+                0 0 0,     0 0 0,            0  0  1;
     */
 
     // fetch estimated DCM components
-    register const fix16_t c1 = x->data[0][0];
-    register const fix16_t c2 = x->data[1][0];
-    register const fix16_t c3 = x->data[2][0];
+    const fix16_t c1 = x->data[0][0];
+    const fix16_t c2 = x->data[1][0];
+    const fix16_t c3 = x->data[2][0];
 
     // fetch estimated angular velocities
-    register const fix16_t gx = x->data[3][0];
-    register const fix16_t gy = x->data[4][0];
-    register const fix16_t gz = x->data[5][0];
+    const fix16_t gx = x->data[3][0];
+    const fix16_t gy = x->data[4][0];
+    const fix16_t gz = x->data[5][0];
     
     // solve differential equations
-    register const fix16_t d_c1 = fix16_sub(fix16_mul(c2, gz), fix16_mul(c3, gy)); //    0*gx  + (-c3*gy) +   c2*gz  = c2*gz - c3*gy
-    register const fix16_t d_c2 = fix16_sub(fix16_mul(c3, gx), fix16_mul(c1, gz)); //   c3*gx  +    0*gy  + (-c1*gz) = c3*gx - c1*gz
-    register const fix16_t d_c3 = fix16_sub(fix16_mul(c1, gy), fix16_mul(c2, gx)); // (-c2*gx) +  (c1*gy) +    0*gz  = c1*gy - c2*gx
+    const fix16_t d_c1 = fix16_sub(fix16_mul(c2, gz), fix16_mul(c3, gy)); //    0*gx  + (-c3*gy) +   c2*gz  = c2*gz - c3*gy
+    const fix16_t d_c2 = fix16_sub(fix16_mul(c3, gx), fix16_mul(c1, gz)); //   c3*gx  +    0*gy  + (-c1*gz) = c3*gx - c1*gz
+    const fix16_t d_c3 = fix16_sub(fix16_mul(c1, gy), fix16_mul(c2, gx)); // (-c2*gx) +  (c1*gy) +    0*gz  = c1*gy - c2*gx
+
+    // fetch integration drift factors
+    const fix16_t dx = x->data[6][0];
+    const fix16_t dy = x->data[7][0];
+    const fix16_t dz = x->data[8][0];
 
     // integrate
-    x->data[0][0] = fix16_add(c1, fix16_mul(d_c1, deltaT));
-    x->data[1][0] = fix16_add(c2, fix16_mul(d_c2, deltaT));
-    x->data[2][0] = fix16_add(c3, fix16_mul(d_c3, deltaT));
+    x->data[0][0] = fix16_sub(fix16_add(c1, fix16_mul(d_c1, deltaT)), fix16_mul(dx, deltaT));
+    x->data[1][0] = fix16_sub(fix16_add(c2, fix16_mul(d_c2, deltaT)), fix16_mul(dy, deltaT));
+    x->data[2][0] = fix16_sub(fix16_add(c3, fix16_mul(d_c3, deltaT)), fix16_mul(dz, deltaT));
 
     // keep constant.
     x->data[3][0] = gx;
