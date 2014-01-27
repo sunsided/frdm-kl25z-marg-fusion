@@ -12,8 +12,8 @@ LIBRARY_NAMES :=
 ADDITIONAL_LINKER_INPUTS :=
 MACOS_FRAMEWORKS :=
 
-CFLAGS := -ggdb -ffunction-sections -fdata-sections -std=c99 -O3 -frename-registers  -fno-keep-static-consts -funsafe-loop-optimizations -fgcse-sm -fgcse-las -fgcse-after-reload -fipa-pta
-CXXFLAGS := -ggdb -ffunction-sections -fdata-sections -fno-exceptions -std=c99 -O3 -frename-registers  -fno-keep-static-consts -funsafe-loop-optimizations -fgcse-sm -fgcse-las -fgcse-after-reload -fipa-pta
+CFLAGS := -ggdb -ffunction-sections -fdata-sections -std=c99 -O3 -frename-registers  -fno-keep-static-consts -funsafe-loop-optimizations -fgcse-sm -fgcse-las -fgcse-after-reload -fipa-pta -fstack-usage
+CXXFLAGS := -ggdb -ffunction-sections -fdata-sections -fno-exceptions -std=c99 -O3 -frename-registers  -fno-keep-static-consts -funsafe-loop-optimizations -fgcse-sm -fgcse-las -fgcse-after-reload -fipa-pta -fstack-usage
 ASFLAGS :=
 LDFLAGS := -Wl,--gc-sections
 COMMONFLAGS :=
