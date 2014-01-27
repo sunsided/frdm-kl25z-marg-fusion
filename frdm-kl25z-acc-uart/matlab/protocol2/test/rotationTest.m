@@ -1,12 +1,12 @@
 clc;
 
-m10 = 52321;
-m11 = -37850;
-m12 = -221;
+m10 = -28095;
+m11 = -58763;
+m12 = 7254;
 
-m20 = 1922;
-m21 = -1922;
-m22 = -65445;
+m20 = -877;
+m21 = -8081;
+m22 = -65030;
 
 norm_m1 = norm([m10 m11 m12]/65535)
 norm_m2 = norm([m20 m21 m22]/65535)
@@ -29,9 +29,14 @@ DCM = DCM / 65535
 
 %close all; 
 figure;
-quiver3(0, 0, 0, DCM(1,1), DCM(1,2), DCM(1,3), 'r'); hold on;
-quiver3(0, 0, 0, DCM(2,1), DCM(2,2), DCM(2,3), 'g', 'LineWidth', 3); hold on;
-quiver3(0, 0, 0, DCM(3,1), DCM(3,2), DCM(3,3), 'b', 'LineWidth', 3); hold on;
+quiver3(0, 0, 0, 10, 0, 0, '-.r', 'LineWidth', 1); hold on;
+quiver3(0, 0, 0, 0, 10, 0, '-.g', 'LineWidth', 1); hold on;
+quiver3(0, 0, 0, 0, 0, 10, '-.b', 'LineWidth', 1); hold on;
+
+DCMd = DCM';
+quiver3(0, 0, 0, DCMd(1,1), DCMd(1,2), DCMd(1,3), ':r', 'LineWidth', 3); hold on;
+quiver3(0, 0, 0, DCMd(2,1), DCMd(2,2), DCMd(2,3), 'g', 'LineWidth', 3); hold on;
+quiver3(0, 0, 0, DCMd(3,1), DCMd(3,2), DCMd(3,3), 'b', 'LineWidth', 3); hold on;
 xlim([-2 2]);
 ylim([-2 2]);
 zlim([-2 2]);
@@ -39,6 +44,10 @@ xlabel('x');
 ylabel('y');
 zlabel('z');
 axis square;
+
+text(DCM(1,1), DCM(1,2), DCM(1,3), 'DCM1', 'Color', 'r');
+text(DCM(2,1), DCM(2,2), DCM(2,3), 'DCM2', 'Color', 'g');
+text(DCM(3,1), DCM(3,2), DCM(3,3), 'DCM3', 'Color', 'b');
 
 % Calculate quaterneion
    

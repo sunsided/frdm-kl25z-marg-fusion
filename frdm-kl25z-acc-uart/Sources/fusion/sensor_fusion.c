@@ -17,11 +17,11 @@
 /* Measurement covariance definitions                                   */
 /************************************************************************/
 
-static const fix16_t initial_r_axis = F16(0.005);
-static const fix16_t initial_r_gyro = F16(0.01);
+static const fix16_t initial_r_axis = F16(0.05);
+static const fix16_t initial_r_gyro = F16(0.02);
 
 static const fix16_t q_axis = F16(0);
-static const fix16_t q_gyro = F16(4.36);
+static const fix16_t q_gyro = F16(100);
 
 static const fix16_t alpha1 = F16(10);
 static const fix16_t alpha2 = F16(0.4);
