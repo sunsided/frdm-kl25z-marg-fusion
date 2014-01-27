@@ -13,7 +13,7 @@
 /*! 
 * \def TEST_ENABLED Unit-globally enables or disables accelerometer/magnetometer or gyroscope testing
 */
-#define TEST_ENABLED 1
+#define TEST_ENABLED 0
 
 /*!
 * \def TEST_GYROS If {\ref TEST_ENABLED} is nonzero, enables gyroscope-only testing
