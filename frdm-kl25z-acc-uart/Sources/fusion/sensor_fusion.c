@@ -227,9 +227,11 @@ STATIC_INLINE void mf16_add_scaled(mf16 *dest, const mf16 *RESTRICT a, const mf1
 
 /*!
 * \brief Initializes the state matrix of a specific filter based on its state
+* \param[in] kf The filter to update
+* \param[in] deltaT The time differential
 */
 HOT NONNULL LEAF
-STATIC_INLINE void update_state_matrix_from_state(kalman16_uc_t *const kf)
+STATIC_INLINE void update_state_matrix_from_state(kalman16_uc_t *const kf, register fix16_t deltaT)
 {
     mf16 *const A = &kf->A;
     const mf16 *const x = &kf->x;
@@ -239,15 +241,15 @@ STATIC_INLINE void update_state_matrix_from_state(kalman16_uc_t *const kf)
     fix16_t c3 = x->data[2][0];
 
     //matrix_set(A, 0, 3,   0);
-    matrix_set(A, 0, 4, -c3);
-    matrix_set(A, 0, 5,  c2);
+    matrix_set(A, 0, 4, -fix16_mul(c3, deltaT));
+    matrix_set(A, 0, 5,  fix16_mul(c2, deltaT));
 
-    matrix_set(A, 1, 3,  c3);
+    matrix_set(A, 1, 3,  fix16_mul(c3, deltaT));
     //matrix_set(A, 1, 4,   0);
-    matrix_set(A, 1, 5, -c1);
+    matrix_set(A, 1, 5, -fix16_mul(c1, deltaT));
 
-    matrix_set(A, 2, 3, -c2);
-    matrix_set(A, 2, 4,  c1);
+    matrix_set(A, 2, 3, -fix16_mul(c2, deltaT));
+    matrix_set(A, 2, 4,  fix16_mul(c1, deltaT));
     //matrix_set(A, 2, 5,   0);
 }
 
@@ -267,7 +269,11 @@ static void initialize_system_filter(kalman16_uc_t *const kf, const uint_fast8_t
     /************************************************************************/
     /* Set state transition model                                           */
     /************************************************************************/
-    update_state_matrix_from_state(kf);
+    {
+        mf16 *const A = &kf->A;
+        mf16_fill_diagonal(A, F16(1));
+        update_state_matrix_from_state(kf, F16(1)); // assume bootstrap dT := 1
+    }
 
     /************************************************************************/
     /* Set state variances                                                  */
@@ -325,6 +331,9 @@ static void initialize_system()
 
 /*!
 * \brief Initializes the state matrix of a specific filter based on its state
+* \param[in] kfm The measurement to update
+* \param[in] axisXYZ The axis observation noise
+* \param[in] gyroXYZ The gyro observation noise
 */
 HOT NONNULL
 STATIC_INLINE void update_measurement_noise(kalman16_observation_t *const kfm, register const fix16_t axisXYZ, register const fix16_t gyroXYZ)
@@ -506,7 +515,6 @@ STATIC_INLINE void fusion_sanitize_state(kalman16_uc_t *const kf)
     x->data[0][0] = c1;
     x->data[1][0] = c2;
     x->data[2][0] = c3;
-    update_state_matrix_from_state(kf);
 }
 
 /*!
@@ -676,13 +684,13 @@ static void fetch_quaternion_opt1(register qf16 *RESTRICT const quat)
     // m10 = R(2, 1);    m11 = R(2, 2);    m12 = R(2, 3);
     // m20 = R(3, 1);    m21 = R(3, 2);    m22 = R(3, 3);
 
-    const register fix16_t m10 = x2->data[0][0];
-    const register fix16_t m11 = x2->data[1][0];
-    const register fix16_t m12 = x2->data[2][0];
+    const fix16_t m10 = x2->data[0][0];
+    const fix16_t m11 = x2->data[1][0];
+    const fix16_t m12 = x2->data[2][0];
 
-    const register fix16_t m20 = x3->data[0][0];
-    const register fix16_t m21 = x3->data[1][0];
-    const register fix16_t m22 = x3->data[2][0];
+    const fix16_t m20 = x3->data[0][0];
+    const fix16_t m21 = x3->data[1][0];
+    const fix16_t m22 = x3->data[2][0];
 
     // calculate cross product for C1
     // m0 = cross([m10 m11 m12], [m20 m21 m22])
@@ -690,9 +698,9 @@ static void fetch_quaternion_opt1(register qf16 *RESTRICT const quat)
     //      m00 = m11*m22 - m12*m21
     //      m01 = m12*m20 - m10*m22
     //      m02 = m10*m21 - m11*m20
-    register fix16_t m00 = fix16_sub(fix16_mul(m11, m22), fix16_mul(m12, m21));
-    register fix16_t m01 = fix16_sub(fix16_mul(m12, m20), fix16_mul(m10, m22));
-    register fix16_t m02 = fix16_sub(fix16_mul(m10, m21), fix16_mul(m11, m20));
+    fix16_t m00 = fix16_sub(fix16_mul(m11, m22), fix16_mul(m12, m21));
+    fix16_t m01 = fix16_sub(fix16_mul(m12, m20), fix16_mul(m10, m22));
+    fix16_t m02 = fix16_sub(fix16_mul(m10, m21), fix16_mul(m11, m20));
 
     // normalize C1 
     const register fix16_t norm = norm3(m00, m01, m02);
@@ -784,13 +792,13 @@ static void fetch_quaternion_opt2(register qf16 *RESTRICT const quat)
     // m10 = R(2, 1);    m11 = R(2, 2);    m12 = R(2, 3);
     // m20 = R(3, 1);    m21 = R(3, 2);    m22 = R(3, 3);
 
-    const register fix16_t m10 = x2->data[0][0];
-    const register fix16_t m11 = x2->data[1][0];
-    const register fix16_t m12 = x2->data[2][0];
+    const fix16_t m10 = x2->data[0][0];
+    const fix16_t m11 = x2->data[1][0];
+    const fix16_t m12 = x2->data[2][0];
 
-    const register fix16_t m20 = x3->data[0][0];
-    const register fix16_t m21 = x3->data[1][0];
-    const register fix16_t m22 = x3->data[2][0];
+    const fix16_t m20 = x3->data[0][0];
+    const fix16_t m21 = x3->data[1][0];
+    const fix16_t m22 = x3->data[2][0];
 
     // calculate cross product for C1
     // m0 = cross([m10 m11 m12], [m20 m21 m22])
@@ -798,9 +806,9 @@ static void fetch_quaternion_opt2(register qf16 *RESTRICT const quat)
     //      m00 = m11*m22 - m12*m21
     //      m01 = m12*m20 - m10*m22
     //      m02 = m10*m21 - m11*m20
-    register fix16_t m00 = fix16_sub(fix16_mul(m11, m22), fix16_mul(m12, m21));
-    register fix16_t m01 = fix16_sub(fix16_mul(m12, m20), fix16_mul(m10, m22));
-    register fix16_t m02 = fix16_sub(fix16_mul(m10, m21), fix16_mul(m11, m20));
+    fix16_t m00 = fix16_sub(fix16_mul(m11, m22), fix16_mul(m12, m21));
+    fix16_t m01 = fix16_sub(fix16_mul(m12, m20), fix16_mul(m10, m22));
+    fix16_t m02 = fix16_sub(fix16_mul(m10, m21), fix16_mul(m11, m20));
 
     // normalize C1 
     const register fix16_t norm = norm3(m00, m01, m02);
@@ -969,13 +977,17 @@ void fusion_predict(register const fix16_t deltaT)
     mf16 *const P2 = kalman_get_system_covariance_uc(&kf_orientation);
     mf16 *const P3 = kalman_get_system_covariance_uc(&kf_attitude);
     
+    // update state matrix
+    update_state_matrix_from_state(&kf_attitude, deltaT);
+    update_state_matrix_from_state(&kf_orientation, deltaT);
+
     // predict state
     fusion_fastpredict_X(&kf_attitude, deltaT);
     fusion_fastpredict_X(&kf_orientation, deltaT);
 
     // predict covariance
-    kalman_cpredict_P_uc(&kf_attitude, deltaT);
-    kalman_cpredict_P_uc(&kf_orientation, deltaT);
+    kalman_predict_P_uc(&kf_attitude);
+    kalman_predict_P_uc(&kf_orientation);
 
     // re-orthogonalize and update state matrix
     fusion_sanitize_state(&kf_attitude);
