@@ -46,10 +46,10 @@ static const fix16_t q_axis = F16(.1);
 #else
 static const fix16_t q_axis = F16(0);
 #endif
-static const fix16_t q_gyro = F16(100);
+static const fix16_t q_gyro = F16(10);
 
 static const fix16_t alpha1 = F16(10);
-static const fix16_t alpha2 = F16(0.4);
+static const fix16_t alpha2 = F16(.4);
 
 /************************************************************************/
 /* Kalman filter structure definition                                   */
