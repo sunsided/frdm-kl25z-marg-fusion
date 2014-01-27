@@ -47,7 +47,7 @@ static const fix16_t q_axis = F16(.1);
 static const fix16_t q_axis = F16(0);
 #endif
 static const fix16_t q_gyro = F16(1);
-static const fix16_t q_drift = F16(0.0001);
+static const fix16_t q_drift = F16(0);
 
 static const fix16_t alpha1 = F16(10);
 static const fix16_t alpha2 = F16(.4);
@@ -286,9 +286,9 @@ STATIC_INLINE void update_state_matrix_from_state(kalman16_uc_t *const kf, regis
     /* Set coefficient for drift                                            */
     /************************************************************************/
 
-    matrix_set(A, 0, 6, -deltaT);
-    matrix_set(A, 1, 7, -deltaT);
-    matrix_set(A, 2, 8, -deltaT);
+    matrix_set(A, 3, 6, -deltaT);
+    matrix_set(A, 4, 7, -deltaT);
+    matrix_set(A, 5, 8, -deltaT);
 }
 
 /*!
@@ -1005,20 +1005,20 @@ STATIC_INLINE void fusion_fastpredict_X(kalman16_uc_t *const kf, const register 
     const fix16_t d_c2 = fix16_sub(fix16_mul(c3, gx), fix16_mul(c1, gz)); //   c3*gx  +    0*gy  + (-c1*gz) = c3*gx - c1*gz
     const fix16_t d_c3 = fix16_sub(fix16_mul(c1, gy), fix16_mul(c2, gx)); // (-c2*gx) +  (c1*gy) +    0*gz  = c1*gy - c2*gx
 
+    // integrate
+    x->data[0][0] = fix16_add(c1, fix16_mul(d_c1, deltaT));
+    x->data[1][0] = fix16_add(c2, fix16_mul(d_c2, deltaT));
+    x->data[2][0] = fix16_add(c3, fix16_mul(d_c3, deltaT));
+
     // fetch integration drift factors
     const fix16_t dx = x->data[6][0];
     const fix16_t dy = x->data[7][0];
     const fix16_t dz = x->data[8][0];
 
-    // integrate
-    x->data[0][0] = fix16_sub(fix16_add(c1, fix16_mul(d_c1, deltaT)), fix16_mul(dx, deltaT));
-    x->data[1][0] = fix16_sub(fix16_add(c2, fix16_mul(d_c2, deltaT)), fix16_mul(dy, deltaT));
-    x->data[2][0] = fix16_sub(fix16_add(c3, fix16_mul(d_c3, deltaT)), fix16_mul(dz, deltaT));
-
     // keep constant.
-    x->data[3][0] = gx;
-    x->data[4][0] = gy;
-    x->data[5][0] = gz;
+    x->data[3][0] = fix16_add(gx, fix16_mul(dx, deltaT));
+    x->data[4][0] = fix16_add(gy, fix16_mul(dy, deltaT));
+    x->data[5][0] = fix16_add(gz, fix16_mul(dz, deltaT));
 }
 
 /*!
