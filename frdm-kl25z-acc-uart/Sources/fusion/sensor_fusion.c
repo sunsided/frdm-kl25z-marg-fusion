@@ -38,18 +38,54 @@
 /* Measurement covariance definitions                                   */
 /************************************************************************/
 
+/*
+* \brief Observation axis uncertainty (accelerometer)
+*/
 static const fix16_t initial_r_axis = F16(0.05);
+
+/*
+* \brief Observation projection uncertainty (magnetometer)
+*/
+static const fix16_t initial_r_projection = F16(0.046);
+
+/*
+* \brief Observation gyro uncertainty
+*/
 static const fix16_t initial_r_gyro = F16(0.02);
 
+/*
+* \brief Accelerometer process noise. Since the accelerometer readings are never used directly, this should always be set to zero.
+*/
 #ifdef TEST_ACCEL
 static const fix16_t q_axis = F16(.1);
 #else
 static const fix16_t q_axis = F16(0);
 #endif
+
+/*
+* \brief Gyro process noise
+*/
 static const fix16_t q_gyro = F16(1);
 
+/*
+* \brief Tuning factor for the axis observation
+*/
 static const fix16_t alpha1 = F16(10);
+
+/*
+* \brief Tuning factor for the gyro observation
+*/
 static const fix16_t alpha2 = F16(.4);
+
+/*!
+* \brief Threshold value for attitude detection. Difference to norm.
+*/
+static const fix16_t attitude_threshold = F16(0.14);
+
+/*!
+* \brief Threshold value for singularity detection. Difference to cos(pitch).
+*/
+static const fix16_t singularity_cos_threshold = F16(0.17365);
 
 /************************************************************************/
 /* Kalman filter structure definition                                   */
@@ -217,6 +253,44 @@ static bool m_orientation_bootstrapped = false;
 /* Helper functions                                                     */
 /************************************************************************/
 
+
+/*!
+* \brief Fetches the sign of a variable
+* \return -1 if value is negative, +1 otherwise
+*/
+HOT CONST
+STATIC_INLINE int32_t fix16_sign(const fix16_t value)
+{
+    return value >= 0 ? 1 : -1;
+}
+
+/*!
+* \brief Fetches the sign of a variable,
+* \return -1 if value is negative, +1 if value is positive, 0 otherwise
+*/
+HOT CONST
+STATIC_INLINE int32_t fix16_sign_ex(const fix16_t value)
+{
+    return (value > 0) ? 1 : (value < 0) ? -1 : 0;
+}
+
+/*!*
+* \brief Calculates the norm of a three component vector
+*/
+HOT CONST
+STATIC_INLINE fix16_t norm3(register const fix16_t a, register const fix16_t b, register const fix16_t c) {
+    return fix16_sqrt(fix16_add(fix16_sq(a), fix16_add(fix16_sq(b), fix16_sq(c))));
+}
+
+/*!*
+* \brief Calculates the norm of a two component vector
+*/
+HOT CONST
+STATIC_INLINE fix16_t norm2(register const fix16_t a, register const fix16_t b) {
+    return fix16_sqrt(fix16_add(fix16_sq(a), fix16_sq(b)));
+}
+
+
 // Calculates dest = A + B * s
 HOT NONNULL
 STATIC_INLINE void mf16_add_scaled(mf16 *dest, const mf16 *RESTRICT a, const mf16 *RESTRICT b, const fix16_t s)
@@ -381,9 +455,8 @@ STATIC_INLINE void update_measurement_noise(kalman16_observation_t *const kfm, r
 HOT
 STATIC_INLINE uint_fast8_t acceleration_detected()
 {
-    register fix16_t alpha = fix16_abs(fix16_sub(fix16_add(fix16_sq(m_accelerometer.x), fix16_add(fix16_sq(m_accelerometer.y), fix16_sq(m_accelerometer.z))), F16(1)));
-    const fix16_t threshold = F16(0.14);
-    if (alpha < threshold)
+    register fix16_t alpha = fix16_abs(fix16_sub(norm3(m_accelerometer.x, m_accelerometer.y, m_accelerometer.z), F16(1)));
+    if (alpha < attitude_threshold)
     {
         return 0;
     }
@@ -543,42 +616,6 @@ STATIC_INLINE void fusion_sanitize_state(kalman16_uc_t *const kf)
 }
 
 /*!
-* \brief Fetches the sign of a variable
-* \return -1 if value is negative, +1 otherwise
-*/
-HOT CONST
-STATIC_INLINE int32_t fix16_sign(const fix16_t value)
-{
-    return value >= 0 ? 1 : -1;
-}
-
-/*!
-* \brief Fetches the sign of a variable, 
-* \return -1 if value is negative, +1 if value is positive, 0 otherwise
-*/
-HOT CONST
-STATIC_INLINE int32_t fix16_sign_ex(const fix16_t value)
-{
-    return (value > 0) ? 1 : (value < 0) ? -1 : 0;
-}
-
-/*!*
-* \brief Calculates the norm of a three component vector
-*/
-HOT CONST
-STATIC_INLINE fix16_t norm3(register const fix16_t a, register const fix16_t b, register const fix16_t c) {
-    return fix16_sqrt(fix16_add(fix16_sq(a), fix16_add(fix16_sq(b), fix16_sq(c))));
-}
-
-/*!*
-* \brief Calculates the norm of a two component vector
-*/
-HOT CONST
-STATIC_INLINE fix16_t norm2(register const fix16_t a, register const fix16_t b) {
-    return fix16_sqrt(fix16_add(fix16_sq(a), fix16_sq(b)));
-}
-
-/*!
 * \brief Fetches the values without any modification
 * \param[out] roll The roll angle in radians.
 * \param[out] pitch The pitch (elevation) angle in radians.
@@ -586,27 +623,6 @@ STATIC_INLINE fix16_t norm2(register const fix16_t a, register const fix16_t b) 
 HOT NONNULL LEAF
 STATIC_INLINE void calculate_roll_pitch(register fix16_t *RESTRICT const roll, register fix16_t *RESTRICT const pitch)
 {
-#if 0
-
-    const mf16 *const x = kalman_get_state_vector_uc(&kf_attitude);
-    
-    // fetch axes
-    const fix16_t c31 = x->data[0][0];
-    const fix16_t c32 = x->data[1][0];
-    const fix16_t c33 = x->data[2][0];
-    
-    // calculate pitch
-    *pitch = -fix16_asin(c31);
-
-    // calculate roll
-    const fix16_t c1sq = fix16_sq(c31);
-    const fix16_t c3sq = fix16_sq(c33);
-    const fix16_t c1c3sq = fix16_add(c1sq, c3sq);
-    const fix16_t c1c3norm = fix16_sqrt(c1c3sq);
-    *roll = fix16_atan2(c32, fix16_sign(c33)*c1c3norm);
-    //*roll = fix16_atan2(c32, c33);
-#else
-
     const mf16 *const x = kalman_get_state_vector_uc(&kf_attitude);
 
     // fetch axes
@@ -615,22 +631,10 @@ STATIC_INLINE void calculate_roll_pitch(register fix16_t *RESTRICT const roll, r
     fix16_t c33 =  x->data[2][0];
     
     // calculate pitch
-    const fix16_t c2sq = fix16_sq(c32);
-    const fix16_t c3sq = fix16_sq(c33);
-    const fix16_t c2c3sq = fix16_add(c2sq, c3sq);
-    const fix16_t c2c3norm = fix16_sqrt(c2c3sq);
-    //*pitch = fix16_atan2(c31, c2c3norm);
     *pitch = -fix16_asin(c31);
 
     // calculate roll
-    const fix16_t c1sq = fix16_sq(c31);
-    const fix16_t c1c3sq = fix16_add(c1sq, c3sq);
-    const fix16_t c1c3norm = fix16_sqrt(c1c3sq);
-    //*roll = fix16_atan2(c32, fix16_sign(c33)*c1c3norm);
-    //*roll = fix16_atan2(c32, fix16_sign(c33)*c1c3norm);
     *roll = fix16_atan2(c32, c33);
-
-#endif
 }
 
 /*!
@@ -769,8 +773,6 @@ static void fetch_quaternion_opt1(register qf16 *RESTRICT const quat)
     //               =  1 - (m00 + (m11 - m22))
     fix16_t qz = fix16_mul(F16(0.5), fix16_sqrt(zero_or_value(fix16_sub(F16(1), fix16_add(m00, fix16_sub(m11, m22))))));
 
-#if 1
-
     // qx = copysign(qx, m21 - m12);
     qx *= fix16_sign_ex(fix16_sub(m21, m12));
 
@@ -779,143 +781,6 @@ static void fetch_quaternion_opt1(register qf16 *RESTRICT const quat)
 
     //  qz = copysign(qz, m10 - m01);
     qz *= fix16_sign_ex(fix16_sub(m10, m01));
-
-#else
-
-    // qx = copysign(qx, m21 - m12);
-    qx *= fix16_sign_ex(fix16_sub(m12, m21));
-
-    // qy = copysign(qy, m02 - m20);
-    qy *= fix16_sign_ex(fix16_sub(m20, m02));
-
-    //  qz = copysign(qz, m10 - m01);
-    qz *= fix16_sign_ex(fix16_sub(m01, m10));
-
-#endif
-
-    // compose quaternion
-    quat->a = qw;
-    quat->b = qx;
-    quat->c = qy;
-    quat->d = qz;
-
-    // normalizify
-    qf16_normalize(quat, quat);
-}
-
-/*!
-* \brief Fetches the orientation quaternion.
-* \param[out] quat The orientation quaternion
-*/
-HOT NONNULL LEAF
-static void fetch_quaternion_opt2(register qf16 *RESTRICT const quat)
-{   
-    const register mf16 *const x2 = kalman_get_state_vector_uc(&kf_orientation);
-    const register mf16 *const x3 = kalman_get_state_vector_uc(&kf_attitude);
-
-    // m00 = R(1, 1);    m01 = R(1, 2);    m02 = R(1, 3);
-    // m10 = R(2, 1);    m11 = R(2, 2);    m12 = R(2, 3);
-    // m20 = R(3, 1);    m21 = R(3, 2);    m22 = R(3, 3);
-
-    const fix16_t m10 = x2->data[0][0];
-    const fix16_t m11 = x2->data[1][0];
-    const fix16_t m12 = x2->data[2][0];
-
-    const fix16_t m20 = x3->data[0][0];
-    const fix16_t m21 = x3->data[1][0];
-    const fix16_t m22 = x3->data[2][0];
-
-    // calculate cross product for C1
-    // m0 = cross([m10 m11 m12], [m20 m21 m22])
-    // -->
-    //      m00 = m11*m22 - m12*m21
-    //      m01 = m12*m20 - m10*m22
-    //      m02 = m10*m21 - m11*m20
-    fix16_t m00 = fix16_sub(fix16_mul(m11, m22), fix16_mul(m12, m21));
-    fix16_t m01 = fix16_sub(fix16_mul(m12, m20), fix16_mul(m10, m22));
-    fix16_t m02 = fix16_sub(fix16_mul(m10, m21), fix16_mul(m11, m20));
-
-    // normalize C1 
-    const register fix16_t norm = norm3(m00, m01, m02);
-    m00 = fix16_div(m00, norm);
-    m01 = fix16_div(m01, norm);
-    m02 = fix16_div(m02, norm);
-
-    // "Angel" code
-    // http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
-
-    fix16_t qw, qx, qy, qz;
-
-    // check the matrice's trace
-    const register fix16_t trace = fix16_add(m00, fix16_add(m11, m22));
-    if (trace > 0)
-    {
-        /*
-        s = 0.5 / sqrt(trace + 1.0);
-        qw = 0.25 / s;
-        qx = ( R(3,2) - R(2,3) ) * s;
-        qy = ( R(1,3) - R(3,1) ) * s;
-        qz = ( R(2,1) - R(1,2) ) * s;
-        */
-
-        const fix16_t s = fix16_div(F16(0.5), fix16_sqrt(fix16_add(F16(1.0), trace)));
-
-        qw = fix16_div(F16(0.25), s);
-        qx = fix16_mul(fix16_sub(m21, m12), s);
-        qy = fix16_mul(fix16_sub(m02, m20), s);
-        qz = fix16_mul(fix16_sub(m10, m01), s);
-    }
-    else
-    {
-        if (m00 > m11 && m00 > m22)
-        {
-            /*
-            s = 2.0 * sqrt( 1.0 + R(1,1) - R(2,2) - R(3,3));
-            qw = (R(3,2) - R(2,3) ) / s;
-            qx = 0.25 * s;
-            qy = (R(1,2) + R(2,1) ) / s;
-            qz = (R(1,3) + R(3,1) ) / s;
-            */
-            const fix16_t s = fix16_mul(F16(2), fix16_sqrt(fix16_add(F16(1), fix16_sub(m00, fix16_add(m11, m22)))));
-
-            qw = fix16_div(fix16_sub(m21, m12), s);
-            qx = fix16_mul(F16(0.25), s);
-            qy = fix16_div(fix16_add(m01, m10), s);
-            qz = fix16_div(fix16_add(m02, m20), s);
-        }
-        else if (m11 > m22)
-        {
-            /*
-            s = 2.0 * sqrt( 1.0 + R(2,2) - R(1,1) - R(3,3));
-            qw = (R(1,3) - R(3,1) ) / s;
-            qx = (R(1,2) + R(2,1) ) / s;
-            qy = 0.25 * s;
-            qz = (R(2,3) + R(3,2) ) / s;
-            */
-            const fix16_t s = fix16_mul(F16(2), fix16_sqrt(fix16_add(F16(1), fix16_sub(m11, fix16_add(m00, m22)))));
-
-            qw = fix16_div(fix16_sub(m02, m20), s);
-            qx = fix16_div(fix16_add(m01, m10), s);
-            qy = fix16_mul(F16(0.25), s);
-            qz = fix16_div(fix16_add(m12, m21), s);
-        }
-        else
-        {
-            /*
-            s = 2.0 * sqrt( 1.0 + R(3,3) - R(1,1) - R(2,2) );
-            qw = (R(2,1) - R(1,2) ) / s;
-            qx = (R(1,3) + R(3,1) ) / s;
-            qy = (R(2,3) + R(3,2) ) / s;
-            qz = 0.25 * s;
-            */
-            const fix16_t s = fix16_mul(F16(2), fix16_sqrt(fix16_add(F16(1), fix16_sub(m22, fix16_add(m00, m11)))));
-
-            qw = fix16_div(fix16_sub(m10, m01), s);
-            qx = fix16_div(fix16_add(m02, m20), s);
-            qy = fix16_div(fix16_add(m12, m21), s);
-            qz = fix16_mul(F16(0.25), s);
-        }
-    }
 
     // compose quaternion
     quat->a = qw;
@@ -1034,18 +899,6 @@ void fusion_set_accelerometer(register const fix16_t *const ax, register const f
     m_accelerometer.x = *ax;
     m_accelerometer.y = *ay;
     m_accelerometer.z = *az;
-
-#if 0
-    // check accelerometer norm and discard non-still accelerations
-    // 1 - (x^2 + y^2 + z^2) == 0
-    fix16_t norm = fix16_sub(F16(1), fix16_sqrt(fix16_add(fix16_sq(m_accelerometer.x), fix16_add(fix16_sq(m_accelerometer.y), fix16_sq(m_accelerometer.z)))));
-    if (norm > F16(0.1) || norm < F16(-0.1))
-    {
-        m_have_accelerometer = false;
-        return;
-    }
-#endif
-
     m_have_accelerometer = true;
 }
 
@@ -1282,7 +1135,7 @@ static void fusion_update_orientation(register const fix16_t deltaT)
     
 #if 1
     // check for singularity
-    if (cos_pitch < F16(0.17365))
+    if (cos_pitch < singularity_cos_threshold)
     {
         fusion_update_orientation_gyro(deltaT);
         return;
@@ -1294,6 +1147,16 @@ static void fusion_update_orientation(register const fix16_t deltaT)
     /************************************************************************/
 
     tune_measurement_noise(&kfm_magneto);
+    {
+        mf16 *const R = &kfm_magneto.R;
+
+        // anyway, overwrite covariance of projection
+        matrix_set(R, 0, 0, initial_r_projection);
+        matrix_set(R, 1, 1, initial_r_projection);
+        matrix_set(R, 2, 2, initial_r_projection);
+    }
+
+    
 
     /************************************************************************/
     /* Prepare measurement                                                  */
