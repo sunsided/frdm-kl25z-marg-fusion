@@ -49,6 +49,10 @@ namespace WindowsFormsApplication1
                 bool bootstrapped = false;
                 var unrotate = new Quaternion(0, 0, 0, 1);
 
+                // coordinate systems
+                bool primary = false;
+                bool secondary = false;
+
                 // attach decoder handler
                 Decoder.DataReady += (sender, args) =>
                                      {
@@ -131,7 +135,8 @@ namespace WindowsFormsApplication1
                 var projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.PiOver3, (float)game.Width / (float)game.Height, 0.001f, 5000);
 
                 // create look-at matrix
-                var lookAt = Matrix4.LookAt(new Vector3(-1.5f, 0.5f, 0.5f), Vector3.Zero, Vector3.UnitY);
+                //var lookAt = Matrix4.LookAt(new Vector3(-1.5f, 0.5f, 0.5f), Vector3.Zero, Vector3.UnitY);
+                var lookAt = Matrix4.LookAt(new Vector3(-1.5f, 0.5f, 0.0f), Vector3.Zero, Vector3.UnitY);
 
                 // change OpenGL coordinate system to right-handed coordinate system
                 lookAt = OpenGLToTextbook(lookAt);
@@ -159,6 +164,14 @@ namespace WindowsFormsApplication1
                     {
                         bootstrapped = false;
                     }
+                    else if (game.Keyboard[Key.Number1] || game.Keyboard[Key.P] || game.Keyboard[Key.G])
+                    {
+                        primary = !primary;
+                    }
+                    else if (game.Keyboard[Key.Number2] || game.Keyboard[Key.S] || game.Keyboard[Key.L])
+                    {
+                        secondary = !secondary;
+                    }
                 };
                 
                 game.RenderFrame += (sender, e) =>
@@ -180,7 +193,10 @@ namespace WindowsFormsApplication1
                     GL.LoadMatrix(ref lookAt);
 
                     // draw the coordinate system
-                    DrawCoordinateSystem(4);
+                    if (primary)
+                    {
+                        DrawCoordinateSystem(4);
+                    }
 
                     // transform to axis-angle
                     Vector3 axis;
@@ -198,8 +214,11 @@ namespace WindowsFormsApplication1
                     DrawArrow(Color.Gray, Color.SlateGray);
 
                     // draw the coordinate system
-                    GL.Translate(0, 0, +0.02f);
-                    DrawCoordinateSystem(1);
+                    if (secondary)
+                    {
+                        GL.Translate(0, 0, +0.02f);
+                        DrawCoordinateSystem(1);
+                    }
 
                     game.SwapBuffers();
                 };
