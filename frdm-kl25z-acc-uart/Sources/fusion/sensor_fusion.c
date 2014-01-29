@@ -1052,7 +1052,7 @@ STATIC_INLINE fix16_t magnetometer_project_ex(const fix16_t roll, const fix16_t 
                                           );
 
     // calculate 2D vector norm
-    register const fix16_t pnorm = fix16_sqrt(fix16_add(fix16_sq(Xh), fix16_sq(Yh)));
+    register const fix16_t pnorm = norm2(Xh, Yh);
 
     // calculate yaw sine and cosine from components
     register const fix16_t sin_yaw = fix16_div(Yh, pnorm);
