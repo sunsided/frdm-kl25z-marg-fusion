@@ -205,15 +205,19 @@ void UART0_Handler()
 {
 	const uint8_t config = UART0->C2;
 	const uint8_t status = UART0->S1;
-	
-	/* handle the receiver full IRQ */
-	if ((config & UART0_C2_RIE_MASK) & (status & UART_S1_RDRF_MASK))
-	{
-		HandleReceiveInterrupt();
-	}
-	
+
+    /* handle the receiver full IRQ */
+    if ((config & UART0_C2_RIE_MASK) && (status & UART0_S1_RDRF_MASK))
+    {
+        HandleReceiveInterrupt();
+
+        // clear flags
+        // TODO: use BME
+        UART0->S1 |= UART0_S1_OR_MASK;  // overrun
+    }
+
 	/* handle the transmitter empty IRQ */
-	if ((config & UART0_C2_TIE_MASK) & (status & UART_S1_TDRE_MASK))
+	if ((config & UART0_C2_TIE_MASK) && (status & UART0_S1_TDRE_MASK))
 	{
 		HandleTransmitInterrupt();
 	}
