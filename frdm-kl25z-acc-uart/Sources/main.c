@@ -42,9 +42,9 @@
 #include "output_mode.h"
 
 #define UART_RX_BUFFER_SIZE	(16)				        /*! Size of the UART RX buffer in byte*/
-#define UART_TX_BUFFER_SIZE	(128)				        /*! Size of the UART TX buffer in byte */
-static uint8_t uartInputData[UART_RX_BUFFER_SIZE], 	    /*! The UART RX buffer */
-		        uartOutputData[UART_TX_BUFFER_SIZE];	/*! The UART TX buffer */
+#define UART_TX_BUFFER_SIZE	(64)				        /*! Size of the UART TX buffer in byte */
+static uint8_t uartInputData[UART_RX_BUFFER_SIZE]  __attribute__((aligned(4))), 	    /*! The UART RX buffer */
+               uartOutputData[UART_TX_BUFFER_SIZE]  __attribute__((aligned(4)));	/*! The UART TX buffer */
 static buffer_t uartInputFifo, 						    /*! The UART RX buffer driver */
 		        uartOutputFifo;							/*! The UART TX buffer driver */
 
@@ -464,7 +464,7 @@ int main(void)
             const fix16_t deltaT = fix16_mul(deltaT_ms, F16(0.001));
             
             last_fusion_time = current_time;
-
+            
             FusionSignal_Predict();
 
             // predict the current measurements
@@ -477,12 +477,6 @@ int main(void)
 
             
             FusionSignal_Clear();
-
-            fix16_t roll, pitch, yaw;
-            fusion_fetch_angles(&roll, &pitch, &yaw);
-
-            qf16 orientation;
-            fusion_fetch_quaternion(&orientation);
 
 #if 0
 
@@ -517,35 +511,47 @@ int main(void)
                 /* write data */
                 switch (output_mode)
                 {
-                case RPY:
-                {
-                             /* write data */
-                             uint8_t type = 42;
-                             fix16_t buffer[3] = { roll, pitch, yaw };
-                             P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)buffer, sizeof(buffer), IO_SendByte);
-                             break;
-                }
-                case QUATERNION:
-                {
-                                   uint8_t type = 43;
-                                   fix16_t buffer[4] = { orientation.a, orientation.b, orientation.c, orientation.d };
-                                   P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)buffer, sizeof(buffer), IO_SendByte);
-                                   break;
-                }
-                case QUATERNION_RPY:
-                {
-                                       uint8_t type = 44;
-                                       fix16_t buffer[7] = { orientation.a, orientation.b, orientation.c, orientation.d, roll, pitch, yaw };
+                    case RPY:
+                    {
+                                fix16_t roll, pitch, yaw;
+                                fusion_fetch_angles(&roll, &pitch, &yaw);
+
+                                /* write data */
+                                uint8_t type = 42;
+                                fix16_t buffer[3] = { roll, pitch, yaw };
+                                P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)buffer, sizeof(buffer), IO_SendByte);
+                                break;
+                    }
+                    case QUATERNION:
+                    {
+                                       qf16 orientation;
+                                       fusion_fetch_quaternion(&orientation);
+
+                                       uint8_t type = 43;
+                                       fix16_t buffer[4] = { orientation.a, orientation.b, orientation.c, orientation.d };
                                        P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)buffer, sizeof(buffer), IO_SendByte);
                                        break;
-                }
-                case SENSORS_RAW:
-                {
-                                       uint8_t type = 0;
-                                       fix16_t buffer[6] = { accgyrotemp.accel.x, accgyrotemp.accel.y, accgyrotemp.accel.z, compass.x, compass.y, compass.z };
-                                       P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)buffer, sizeof(buffer), IO_SendByte);
-                                       break;
-                }
+                    }
+                    case QUATERNION_RPY:
+                    {
+                                           fix16_t roll, pitch, yaw;
+                                           fusion_fetch_angles(&roll, &pitch, &yaw);
+
+                                           qf16 orientation;
+                                           fusion_fetch_quaternion(&orientation);
+
+                                           uint8_t type = 44;
+                                           fix16_t buffer[7] = { orientation.a, orientation.b, orientation.c, orientation.d, roll, pitch, yaw };
+                                           P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)buffer, sizeof(buffer), IO_SendByte);
+                                           break;
+                    }
+                    case SENSORS_RAW:
+                    {
+                                        uint8_t type = 0;
+                                        fix16_t buffer[6] = { accgyrotemp.accel.x, accgyrotemp.accel.y, accgyrotemp.accel.z, compass.x, compass.y, compass.z };
+                                        P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)buffer, sizeof(buffer), IO_SendByte);
+                                        break;
+                    }
                 }
 
                 last_transmit_time = current_time;
