@@ -144,6 +144,7 @@
     <ClInclude Include="Project_Headers\init_sensors.h" />
     <ClInclude Include="Project_Headers\led\led.h" />
     <ClInclude Include="Project_Headers\nice_names.h" />
+    <ClInclude Include="Project_Headers\output_mode.h" />
     <ClInclude Include="Project_Headers\system_ARMCM0plus.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
