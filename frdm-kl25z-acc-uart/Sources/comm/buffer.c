@@ -22,6 +22,7 @@ uint8_t RingBuffer_Init(buffer_t *const buffer, uint8_t (*const data)[], const u
 		return 1;
 	}
 	
+    // cast to remove const qualifier -- ESPECIALLY not enabled on GCC
 	*(uint8_t**)(&buffer->data) = (uint8_t*)*data;
 	*(uint32_t*)(&buffer->size) = size;
 	*(uint32_t*)(&buffer->mask) = size-1;
