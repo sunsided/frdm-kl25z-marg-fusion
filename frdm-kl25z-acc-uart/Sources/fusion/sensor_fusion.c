@@ -696,6 +696,10 @@ STATIC_INLINE const fix16_t zero_or_value(register const fix16_t value)
 /*!
 * \brief Fetches the orientation quaternion.
 * \param[out] quat The orientation quaternion
+*
+* While this method, described at http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+* should be computationally faster than opt2, it would result in glitches (i.e. flipping of the rotation axis' signs) around pitch 0°, yaw 180°.
+*
 */
 HOT NONNULL LEAF
 static void fetch_quaternion_opt1(register qf16 *RESTRICT const quat)
@@ -767,8 +771,6 @@ static void fetch_quaternion_opt1(register qf16 *RESTRICT const quat)
     //               =  1 - (m00 + (m11 - m22))
     fix16_t qz = fix16_mul(F16(0.5), fix16_sqrt(zero_or_value(fix16_add(F16(1), fix16_add(-m00, fix16_add(-m11, m22))))));
 
-#if 1
-
     // qx = copysign(qx, m21 - m12);
     qx *= fix16_sign_ex(fix16_sub(m21, m12));
 
@@ -777,8 +779,6 @@ static void fetch_quaternion_opt1(register qf16 *RESTRICT const quat)
 
     //  qz = copysign(qz, m10 - m01);
     qz *= fix16_sign_ex(fix16_sub(m10, m01));
-
-#endif
 
     // compose quaternion
     quat->a = qw;
