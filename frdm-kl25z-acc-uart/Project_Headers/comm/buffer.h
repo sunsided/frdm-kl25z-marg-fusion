@@ -51,7 +51,6 @@ __STATIC_INLINE void RingBuffer_Reset(buffer_t *buffer)
  * @param[in] buffer The ring buffer instance
  * @param[in] data The data to write
  */
-__attribute__((hot, forceinline))
 __STATIC_INLINE void RingBuffer_Write(buffer_t *buffer, const uint8_t data)
 {
 	buffer->data[buffer->mask & (buffer->writeIndex++)] = data;
@@ -63,7 +62,6 @@ __STATIC_INLINE void RingBuffer_Write(buffer_t *buffer, const uint8_t data)
  * @param[in] buffer The ring buffer instance
  * @return The data read
  */
-__attribute__((hot, forceinline))
 __STATIC_INLINE const uint8_t RingBuffer_Read(buffer_t *const buffer)
 {
 	const uint8_t data = buffer->data[buffer->mask & (buffer->readIndex++)];
@@ -101,7 +99,6 @@ __STATIC_INLINE const uint32_t RingBuffer_Count(const buffer_t *const buffer)
  * @param[in] buffer The ring buffer instance
  * @return nonzero if full, zero otherwise
  */
-__attribute__((hot, forceinline))
 __STATIC_INLINE const uint8_t RingBuffer_Full(const buffer_t *const buffer)
 {
 	return RingBuffer_Count(buffer) >= buffer->size;
