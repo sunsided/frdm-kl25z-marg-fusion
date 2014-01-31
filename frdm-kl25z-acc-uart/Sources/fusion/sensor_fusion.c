@@ -46,7 +46,7 @@ static const fix16_t initial_r_axis = F16(0.05);
 /*
 * \brief Observation projection uncertainty (magnetometer)
 */
-static const fix16_t initial_r_projection = F16(0.046);
+static const fix16_t initial_r_projection = F16(0.02);
 
 /*
 * \brief Observation gyro uncertainty
@@ -70,12 +70,12 @@ static const fix16_t q_gyro = F16(1);
 /*
 * \brief Tuning factor for the axis observation
 */
-static const fix16_t alpha1 = F16(40);
+static const fix16_t alpha1 = F16(5);
 
 /*
 * \brief Tuning factor for the gyro observation
 */
-static const fix16_t alpha2 = F16(.1);
+static const fix16_t alpha2 = F16(.8);
 
 /*!
 * \brief Threshold value for attitude detection. Difference to norm.
@@ -1237,9 +1237,9 @@ static void fusion_update_orientation(register const fix16_t deltaT)
         mf16 *const R = &kfm_magneto.R;
 
         // anyway, overwrite covariance of projection
-        matrix_set(R, 0, 0, initial_r_projection);
-        matrix_set(R, 1, 1, initial_r_projection);
-        matrix_set(R, 2, 2, initial_r_projection);
+        matrix_set(R, 0, 0, fix16_mul(initial_r_projection, alpha1));
+        matrix_set(R, 1, 1, fix16_mul(initial_r_projection, alpha1));
+        matrix_set(R, 2, 2, fix16_mul(initial_r_projection, alpha1));
     }
 
     
