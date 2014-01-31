@@ -70,12 +70,12 @@ static const fix16_t q_gyro = F16(1);
 /*
 * \brief Tuning factor for the axis observation
 */
-static const fix16_t alpha1 = F16(10);
+static const fix16_t alpha1 = F16(40);
 
 /*
 * \brief Tuning factor for the gyro observation
 */
-static const fix16_t alpha2 = F16(.4);
+static const fix16_t alpha2 = F16(.1);
 
 /*!
 * \brief Threshold value for attitude detection. Difference to norm.
