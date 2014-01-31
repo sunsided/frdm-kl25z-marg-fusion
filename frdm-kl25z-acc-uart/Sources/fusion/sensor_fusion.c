@@ -661,7 +661,7 @@ STATIC_INLINE void calculate_yaw(register const fix16_t roll, register const fix
     fix16_t c11 = fix16_sub(fix16_mul(c22, c33), fix16_mul(c23, c32));
 
     // calculate pitch
-    *yaw = -fix16_atan2(c21, c11);
+    *yaw = fix16_atan2(c21, -c11);
 }
 
 /************************************************************************/
