@@ -5,51 +5,83 @@ close all; clc;
 % pitch ~ 0, roll ~ 0
 
 a = [
-     3089
-     -3936
-     66126
+     8030
+     28
+     65320
      ]/65535;
- 
+
 m = [
-     14478
-     516
-     -29803
+     21345
+     1185
+     -26376
      ]/65535;
 
  displayify(a, m);
  
-% pitch ~ 0, roll ~ 45
+% pitch ~ 0, roll ~ 22
 
 a = [
-     -2964
-     -46082
-     47952
+     -1887
+     29423
+     60568
      ]/65535;
- 
+
 m = [
-     16315
-     -20296
-     -23855
+     16131
+     -13104
+     -27591
      ]/65535;
 
 displayify(a, m);
  
-% pitch ~ 0, roll ~ 90
+% pitch ~ 0, roll ~ 45
  
 a = [
-     -5649
-     -63817
-     16256
+     -2622
+     47484
+     44099
      ]/65535;
- 
+
 m = [
-     16970
-     -31706
-     -10052
+     15735
+     -22826
+     -23088
      ]/65535;
      
 displayify(a, m); 
  
+% pitch ~ 0, roll ~ 67
+ 
+a = [
+     3207
+     61746
+     27114
+     ]/65535;
+
+m = [
+     17513
+     -29641
+     -14595
+     ]/65535;
+
+displayify(a, m); 
+
+% pitch ~ 0, roll ~ 90
+ 
+a = [
+     -3969
+     67779
+     843
+     ]/65535;
+
+m = [
+     14602
+     -36754
+     -294
+     ]/65535;
+     
+displayify(a, m); 
+
 end
 
 function displayify(a, m)
@@ -57,7 +89,7 @@ function displayify(a, m)
     %% Calculate roll and pitch
 
     pitch =  asind(a(1))
-    roll  =  atan2d(a(2), -a(3))
+    roll  =  atan2d(-a(2), -a(3))
 
     %% Calculate yaw
 
@@ -73,12 +105,14 @@ function displayify(a, m)
     my =  cosd(roll) * cos_yaw + sind(roll)*sind(pitch)*sin_yaw;
     mz = -sind(roll) * cos_yaw + cosd(roll)*sind(pitch)*sin_yaw;
 
-    yaw   = NaN;
+    yaw   = atan2d(Yh, Xh)
 
     %% Plotify!
 
+    plot_title = sprintf('roll: %6.2f, pitch: %6.2f, yaw: %6.2f', roll, pitch, yaw);
+    
     %close all; 
-    figure('Name', 'LOL', 'NumberTitle', 'off');
+    figure('Name', plot_title, 'NumberTitle', 'off');
 
     O = [0 0 0];
     X = [1 0 0];
@@ -142,7 +176,7 @@ function displayify(a, m)
     quiver3(O(1), O(2), O(3), 0, Yh, 0, 'k', 'LineWidth', 1);
     quiver3(O(1), O(2), O(3), mx, my, mz, 'c', 'LineWidth', 2);
     xlim([-1.5 1.5]); ylim([-1.5 1.5]); zlim([-1.5 1.5]);
-    title(sprintf('roll: %6.2f, pitch: %6.2f, yaw: %6.2f', roll, pitch, yaw));
+    title(plot_title);
     xlabel('x');
     ylabel('y');
     zlabel('z');
