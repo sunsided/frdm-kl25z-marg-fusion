@@ -321,5 +321,8 @@
     <ClInclude Include="libraries\libfixmatrix\fixquat.h">
       <Filter>libraries\libfixmatrix</Filter>
     </ClInclude>
+    <ClInclude Include="Project_Headers\output_mode.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

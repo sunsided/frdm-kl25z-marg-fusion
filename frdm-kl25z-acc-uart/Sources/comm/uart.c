@@ -59,8 +59,8 @@ void InitUart0()
 	static const uint16_t sbr = 7U;
 	static const uint8_t osr  = 15U;
 #elif UART_SPEED_MODE == UART_DEV
-	static const uint16_t sbr = 15U;
-	static const uint8_t osr  = 3U;
+	static const uint16_t sbr = 39U;    // 38400 baud
+	static const uint8_t osr  = 15U;
 #else
 #error No UART speed configured
 #endif
@@ -117,7 +117,7 @@ void InitUart0()
 	/* set oversampling ratio when oversampling is between 4 and 7 
 	 * (it is optional for higher oversampling ratios) */
 #if UART_SPEED_MODE == UART_115200
-	UART0->C5 = 0;
+    UART0->C5 = 0;
 #elif UART_SPEED_MODE == UART_230400
 	UART0->C5 = 0;
 #elif UART_SPEED_MODE == UART_DEV
@@ -134,8 +134,8 @@ void InitUart0()
 	
 	/* keep default settings for parity and loopback */
 	UART0->C1 = 0;
-	
-	UART0->C3 |= 0;
+
+	UART0->C3 = 0;
 	
 	/* clear flags to avoid unexpected behaviour */
 	UART0->MA1 = 0;
@@ -176,7 +176,7 @@ void Uart0_InitializeIrq(buffer_t *restrict const receiveFifo, buffer_t *restric
  */
 static inline void HandleReceiveInterrupt()
 {
-	uint8_t data = UART0->D;
+    const uint8_t data = UART0->D;
 	RingBuffer_Write(uartReadFifo, data);
 }
 
@@ -201,19 +201,24 @@ static inline void HandleTransmitInterrupt()
 /**
  * @brief IRQ handler for UART0
  */
+__attribute__((optimize("-O0"))) // fix: no data received in -O3
 void UART0_Handler()
 {
-	const uint8_t config = UART0->C2;
-	const uint8_t status = UART0->S1;
-	
-	/* handle the receiver full IRQ */
-	if ((config & UART0_C2_RIE_MASK) & (status & UART_S1_RDRF_MASK))
-	{
-		HandleReceiveInterrupt();
-	}
-	
+    const uint8_t config = UART0->C2;
+    const uint8_t status = UART0->S1;
+
+    /* handle the receiver full IRQ */
+    if ((config & UART0_C2_RIE_MASK) && (status & UART0_S1_RDRF_MASK))
+    {
+        HandleReceiveInterrupt();
+
+        // clear flags
+        // TODO: use BME
+        UART0->S1 |= UART0_S1_OR_MASK;  // overrun
+    }
+
 	/* handle the transmitter empty IRQ */
-	if ((config & UART0_C2_TIE_MASK) & (status & UART_S1_TDRE_MASK))
+	if ((config & UART0_C2_TIE_MASK) && (status & UART0_S1_TDRE_MASK))
 	{
 		HandleTransmitInterrupt();
 	}

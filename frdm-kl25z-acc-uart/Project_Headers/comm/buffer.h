@@ -21,8 +21,8 @@
  * @brief Ring buffer type
  */
 typedef struct {
-	const uint32_t size;			/*< The data array size; Power of two */
-	const uint32_t mask;			/*< The address mask; one less than size */
+	uint32_t size;			/*< The data array size; Power of two */
+	uint32_t mask;			/*< The address mask; one less than size */
 	volatile uint32_t writeIndex;	/*< The write index */
 	volatile uint32_t readIndex;	/*< The read index */
 	uint8_t */*const*/ data;		/*< The data array; Size is defined in size */
