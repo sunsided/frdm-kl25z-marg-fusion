@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Windows.Forms;
 
 namespace WindowsFormsApplication1
@@ -231,6 +233,43 @@ namespace WindowsFormsApplication1
                              }
                          };
             Invoke(set);
+        }
+
+        /// <summary>
+        /// Handles the KeyUp event of the DataDump control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="KeyEventArgs"/> instance containing the event data.</param>
+        private void DataDump_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Control && e.KeyCode == Keys.C)
+            {
+                e.Handled = true;
+
+                var builder = new StringBuilder();
+
+                builder.AppendLine("a = [");
+                builder.Append("     ");
+                builder.AppendLine(textBoxAccelerometerXFix.Text);
+                builder.Append("     ");
+                builder.AppendLine(textBoxAccelerometerYFix.Text);
+                builder.Append("     ");
+                builder.AppendLine(textBoxAccelerometerZFix.Text);
+                builder.AppendLine("     ]/65535;");
+                builder.AppendLine();
+
+                builder.AppendLine("m = [");
+                builder.Append("     ");
+                builder.AppendLine(textBoxMagnetometerXFix.Text);
+                builder.Append("     ");
+                builder.AppendLine(textBoxMagnetometerYFix.Text);
+                builder.Append("     ");
+                builder.AppendLine(textBoxMagnetometerZFix.Text);
+                builder.AppendLine("     ]/65535;");
+
+                Clipboard.SetText(builder.ToString());
+                Trace.WriteLine("Copied accelerometer and magnetometer to clipboard.");
+            }
         }
     }
 }

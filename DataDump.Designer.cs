@@ -499,12 +499,14 @@
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.comboBoxMode);
+            this.KeyPreview = true;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "DataDump";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.Text = "Data Dump";
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.DataDump_KeyUp);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
