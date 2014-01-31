@@ -28,9 +28,9 @@ void sensor_prepare_mpu6050_accelerometer_data(v3d *const out, int16_t rawx, int
     mpu6050_calibrate_accelerometer_v3d(out);
 
     value = *out;
-    out->x = -value.x;
+    out->x =  value.x;
     out->y =  value.y;
-    out->z = -value.z;
+    out->z =  value.z;
 }
 
 /*!
@@ -79,9 +79,13 @@ void sensor_prepare_mpu6050_gyroscope_data(v3d *const out, int16_t rawx, int16_t
     out->x = fix16_deg_to_rad( out->x);
     out->y = fix16_deg_to_rad(-out->y);
     out->z = fix16_deg_to_rad( out->z);
+#elseif 0
+    out->x = fix16_deg_to_rad(-out->x);
+    out->y = fix16_deg_to_rad( out->y);
+    out->z = fix16_deg_to_rad(-out->z);
 #else
-    out->x = fix16_deg_to_rad( out->x);
-    out->y = fix16_deg_to_rad(-out->y);
+    out->x = fix16_deg_to_rad(out->x);
+    out->y = fix16_deg_to_rad(out->y);
     out->z = fix16_deg_to_rad(-out->z);
 #endif
 }
