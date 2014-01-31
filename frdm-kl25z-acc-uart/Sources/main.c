@@ -186,7 +186,7 @@ int main(void)
     /* initialize the core clock and the systick timer */
     InitClock();
     InitSysTick();
-
+    
     /* initialize the RGB led */
     LED_Init();
 
@@ -434,10 +434,11 @@ int main(void)
         // if there were sensor data ...
         if (eventsProcessed)
         {
+            v3d gyro, acc, mag;
+
             // convert, calibrate and store gyroscope data
             if (have_gyro_data)
             {
-                v3d gyro;
                 sensor_prepare_mpu6050_gyroscope_data(&gyro, accgyrotemp.gyro.x, accgyrotemp.gyro.y, accgyrotemp.gyro.z, mpu6050_gyroscope_scaler);
                 fusion_set_gyroscope_v3d(&gyro);
             }
@@ -445,7 +446,6 @@ int main(void)
             // convert, calibrate and store accelerometer data
             if (have_acc_data)
             {
-                v3d acc;
                 sensor_prepare_mpu6050_accelerometer_data(&acc, accgyrotemp.accel.x, accgyrotemp.accel.y, accgyrotemp.accel.z, mpu6050_accelerometer_scaler);
                 fusion_set_accelerometer_v3d(&acc);
             }
@@ -453,7 +453,6 @@ int main(void)
             // convert, calibrate and store magnetometer data
             if (have_mag_data)
             {
-                v3d mag;
                 sensor_prepare_hmc5883l_data(&mag, compass.x, compass.y, compass.z, hmc5883l_magnetometer_scaler);
                 fusion_set_magnetometer_v3d(&mag);
             }
@@ -548,7 +547,7 @@ int main(void)
                     case SENSORS_RAW:
                     {
                                         uint8_t type = 0;
-                                        fix16_t buffer[6] = { accgyrotemp.accel.x, accgyrotemp.accel.y, accgyrotemp.accel.z, compass.x, compass.y, compass.z };
+                                        fix16_t buffer[6] = { acc.x, acc.y, acc.z, mag.x, mag.y, mag.z };
                                         P2PPE_TransmissionPrefixed(&type, 1, (uint8_t*)buffer, sizeof(buffer), IO_SendByte);
                                         break;
                     }
