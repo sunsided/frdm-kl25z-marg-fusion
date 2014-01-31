@@ -26,5 +26,5 @@ CFLAGS +=
 CXXFLAGS += 
 ASFLAGS += 
 LDFLAGS +=  -T$(BSP_ROOT)/KL25Z4/LinkerScripts/MKL25Z128xxx4_flash.lds
-COMMONFLAGS += -mcpu=cortex-m0 -mthumb
+COMMONFLAGS += -mcpu=cortex-m0plus -mthumb
 
