@@ -49,6 +49,6 @@ A inertial measurement sensor fusion unit with 200 kHz observation frequency and
 ### Sensor Fusion ###
 
 - Standard Kalman filter in Q16 fixed point using [libfixkalman](https://github.com/sunsided/libfixkalman)
-- Direct estimation of DCM axes as described in 	
-*A DCM Based Orientation Estimation Algorithm with an Inertial Measurement Unit and a Magnetic Compass* (Nguyen Ho Quoc Phuong et al., [J.UCS 15.4](http://www.jucs.org/jucs_15_4/a_dcm_based_orientation))
+- Direct estimation of DCM axes based on *A DCM Based Orientation Estimation Algorithm with an Inertial Measurement Unit and a Magnetic Compass* (Nguyen Ho Quoc Phuong et al., [J.UCS 15.4](http://www.jucs.org/jucs_15_4/a_dcm_based_orientation)), but using TRIAD approach instead of magnetometer tilt-compensation.
 - Quaternion conversion for transfer
+- C# demonstration program using OpenTK available in branch [orientation-opengl](https://github.com/sunsided/frdm-kl25z-acc-uart/tree/orientation-opengl) 
