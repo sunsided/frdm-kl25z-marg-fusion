@@ -48,7 +48,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataDump.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DataDump.Designer.cs">
+      <DependentUpon>DataDump.cs</DependentUpon>
+    </Compile>
     <Compile Include="DataEvent.cs" />
+    <Compile Include="Mode.cs" />
     <Compile Include="PortSelection.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -58,6 +65,9 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ProtocolDecoder.cs" />
+    <EmbeddedResource Include="DataDump.resx">
+      <DependentUpon>DataDump.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="PortSelection.resx">
       <DependentUpon>PortSelection.cs</DependentUpon>
     </EmbeddedResource>

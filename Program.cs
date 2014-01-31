@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Drawing;
-using System.Globalization;
 using System.IO.Ports;
 using System.Windows.Forms;
 using OpenTK;
-using OpenTK.Graphics;
 using OpenTK.Input;
 using ClearBufferMask = OpenTK.Graphics.OpenGL.ClearBufferMask;
 using EnableCap = OpenTK.Graphics.OpenGL.EnableCap;
-using GetPName = OpenTK.Graphics.OpenGL.GetPName;
 using GL = OpenTK.Graphics.OpenGL.GL;
 using MatrixMode = OpenTK.Graphics.OpenGL.MatrixMode;
 
@@ -16,7 +13,15 @@ namespace WindowsFormsApplication1
 {
     static class Program
     {
+        /// <summary>
+        /// The decoder
+        /// </summary>
         private static readonly ProtocolDecoder Decoder = new ProtocolDecoder();
+
+        /// <summary>
+        /// The default mode
+        /// </summary>
+        private const byte DefaultMode = 44;
 
         /// <summary>
         /// The main entry point for the application.
@@ -41,9 +46,26 @@ namespace WindowsFormsApplication1
             // Create the serial port with basic settings
             using (var port = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One))
             using (var game = new GameWindow())
+            using (var dump = new DataDump())
             {
+                // create the helper window
+                var handle = game.WindowInfo.Handle;
+                var window = Control.FromHandle(handle);
+                dump.SetMode(DefaultMode);
+                dump.Show(window);
+
+                // last selected mode
+                byte lastMode = 255;
+
+                // wire the mode change event
+                dump.SelectedModeChanged += (sender, args) =>
+                                            {
+                                                port.BaseStream.WriteByte(dump.SelectedMode);
+                                            };
+
                 // create the rotation quaternion
                 var rotation = new Quaternion(0, 0, 0, 1);
+                bool hasOrientation = false;
 
                 // the normalization quaternion
                 bool bootstrapped = false;
@@ -53,14 +75,56 @@ namespace WindowsFormsApplication1
                 bool primary = false;
                 bool secondary = false;
 
+                // to store the default title
+                string defaultTitle = String.Empty;
+
                 // attach decoder handler
                 Decoder.DataReady += (sender, args) =>
                                      {
                                          var data = args.Data;
+                                         string newTitle = defaultTitle;
+                                         hasOrientation = false;
 
-                                         // check for quaternion data
-                                         if (data[0] == 43)
+                                         var mode = data[0];
+                                         if (mode != lastMode)
                                          {
+                                             dump.ClearDumps();
+                                             lastMode = mode;
+                                         }
+
+                                         // check for raw sensor data
+                                         if (mode == 0)
+                                         {
+                                             float ax = BitConverter.ToInt32(data, 1) / 65535.0f;
+                                             float ay = BitConverter.ToInt32(data, 5) / 65535.0f;
+                                             float az = BitConverter.ToInt32(data, 9) / 65535.0f;
+
+                                             float mx = BitConverter.ToInt32(data, 13) / 65535.0f;
+                                             float my = BitConverter.ToInt32(data, 17) / 65535.0f;
+                                             float mz = BitConverter.ToInt32(data, 21) / 65535.0f;
+
+                                             // pipe to dump window
+                                             dump.SetAccelerometer(ax, ay, az);
+                                             dump.SetMagnetometer(mx, my, mz);
+                                         }
+                                         // check for angle data
+                                         else if (mode == 42)
+                                         {
+                                             hasOrientation = false;
+                                             double roll = BitConverter.ToInt32(data, 1) / 65535.0 * 180 / Math.PI;
+                                             double pitch = BitConverter.ToInt32(data, 5) / 65535.0 * 180 / Math.PI;
+                                             double yaw = BitConverter.ToInt32(data, 9) / 65535.0 * 180 / Math.PI;
+
+                                             //Console.WriteLine("roll: {0:##0.00}, pitch: {1:##0.00}, yaw: {2:##0.00}", roll, pitch, yaw);
+                                             newTitle = String.Format("roll: {0:##0.00}, pitch: {1:##0.00}, yaw: {2:##0.00}", roll, pitch, yaw);
+                                             
+                                             // pipe to dump window
+                                             dump.SetAngles(roll, pitch, yaw);
+                                         }
+                                         // check for quaternion data
+                                         else if (mode == 43)
+                                         {
+                                             hasOrientation = true;
                                              float w = BitConverter.ToInt32(data, 1)/65535.0f;
                                              float x = BitConverter.ToInt32(data, 5) / 65535.0f;
                                              float y = BitConverter.ToInt32(data, 9) / 65535.0f;
@@ -81,9 +145,13 @@ namespace WindowsFormsApplication1
 
                                              // store for rendering
                                              rotation = quat;
+
+                                             // pipe to dump window
+                                             dump.SetQuaternion(w, x, y, z);
                                          }
-                                         else if (data[0] == 44)
+                                         else if (mode == 44)
                                          {
+                                             hasOrientation = true;
                                              float w = BitConverter.ToInt32(data, 1) / 65535.0f;
                                              float x = BitConverter.ToInt32(data, 5) / 65535.0f;
                                              float y = BitConverter.ToInt32(data, 9) / 65535.0f;
@@ -94,7 +162,7 @@ namespace WindowsFormsApplication1
                                              double yaw = BitConverter.ToInt32(data, 25) / 65535.0 * 180 / Math.PI;
 
                                              //Console.WriteLine("roll: {0:##0.00}, pitch: {1:##0.00}, yaw: {2:##0.00}", roll, pitch, yaw);
-                                             game.Title = String.Format("roll: {0:##0.00}, pitch: {1:##0.00}, yaw: {2:##0.00}", roll, pitch, yaw);
+                                             newTitle = String.Format("roll: {0:##0.00}, pitch: {1:##0.00}, yaw: {2:##0.00}", roll, pitch, yaw);
 
                                              // compose quaternion
                                              var quat = new Quaternion(x, y, z, w);
@@ -122,7 +190,13 @@ namespace WindowsFormsApplication1
 
                                              // store for rendering
                                              rotation = quat;
+
+                                             // pipe to dump window
+                                             dump.SetQuaternion(w, x, y, z);
+                                             dump.SetAngles(roll, pitch, yaw);
                                          }
+
+                                         game.Title = newTitle;
                                      };
 
                 // attach data receive event
@@ -130,6 +204,7 @@ namespace WindowsFormsApplication1
 
                 // begin communication
                 port.Open();
+                port.BaseStream.WriteByte(DefaultMode);
 
                 // create projection matrix
                 var projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.PiOver3, (float)game.Width / (float)game.Height, 0.001f, 5000);
@@ -145,7 +220,10 @@ namespace WindowsFormsApplication1
                 {
                     // setup settings, load textures, sounds
                     game.VSync = VSyncMode.On;
-                    game.Title = String.Format("Orientation Estimation ({0}, {1} bps)", port.PortName, port.BaudRate);
+
+                    defaultTitle = String.Format("Orientation Estimation ({0}, {1} bps)", port.PortName, port.BaudRate);
+                    game.Title = defaultTitle;
+
                 };
 
                 game.Resize += (sender, e) =>
@@ -209,15 +287,18 @@ namespace WindowsFormsApplication1
                     GL.Rotate(angle, axis);
 
                     // draw arrow
-                    DrawArrow(Color.Crimson, Color.DarkRed);
-                    GL.Translate(0, 0, -0.04f);
-                    DrawArrow(Color.Gray, Color.SlateGray);
-
-                    // draw the coordinate system
-                    if (secondary)
+                    if (hasOrientation)
                     {
-                        GL.Translate(0, 0, +0.02f);
-                        DrawCoordinateSystem(1);
+                        DrawArrow(Color.Crimson, Color.DarkRed);
+                        GL.Translate(0, 0, -0.04f);
+                        DrawArrow(Color.Gray, Color.SlateGray);
+
+                        // draw the coordinate system
+                        if (secondary)
+                        {
+                            GL.Translate(0, 0, +0.02f);
+                            DrawCoordinateSystem(1);
+                        }
                     }
 
                     game.SwapBuffers();
