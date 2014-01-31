@@ -261,7 +261,7 @@ static bool m_orientation_bootstrapped = false;
 HOT CONST
 STATIC_INLINE int32_t fix16_sign(const fix16_t value)
 {
-    return value >= 0 ? 1 : -1;
+    return (value >= 0) ? 1 : -1;
 }
 
 /*!
@@ -271,7 +271,7 @@ STATIC_INLINE int32_t fix16_sign(const fix16_t value)
 HOT CONST
 STATIC_INLINE int32_t fix16_sign_ex(const fix16_t value)
 {
-    return (value > 0) ? 1 : (value < 0) ? -1 : 0;
+    return (value > 0) ? 1 : ((value < 0) ? -1 : 0);
 }
 
 /*!*
@@ -340,15 +340,15 @@ STATIC_INLINE void update_state_matrix_from_state(kalman16_uc_t *const kf, regis
     fix16_t c3 = x->data[2][0];
 
     //matrix_set(A, 0, 3,   0);
-    matrix_set(A, 0, 4, -fix16_mul(c3, deltaT));
-    matrix_set(A, 0, 5,  fix16_mul(c2, deltaT));
+    matrix_set(A, 0, 4,  fix16_mul(c3, deltaT));
+    matrix_set(A, 0, 5, -fix16_mul(c2, deltaT));
 
-    matrix_set(A, 1, 3,  fix16_mul(c3, deltaT));
+    matrix_set(A, 1, 3, -fix16_mul(c3, deltaT));
     //matrix_set(A, 1, 4,   0);
-    matrix_set(A, 1, 5, -fix16_mul(c1, deltaT));
+    matrix_set(A, 1, 5,  fix16_mul(c1, deltaT));
 
-    matrix_set(A, 2, 3, -fix16_mul(c2, deltaT));
-    matrix_set(A, 2, 4,  fix16_mul(c1, deltaT));
+    matrix_set(A, 2, 3,  fix16_mul(c2, deltaT));
+    matrix_set(A, 2, 4, -fix16_mul(c1, deltaT));
     //matrix_set(A, 2, 5,   0);
 }
 
@@ -589,20 +589,14 @@ STATIC_INLINE void fusion_sanitize_state(kalman16_uc_t *const kf)
 {
     mf16 *const A = &kf->A;
     mf16 *const x = &kf->x;
-
+    
     // fetch axes
     fix16_t c1 = x->data[0][0];
     fix16_t c2 = x->data[1][0];
     fix16_t c3 = x->data[2][0];
 
     // calculate vector norm
-    fix16_t norm = fix16_sqrt(
-                        fix16_add(
-                            fix16_add(
-                                fix16_sq(c1), 
-                                fix16_sq(c2)),
-                            fix16_sq(c3))
-                    );
+    fix16_t norm = norm3(c1, c2, c3);
 
     // normalize vectors
     c1 = fix16_div(c1, norm);
@@ -634,7 +628,7 @@ STATIC_INLINE void calculate_roll_pitch(register fix16_t *RESTRICT const roll, r
     *pitch = -fix16_asin(c31);
 
     // calculate roll
-    *roll = fix16_atan2(c32, c33);
+    *roll = -fix16_atan2(c32, -c33);
 }
 
 /*!
@@ -819,9 +813,9 @@ STATIC_INLINE void fusion_fastpredict_X(kalman16_uc_t *const kf, const register 
     /*
         Transition matrix layout:
 
-        A_rp = [0 0 0,     0 -Cn3  Cn2;
-                0 0 0,   Cn3    0 -Cn1;
-                0 0 0,  -Cn2  Cn1    0;
+        A_rp = [0 0 0,     0  Cn3 -Cn2;
+                0 0 0,  -Cn3    0  Cn1;
+                0 0 0,   Cn2 -Cn1    0;
 
                 0 0 0,     0 0 0;
                 0 0 0,     0 0 0;
@@ -839,9 +833,9 @@ STATIC_INLINE void fusion_fastpredict_X(kalman16_uc_t *const kf, const register 
     register const fix16_t gz = x->data[5][0];
     
     // solve differential equations
-    register const fix16_t d_c1 = fix16_sub(fix16_mul(c2, gz), fix16_mul(c3, gy)); //    0*gx  + (-c3*gy) +   c2*gz  = c2*gz - c3*gy
-    register const fix16_t d_c2 = fix16_sub(fix16_mul(c3, gx), fix16_mul(c1, gz)); //   c3*gx  +    0*gy  + (-c1*gz) = c3*gx - c1*gz
-    register const fix16_t d_c3 = fix16_sub(fix16_mul(c1, gy), fix16_mul(c2, gx)); // (-c2*gx) +  (c1*gy) +    0*gz  = c1*gy - c2*gx
+    register const fix16_t d_c1 = fix16_sub(fix16_mul(c3, gy), fix16_mul(c2, gz)); //    0*gx  +   c3*gy  + (-c2*gz) = c3*gy - c2*gz
+    register const fix16_t d_c2 = fix16_sub(fix16_mul(c1, gz), fix16_mul(c3, gx)); // (-c3*gx) +    0*gy  +   c1*gz  = c1*gz - c3*gx
+    register const fix16_t d_c3 = fix16_sub(fix16_mul(c2, gx), fix16_mul(c1, gy)); //   c2*gx  + (-c1*gy) +    0*gz  = c2*gx - c1*gy
 
     // integrate
     x->data[0][0] = fix16_add(c1, fix16_mul(d_c1, deltaT));
@@ -1069,6 +1063,26 @@ STATIC_INLINE fix16_t magnetometer_project_ex(const fix16_t roll, const fix16_t 
     *mz = fix16_add(fix16_mul(-sin_roll, cos_yaw),
                     fix16_mul(cos_roll_sin_pitch, sin_yaw)
                     );
+
+    /************************************************************************/
+    /* Instead of tilt calculated angle, use TRIAD algorithm                */
+    /************************************************************************/
+
+    // calculate cross product for C1
+    // m0 = cross([m_magnetometer.x m_magnetometer.y m_magnetometer.z], [m_accelerometer.x m_accelerometer.y m_accelerometer.z])
+    // -->
+    //      m00 = m_magnetometer.y*m_accelerometer.z - m_magnetometer.z*m_accelerometer.y
+    //      m01 = m_magnetometer.z*m_accelerometer.x - m_magnetometer.x*m_accelerometer.z
+    //      m02 = m_magnetometer.x*m_accelerometer.y - m_magnetometer.y*m_accelerometer.x
+    *mx = fix16_sub(fix16_mul(m_magnetometer.y, m_accelerometer.z), fix16_mul(m_magnetometer.z, m_accelerometer.y));
+    *my = fix16_sub(fix16_mul(m_magnetometer.z, m_accelerometer.x), fix16_mul(m_magnetometer.x, m_accelerometer.z));
+    *mz = fix16_sub(fix16_mul(m_magnetometer.x, m_accelerometer.y), fix16_mul(m_magnetometer.y, m_accelerometer.x));
+
+    // normalize C1 
+    const register fix16_t norm = norm3(*mx, *my, *mz);
+    *mx = fix16_div(*mx, norm);
+    *my = fix16_div(*my, norm);
+    *mz = fix16_div(*mz, norm);
 
     return cos_pitch;
 }
