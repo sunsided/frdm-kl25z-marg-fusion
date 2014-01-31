@@ -20,6 +20,11 @@ namespace WindowsFormsApplication1
         /// </summary>
         public event EventHandler SelectedModeChanged;
 
+        /// <summary>
+        /// The _lastValues
+        /// </summary>
+        private readonly Dictionary<TextBox, double> _lastValues = new Dictionary<TextBox, double>();
+
         public DataDump()
         {
             InitializeComponent();
@@ -35,28 +40,15 @@ namespace WindowsFormsApplication1
             comboBoxMode.ValueMember = "Value";
             comboBoxMode.DataSource = dataSource;
 
-            textBoxAccelerometerX.TextChanged += BoxOnTextChanged;
-            textBoxAccelerometerY.TextChanged += BoxOnTextChanged;
-            textBoxAccelerometerZ.TextChanged += BoxOnTextChanged;
-            textBoxAccelerometerXFix.TextChanged += BoxOnTextChanged;
-            textBoxAccelerometerYFix.TextChanged += BoxOnTextChanged;
-            textBoxAccelerometerZFix.TextChanged += BoxOnTextChanged;
-
-            textBoxMagnetometerX.TextChanged += BoxOnTextChanged;
-            textBoxMagnetometerY.TextChanged += BoxOnTextChanged;
-            textBoxMagnetometerZ.TextChanged += BoxOnTextChanged;
-            textBoxMagnetometerXFix.TextChanged += BoxOnTextChanged;
-            textBoxMagnetometerYFix.TextChanged += BoxOnTextChanged;
-            textBoxMagnetometerZFix.TextChanged += BoxOnTextChanged;
-
-            textBoxRoll.TextChanged += BoxOnTextChanged;
-            textBoxPitch.TextChanged += BoxOnTextChanged;
-            textBoxYaw.TextChanged += BoxOnTextChanged;
-
-            textBoxQuaternionW.TextChanged += BoxOnTextChanged;
-            textBoxQuaternionX.TextChanged += BoxOnTextChanged;
-            textBoxQuaternionY.TextChanged += BoxOnTextChanged;
-            textBoxQuaternionZ.TextChanged += BoxOnTextChanged;
+            foreach (var group in Controls.OfType<GroupBox>())
+            {
+                foreach (var textBox in group.Controls.OfType<TextBox>())
+                {
+                    textBox.Text = String.Empty;
+                    textBox.TextChanged += BoxOnTextChanged;
+                    _lastValues[textBox] = Double.NaN;
+                }
+            }
         }
 
         private void BoxOnTextChanged(object sender, EventArgs eventArgs)
@@ -151,9 +143,9 @@ namespace WindowsFormsApplication1
         {
             Action set = delegate
             {
-                textBoxRoll.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", roll);
-                textBoxPitch.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", pitch);
-                textBoxYaw.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", yaw);
+                textBoxRoll.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", Filter(textBoxRoll, roll));
+                textBoxPitch.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", Filter(textBoxPitch, pitch));
+                textBoxYaw.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", Filter(textBoxYaw, yaw));
             };
             Invoke(set);
         }
@@ -168,13 +160,13 @@ namespace WindowsFormsApplication1
         {
             Action set = delegate
             {
-                textBoxAccelerometerX.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", x);
-                textBoxAccelerometerY.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", y);
-                textBoxAccelerometerZ.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", z);
+                textBoxAccelerometerX.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", Filter(textBoxAccelerometerX, x));
+                textBoxAccelerometerY.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", Filter(textBoxAccelerometerY, y));
+                textBoxAccelerometerZ.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", Filter(textBoxAccelerometerZ, z));
 
-                textBoxAccelerometerXFix.Text = String.Format(CultureInfo.InvariantCulture, "{0:0}", x * 65535);
-                textBoxAccelerometerYFix.Text = String.Format(CultureInfo.InvariantCulture, "{0:0}", y * 65535);
-                textBoxAccelerometerZFix.Text = String.Format(CultureInfo.InvariantCulture, "{0:0}", z * 65535);
+                textBoxAccelerometerXFix.Text = String.Format(CultureInfo.InvariantCulture, "{0:0}", Filter(textBoxAccelerometerXFix, x * 65535));
+                textBoxAccelerometerYFix.Text = String.Format(CultureInfo.InvariantCulture, "{0:0}", Filter(textBoxAccelerometerYFix, y * 65535));
+                textBoxAccelerometerZFix.Text = String.Format(CultureInfo.InvariantCulture, "{0:0}", Filter(textBoxAccelerometerZFix, z * 65535));
             };
             Invoke(set);
         }
@@ -189,15 +181,36 @@ namespace WindowsFormsApplication1
         {
             Action set = delegate
             {
-                textBoxMagnetometerX.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", x);
-                textBoxMagnetometerY.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", y);
-                textBoxMagnetometerZ.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", z);
+                textBoxMagnetometerX.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", Filter(textBoxMagnetometerX, x));
+                textBoxMagnetometerY.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", Filter(textBoxMagnetometerY, y));
+                textBoxMagnetometerZ.Text = String.Format(CultureInfo.InvariantCulture, "{0:0.00000}", Filter(textBoxMagnetometerZ, z));
 
-                textBoxMagnetometerXFix.Text = String.Format(CultureInfo.InvariantCulture, "{0:0}", x * 65535);
-                textBoxMagnetometerYFix.Text = String.Format(CultureInfo.InvariantCulture, "{0:0}", y * 65535);
-                textBoxMagnetometerZFix.Text = String.Format(CultureInfo.InvariantCulture, "{0:0}", z * 65535);
+                textBoxMagnetometerXFix.Text = String.Format(CultureInfo.InvariantCulture, "{0:0}", Filter(textBoxMagnetometerXFix, x * 65535));
+                textBoxMagnetometerYFix.Text = String.Format(CultureInfo.InvariantCulture, "{0:0}", Filter(textBoxMagnetometerYFix, y * 65535));
+                textBoxMagnetometerZFix.Text = String.Format(CultureInfo.InvariantCulture, "{0:0}", Filter(textBoxMagnetometerZFix, z * 65535));
             };
             Invoke(set);
+        }
+
+        /// <summary>
+        /// Low-pass filters the values
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="value">The value.</param>
+        /// <returns>System.Double.</returns>
+        private double Filter(TextBox key, double value)
+        {
+            var oldValue = _lastValues[key];
+            if (Double.IsNaN(oldValue) || !checkBoxLowPass.Checked)
+            {
+                _lastValues[key] = value;
+                return value;
+            }
+
+            const double alpha = 0.1;
+            value = alpha*value + (1 - alpha)*oldValue;
+            _lastValues[key] = value;
+            return value;
         }
 
         /// <summary>
@@ -213,6 +226,7 @@ namespace WindowsFormsApplication1
                                  foreach (var textBox in group.Controls.OfType<TextBox>())
                                  {
                                      textBox.Text = String.Empty;
+                                     _lastValues[textBox] = Double.NaN;
                                  }
                              }
                          };

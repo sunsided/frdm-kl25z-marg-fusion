@@ -30,14 +30,14 @@
         {
             this.comboBoxMode = new System.Windows.Forms.ComboBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.textBoxQuaternionW = new System.Windows.Forms.TextBox();
-            this.textBoxQuaternionX = new System.Windows.Forms.TextBox();
-            this.textBoxQuaternionY = new System.Windows.Forms.TextBox();
-            this.textBoxQuaternionZ = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label1 = new System.Windows.Forms.Label();
+            this.textBoxQuaternionZ = new System.Windows.Forms.TextBox();
+            this.textBoxQuaternionY = new System.Windows.Forms.TextBox();
+            this.textBoxQuaternionX = new System.Windows.Forms.TextBox();
+            this.textBoxQuaternionW = new System.Windows.Forms.TextBox();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.label6 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
@@ -46,6 +46,9 @@
             this.textBoxPitch = new System.Windows.Forms.TextBox();
             this.textBoxRoll = new System.Windows.Forms.TextBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.textBoxAccelerometerZFix = new System.Windows.Forms.TextBox();
+            this.textBoxAccelerometerYFix = new System.Windows.Forms.TextBox();
+            this.textBoxAccelerometerXFix = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
             this.label10 = new System.Windows.Forms.Label();
@@ -53,18 +56,16 @@
             this.textBoxAccelerometerY = new System.Windows.Forms.TextBox();
             this.textBoxAccelerometerX = new System.Windows.Forms.TextBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.textBoxMagnetometerZFix = new System.Windows.Forms.TextBox();
+            this.textBoxMagnetometerYFix = new System.Windows.Forms.TextBox();
+            this.textBoxMagnetometerXFix = new System.Windows.Forms.TextBox();
             this.label11 = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
             this.label13 = new System.Windows.Forms.Label();
             this.textBoxMagnetometerZ = new System.Windows.Forms.TextBox();
             this.textBoxMagnetometerY = new System.Windows.Forms.TextBox();
             this.textBoxMagnetometerX = new System.Windows.Forms.TextBox();
-            this.textBoxAccelerometerXFix = new System.Windows.Forms.TextBox();
-            this.textBoxAccelerometerYFix = new System.Windows.Forms.TextBox();
-            this.textBoxAccelerometerZFix = new System.Windows.Forms.TextBox();
-            this.textBoxMagnetometerZFix = new System.Windows.Forms.TextBox();
-            this.textBoxMagnetometerYFix = new System.Windows.Forms.TextBox();
-            this.textBoxMagnetometerXFix = new System.Windows.Forms.TextBox();
+            this.checkBoxLowPass = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -99,38 +100,41 @@
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Quaternion";
             // 
-            // textBoxQuaternionW
+            // label4
             // 
-            this.textBoxQuaternionW.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxQuaternionW.ForeColor = System.Drawing.Color.White;
-            this.textBoxQuaternionW.Location = new System.Drawing.Point(27, 19);
-            this.textBoxQuaternionW.Name = "textBoxQuaternionW";
-            this.textBoxQuaternionW.ReadOnly = true;
-            this.textBoxQuaternionW.Size = new System.Drawing.Size(145, 20);
-            this.textBoxQuaternionW.TabIndex = 2;
-            this.textBoxQuaternionW.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(6, 100);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(14, 13);
+            this.label4.TabIndex = 9;
+            this.label4.Text = "Z";
             // 
-            // textBoxQuaternionX
+            // label3
             // 
-            this.textBoxQuaternionX.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxQuaternionX.ForeColor = System.Drawing.Color.White;
-            this.textBoxQuaternionX.Location = new System.Drawing.Point(27, 45);
-            this.textBoxQuaternionX.Name = "textBoxQuaternionX";
-            this.textBoxQuaternionX.ReadOnly = true;
-            this.textBoxQuaternionX.Size = new System.Drawing.Size(145, 20);
-            this.textBoxQuaternionX.TabIndex = 3;
-            this.textBoxQuaternionX.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(6, 74);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(14, 13);
+            this.label3.TabIndex = 8;
+            this.label3.Text = "Y";
             // 
-            // textBoxQuaternionY
+            // label2
             // 
-            this.textBoxQuaternionY.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxQuaternionY.ForeColor = System.Drawing.Color.White;
-            this.textBoxQuaternionY.Location = new System.Drawing.Point(27, 71);
-            this.textBoxQuaternionY.Name = "textBoxQuaternionY";
-            this.textBoxQuaternionY.ReadOnly = true;
-            this.textBoxQuaternionY.Size = new System.Drawing.Size(145, 20);
-            this.textBoxQuaternionY.TabIndex = 4;
-            this.textBoxQuaternionY.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(6, 48);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(14, 13);
+            this.label2.TabIndex = 7;
+            this.label2.Text = "X";
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(6, 22);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(15, 13);
+            this.label1.TabIndex = 6;
+            this.label1.Text = "w";
             // 
             // textBoxQuaternionZ
             // 
@@ -143,41 +147,38 @@
             this.textBoxQuaternionZ.TabIndex = 5;
             this.textBoxQuaternionZ.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
-            // label1
+            // textBoxQuaternionY
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(6, 22);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(15, 13);
-            this.label1.TabIndex = 6;
-            this.label1.Text = "w";
+            this.textBoxQuaternionY.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBoxQuaternionY.ForeColor = System.Drawing.Color.White;
+            this.textBoxQuaternionY.Location = new System.Drawing.Point(27, 71);
+            this.textBoxQuaternionY.Name = "textBoxQuaternionY";
+            this.textBoxQuaternionY.ReadOnly = true;
+            this.textBoxQuaternionY.Size = new System.Drawing.Size(145, 20);
+            this.textBoxQuaternionY.TabIndex = 4;
+            this.textBoxQuaternionY.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
-            // label2
+            // textBoxQuaternionX
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(6, 48);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(14, 13);
-            this.label2.TabIndex = 7;
-            this.label2.Text = "X";
+            this.textBoxQuaternionX.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBoxQuaternionX.ForeColor = System.Drawing.Color.White;
+            this.textBoxQuaternionX.Location = new System.Drawing.Point(27, 45);
+            this.textBoxQuaternionX.Name = "textBoxQuaternionX";
+            this.textBoxQuaternionX.ReadOnly = true;
+            this.textBoxQuaternionX.Size = new System.Drawing.Size(145, 20);
+            this.textBoxQuaternionX.TabIndex = 3;
+            this.textBoxQuaternionX.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
-            // label3
+            // textBoxQuaternionW
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(6, 74);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(14, 13);
-            this.label3.TabIndex = 8;
-            this.label3.Text = "Y";
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(6, 100);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(14, 13);
-            this.label4.TabIndex = 9;
-            this.label4.Text = "Z";
+            this.textBoxQuaternionW.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBoxQuaternionW.ForeColor = System.Drawing.Color.White;
+            this.textBoxQuaternionW.Location = new System.Drawing.Point(27, 19);
+            this.textBoxQuaternionW.Name = "textBoxQuaternionW";
+            this.textBoxQuaternionW.ReadOnly = true;
+            this.textBoxQuaternionW.Size = new System.Drawing.Size(145, 20);
+            this.textBoxQuaternionW.TabIndex = 2;
+            this.textBoxQuaternionW.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
             // groupBox2
             // 
@@ -272,6 +273,39 @@
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Accelerometer";
             // 
+            // textBoxAccelerometerZFix
+            // 
+            this.textBoxAccelerometerZFix.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBoxAccelerometerZFix.ForeColor = System.Drawing.Color.White;
+            this.textBoxAccelerometerZFix.Location = new System.Drawing.Point(105, 71);
+            this.textBoxAccelerometerZFix.Name = "textBoxAccelerometerZFix";
+            this.textBoxAccelerometerZFix.ReadOnly = true;
+            this.textBoxAccelerometerZFix.Size = new System.Drawing.Size(67, 20);
+            this.textBoxAccelerometerZFix.TabIndex = 11;
+            this.textBoxAccelerometerZFix.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // textBoxAccelerometerYFix
+            // 
+            this.textBoxAccelerometerYFix.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBoxAccelerometerYFix.ForeColor = System.Drawing.Color.White;
+            this.textBoxAccelerometerYFix.Location = new System.Drawing.Point(105, 45);
+            this.textBoxAccelerometerYFix.Name = "textBoxAccelerometerYFix";
+            this.textBoxAccelerometerYFix.ReadOnly = true;
+            this.textBoxAccelerometerYFix.Size = new System.Drawing.Size(67, 20);
+            this.textBoxAccelerometerYFix.TabIndex = 10;
+            this.textBoxAccelerometerYFix.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // textBoxAccelerometerXFix
+            // 
+            this.textBoxAccelerometerXFix.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBoxAccelerometerXFix.ForeColor = System.Drawing.Color.White;
+            this.textBoxAccelerometerXFix.Location = new System.Drawing.Point(105, 19);
+            this.textBoxAccelerometerXFix.Name = "textBoxAccelerometerXFix";
+            this.textBoxAccelerometerXFix.ReadOnly = true;
+            this.textBoxAccelerometerXFix.Size = new System.Drawing.Size(67, 20);
+            this.textBoxAccelerometerXFix.TabIndex = 9;
+            this.textBoxAccelerometerXFix.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
             // label5
             // 
             this.label5.AutoSize = true;
@@ -350,6 +384,39 @@
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Magnetometer";
             // 
+            // textBoxMagnetometerZFix
+            // 
+            this.textBoxMagnetometerZFix.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBoxMagnetometerZFix.ForeColor = System.Drawing.Color.White;
+            this.textBoxMagnetometerZFix.Location = new System.Drawing.Point(105, 71);
+            this.textBoxMagnetometerZFix.Name = "textBoxMagnetometerZFix";
+            this.textBoxMagnetometerZFix.ReadOnly = true;
+            this.textBoxMagnetometerZFix.Size = new System.Drawing.Size(67, 20);
+            this.textBoxMagnetometerZFix.TabIndex = 11;
+            this.textBoxMagnetometerZFix.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // textBoxMagnetometerYFix
+            // 
+            this.textBoxMagnetometerYFix.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBoxMagnetometerYFix.ForeColor = System.Drawing.Color.White;
+            this.textBoxMagnetometerYFix.Location = new System.Drawing.Point(105, 45);
+            this.textBoxMagnetometerYFix.Name = "textBoxMagnetometerYFix";
+            this.textBoxMagnetometerYFix.ReadOnly = true;
+            this.textBoxMagnetometerYFix.Size = new System.Drawing.Size(67, 20);
+            this.textBoxMagnetometerYFix.TabIndex = 10;
+            this.textBoxMagnetometerYFix.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // textBoxMagnetometerXFix
+            // 
+            this.textBoxMagnetometerXFix.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBoxMagnetometerXFix.ForeColor = System.Drawing.Color.White;
+            this.textBoxMagnetometerXFix.Location = new System.Drawing.Point(105, 19);
+            this.textBoxMagnetometerXFix.Name = "textBoxMagnetometerXFix";
+            this.textBoxMagnetometerXFix.ReadOnly = true;
+            this.textBoxMagnetometerXFix.Size = new System.Drawing.Size(67, 20);
+            this.textBoxMagnetometerXFix.TabIndex = 9;
+            this.textBoxMagnetometerXFix.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
             // label11
             // 
             this.label11.AutoSize = true;
@@ -410,71 +477,15 @@
             this.textBoxMagnetometerX.TabIndex = 2;
             this.textBoxMagnetometerX.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
-            // textBoxAccelerometerXFix
+            // checkBoxLowPass
             // 
-            this.textBoxAccelerometerXFix.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxAccelerometerXFix.ForeColor = System.Drawing.Color.White;
-            this.textBoxAccelerometerXFix.Location = new System.Drawing.Point(105, 19);
-            this.textBoxAccelerometerXFix.Name = "textBoxAccelerometerXFix";
-            this.textBoxAccelerometerXFix.ReadOnly = true;
-            this.textBoxAccelerometerXFix.Size = new System.Drawing.Size(67, 20);
-            this.textBoxAccelerometerXFix.TabIndex = 9;
-            this.textBoxAccelerometerXFix.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            // 
-            // textBoxAccelerometerYFix
-            // 
-            this.textBoxAccelerometerYFix.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxAccelerometerYFix.ForeColor = System.Drawing.Color.White;
-            this.textBoxAccelerometerYFix.Location = new System.Drawing.Point(105, 45);
-            this.textBoxAccelerometerYFix.Name = "textBoxAccelerometerYFix";
-            this.textBoxAccelerometerYFix.ReadOnly = true;
-            this.textBoxAccelerometerYFix.Size = new System.Drawing.Size(67, 20);
-            this.textBoxAccelerometerYFix.TabIndex = 10;
-            this.textBoxAccelerometerYFix.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            // 
-            // textBoxAccelerometerZFix
-            // 
-            this.textBoxAccelerometerZFix.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxAccelerometerZFix.ForeColor = System.Drawing.Color.White;
-            this.textBoxAccelerometerZFix.Location = new System.Drawing.Point(105, 71);
-            this.textBoxAccelerometerZFix.Name = "textBoxAccelerometerZFix";
-            this.textBoxAccelerometerZFix.ReadOnly = true;
-            this.textBoxAccelerometerZFix.Size = new System.Drawing.Size(67, 20);
-            this.textBoxAccelerometerZFix.TabIndex = 11;
-            this.textBoxAccelerometerZFix.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            // 
-            // textBoxMagnetometerZFix
-            // 
-            this.textBoxMagnetometerZFix.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxMagnetometerZFix.ForeColor = System.Drawing.Color.White;
-            this.textBoxMagnetometerZFix.Location = new System.Drawing.Point(105, 71);
-            this.textBoxMagnetometerZFix.Name = "textBoxMagnetometerZFix";
-            this.textBoxMagnetometerZFix.ReadOnly = true;
-            this.textBoxMagnetometerZFix.Size = new System.Drawing.Size(67, 20);
-            this.textBoxMagnetometerZFix.TabIndex = 11;
-            this.textBoxMagnetometerZFix.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            // 
-            // textBoxMagnetometerYFix
-            // 
-            this.textBoxMagnetometerYFix.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxMagnetometerYFix.ForeColor = System.Drawing.Color.White;
-            this.textBoxMagnetometerYFix.Location = new System.Drawing.Point(105, 45);
-            this.textBoxMagnetometerYFix.Name = "textBoxMagnetometerYFix";
-            this.textBoxMagnetometerYFix.ReadOnly = true;
-            this.textBoxMagnetometerYFix.Size = new System.Drawing.Size(67, 20);
-            this.textBoxMagnetometerYFix.TabIndex = 10;
-            this.textBoxMagnetometerYFix.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            // 
-            // textBoxMagnetometerXFix
-            // 
-            this.textBoxMagnetometerXFix.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxMagnetometerXFix.ForeColor = System.Drawing.Color.White;
-            this.textBoxMagnetometerXFix.Location = new System.Drawing.Point(105, 19);
-            this.textBoxMagnetometerXFix.Name = "textBoxMagnetometerXFix";
-            this.textBoxMagnetometerXFix.ReadOnly = true;
-            this.textBoxMagnetometerXFix.Size = new System.Drawing.Size(67, 20);
-            this.textBoxMagnetometerXFix.TabIndex = 9;
-            this.textBoxMagnetometerXFix.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.checkBoxLowPass.AutoSize = true;
+            this.checkBoxLowPass.Location = new System.Drawing.Point(645, 12);
+            this.checkBoxLowPass.Name = "checkBoxLowPass";
+            this.checkBoxLowPass.Size = new System.Drawing.Size(97, 17);
+            this.checkBoxLowPass.TabIndex = 13;
+            this.checkBoxLowPass.Text = "Low-Pass Filter";
+            this.checkBoxLowPass.UseVisualStyleBackColor = true;
             // 
             // DataDump
             // 
@@ -482,6 +493,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(760, 182);
             this.ControlBox = false;
+            this.Controls.Add(this.checkBoxLowPass);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
@@ -502,6 +514,7 @@
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -544,5 +557,6 @@
         private System.Windows.Forms.TextBox textBoxMagnetometerZFix;
         private System.Windows.Forms.TextBox textBoxMagnetometerYFix;
         private System.Windows.Forms.TextBox textBoxMagnetometerXFix;
+        private System.Windows.Forms.CheckBox checkBoxLowPass;
     }
 }
