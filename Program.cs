@@ -4,6 +4,7 @@ using System.Drawing.Drawing2D;
 using System.IO.Ports;
 using System.Windows.Forms;
 using OpenTK;
+using OpenTK.Graphics;
 using OpenTK.Input;
 using ClearBufferMask = OpenTK.Graphics.OpenGL.ClearBufferMask;
 using EnableCap = OpenTK.Graphics.OpenGL.EnableCap;
@@ -46,7 +47,7 @@ namespace WindowsFormsApplication1
 
             // Create the serial port with basic settings
             using (var port = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One))
-            using (var game = new GameWindow())
+            using (var game = new GameWindow(800, 600, new GraphicsMode(new ColorFormat(32), 24, 0, 4)))
             using (var dump = new DataDump())
             {
                 // create the helper window
@@ -78,7 +79,11 @@ namespace WindowsFormsApplication1
 
                 // the normalization quaternion
                 bool bootstrapped = false;
+                bool bootstrappingEnabled = true;
                 var unrotate = new Quaternion(0, 0, 0, 1);
+
+                // the keyboard states
+                KeyboardState previousState = Keyboard.GetState();
 
                 // coordinate systems
                 bool primary = false;
@@ -168,7 +173,10 @@ namespace WindowsFormsApplication1
                                              }
 
                                              // normalize
-                                             quat = unrotate * quat;
+                                             if (bootstrappingEnabled)
+                                             {
+                                                 quat = unrotate*quat;
+                                             }
 
                                              // store for rendering
                                              rotation = quat;
@@ -207,7 +215,10 @@ namespace WindowsFormsApplication1
                                              }
 
                                              // normalize
-                                             quat = unrotate * quat;
+                                             if (bootstrappingEnabled)
+                                             {
+                                                 quat = unrotate*quat;
+                                             }
 
                                              // store for rendering
                                              rotation = quat;
@@ -252,7 +263,10 @@ namespace WindowsFormsApplication1
                                              }
 
                                              // normalize
-                                             quat = unrotate * quat;
+                                             if (bootstrappingEnabled)
+                                             {
+                                                 quat = unrotate*quat;
+                                             }
 
                                              // store for rendering
                                              rotation = quat;
@@ -298,29 +312,40 @@ namespace WindowsFormsApplication1
                 };
 
                 game.UpdateFrame += (sender, e) =>
-                {
-                    // add game logic, input handling
-                    if (game.Keyboard[Key.Escape])
-                    {
-                        game.Exit();
-                    }
-                    else if (game.Keyboard[Key.R])
-                    {
-                        bootstrapped = false;
-                    }
-                    else if (game.Keyboard[Key.Number1] || game.Keyboard[Key.P] || game.Keyboard[Key.G])
-                    {
-                        primary = !primary;
-                    }
-                    else if (game.Keyboard[Key.Number2] || game.Keyboard[Key.S] || game.Keyboard[Key.L])
-                    {
-                        secondary = !secondary;
-                    }
-                    else if (game.Keyboard[Key.Space])
-                    {
-                        dump.BringToFront();
-                    }
-                };
+                                    {
+                                        var currentState = Keyboard.GetState();
+
+                                        // add game logic, input handling
+                                        if (currentState.IsKeyDown(Key.Escape) && !previousState.IsKeyDown(Key.Escape))
+                                        {
+                                            game.Exit();
+                                        }
+                                        else if (currentState.IsKeyDown(Key.R) && !previousState.IsKeyDown(Key.R))
+                                        {
+                                            bootstrappingEnabled = !bootstrappingEnabled;
+                                            if (bootstrappingEnabled)
+                                            {
+                                                bootstrapped = false;
+                                            }
+                                        }
+                                        else if (currentState.IsKeyDown(Key.Number1) &&
+                                                 !previousState.IsKeyDown(Key.Number1))
+                                        {
+                                            primary = !primary;
+                                        }
+                                        else if (currentState.IsKeyDown(Key.Number2) &&
+                                                 !previousState.IsKeyDown(Key.Number2))
+                                        {
+                                            secondary = !secondary;
+                                        }
+                                        else if (currentState.IsKeyDown(Key.Space) &&
+                                                 !previousState.IsKeyDown(Key.Space))
+                                        {
+                                            dump.BringToFront();
+                                        }
+
+                                        previousState = currentState;
+                                    };
                 
                 game.RenderFrame += (sender, e) =>
                 {
