@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.IO.Ports;
 using System.Windows.Forms;
 using OpenTK;
@@ -79,7 +78,7 @@ namespace WindowsFormsApplication1
 
                 // the normalization quaternion
                 bool bootstrapped = false;
-                bool bootstrappingEnabled = true;
+                bool bootstrappingEnabled = false;
                 var unrotate = new Quaternion(0, 0, 0, 1);
 
                 // the keyboard states
@@ -350,6 +349,11 @@ namespace WindowsFormsApplication1
                 game.RenderFrame += (sender, e) =>
                 {
                     // render graphics
+                    GL.ClearColor(Color.Black);
+                    if (bootstrappingEnabled)
+                    {
+                        GL.ClearColor(Color.MidnightBlue);
+                    }
                     GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
                     // set options
