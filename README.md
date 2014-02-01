@@ -1,16 +1,28 @@
-frdm-kl25z-acc-uart: Fuse...ify!
-================================
+llfrdm-kl25z-marg-fusion
+========================
 
-### What it used to be ####
-
-Freescale FRDM-KL25Z bare metal foo - an attempt to bring the Kinetis KL25Z Freedom board
-to life without using Processor Expert, so just bare metal here. No CMSIS though at the time being.
-
-### What it is now ####
-
-A inertial measurement sensor fusion unit with 200 kHz observation frequency and 10 Hz orientation quaternion output over UART.
+Evaluation of a regular Kalman filter based Direction Cosine Matrix estimation through MARG (IMU) sensor fusion, implemented on bare metal Freescale FRDM-KL25Z.
 
 ## Implemented so far ##
+
+### Inertial Sensing ###
+
+- (on-board) MMA8451Q accelerometer driver, sensor data dumping in 14-bit non-fifo mode
+- MPU6050 accelerometer, gyroscope and temperature sensor driver
+- HMC5883L magnetometer sensor driver
+- Full configuration fetch and store over I2C
+- Automatic endian conversion based on system settings
+- Interrupt-based update notification and polling
+- MATLAB interfacing at up 800 Hz over serial port
+  - serial protocol decoder
+  - visual representation of the measured accelerations at 60 FPS with virtual horizon. For an older version, see [https://www.youtube.com/watch?v=RunpaR2PdHQ](https://www.youtube.com/watch?v=RunpaR2PdHQ).
+
+### Sensor Fusion ###
+
+- Standard Kalman filter in 32bit Q16 fixed point using [libfixkalman](https://github.com/sunsided/libfixkalman)
+- Direct estimation of DCM axes based on *A DCM Based Orientation Estimation Algorithm with an Inertial Measurement Unit and a Magnetic Compass* (Nguyen Ho Quoc Phuong et al., [J.UCS 15.4](http://www.jucs.org/jucs_15_4/a_dcm_based_orientation)), but using TRIAD approach instead of magnetometer tilt-compensation.
+- Quaternion conversion for transfer
+- C# demonstration program using OpenTK available in branch [orientation-opengl](https://github.com/sunsided/frdm-kl25z-acc-uart/tree/orientation-opengl) 
 
 ### System ###
 
@@ -33,22 +45,3 @@ A inertial measurement sensor fusion unit with 200 kHz observation frequency and
 ### LED ###
 
 - RGB LED GPIO access using fast GPIO (Core IOPORT; very trivial API, basically crap)
-
-### Inertial Sensing ###
-
-- (on-board) MMA8451Q accelerometer driver, sensor data dumping in 14-bit non-fifo mode
-- MPU6050 accelerometer, gyroscope and temperatur sensor driver
-- HMC5883L magnetometer sensor driver
-- Full configuration fetch and store over I2C
-- Automatic endian conversion based on system settings
-- Interrupt-based update notification and polling
-- MATLAB interfacing at up 800 Hz over serial port
-  - serial protocol decoder
-  - visual representation of the measured accelerations at 60 FPS with virtual horizon; for an older version https://www.youtube.com/watch?v=RunpaR2PdHQ
-
-### Sensor Fusion ###
-
-- Standard Kalman filter in Q16 fixed point using [libfixkalman](https://github.com/sunsided/libfixkalman)
-- Direct estimation of DCM axes based on *A DCM Based Orientation Estimation Algorithm with an Inertial Measurement Unit and a Magnetic Compass* (Nguyen Ho Quoc Phuong et al., [J.UCS 15.4](http://www.jucs.org/jucs_15_4/a_dcm_based_orientation)), but using TRIAD approach instead of magnetometer tilt-compensation.
-- Quaternion conversion for transfer
-- C# demonstration program using OpenTK available in branch [orientation-opengl](https://github.com/sunsided/frdm-kl25z-acc-uart/tree/orientation-opengl) 
