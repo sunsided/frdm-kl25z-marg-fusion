@@ -808,9 +808,9 @@ static void fetch_quaternion_opt2(register qf16 *RESTRICT const quat)
     const fix16_t m11 = x2->data[1][0];
     const fix16_t m12 = x2->data[2][0];
 
-    const fix16_t m20 = x3->data[0][0];
-    const fix16_t m21 = x3->data[1][0];
-    const fix16_t m22 = x3->data[2][0];
+    const fix16_t m20 = -x3->data[0][0];
+    const fix16_t m21 = -x3->data[1][0];
+    const fix16_t m22 = -x3->data[2][0];
 
     // calculate cross product for C1
     // m0 = cross([m10 m11 m12], [m20 m21 m22])
