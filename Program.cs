@@ -55,6 +55,14 @@ namespace WindowsFormsApplication1
                 dump.SetMode(DefaultMode);
                 dump.Show(window);
 
+                game.WindowStateChanged += (sender, args) =>
+                                           {
+                                               if (game.WindowState == WindowState.Normal)
+                                               {
+                                                   dump.BringToFront();
+                                               }
+                                           };
+
                 // last selected mode
                 byte lastMode = 255;
 
@@ -91,6 +99,7 @@ namespace WindowsFormsApplication1
                                          {
                                              dump.ClearDumps();
                                              lastMode = mode;
+                                             bootstrapped = false;
                                          }
 
                                          // check for raw sensor data
@@ -149,7 +158,20 @@ namespace WindowsFormsApplication1
                                                                  );
 
                                              hasOrientation = true;
-                                             rotation = Quaternion.FromMatrix(dcm);
+                                             var quat = Quaternion.FromMatrix(dcm);
+
+                                             // invert quaternion for cake and profit
+                                             if (!bootstrapped)
+                                             {
+                                                 bootstrapped = true;
+                                                 unrotate = Quaternion.Invert(quat);
+                                             }
+
+                                             // normalize
+                                             quat = unrotate * quat;
+
+                                             // store for rendering
+                                             rotation = quat;
                                          }
                                          // check for angle data
                                          else if (mode == 42)
@@ -293,6 +315,10 @@ namespace WindowsFormsApplication1
                     else if (game.Keyboard[Key.Number2] || game.Keyboard[Key.S] || game.Keyboard[Key.L])
                     {
                         secondary = !secondary;
+                    }
+                    else if (game.Keyboard[Key.Space])
+                    {
+                        dump.BringToFront();
                     }
                 };
                 
