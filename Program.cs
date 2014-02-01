@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO.Ports;
 using System.Windows.Forms;
 using OpenTK;
@@ -106,6 +107,49 @@ namespace WindowsFormsApplication1
                                              // pipe to dump window
                                              dump.SetAccelerometer(ax, ay, az);
                                              dump.SetMagnetometer(mx, my, mz);
+
+                                             // use TRIAD for orientation
+                                             var norm = (float)Math.Sqrt(ax*ax + ay*ay + az*az);
+                                             ax /= -norm;
+                                             ay /= -norm;
+                                             az /= -norm;
+                                             norm = (float)Math.Sqrt(ax * ax + ay * ay + az * az);
+
+                                             norm = (float) Math.Sqrt(mx*mx + my*my + mz*mz);
+                                             mx /= norm;
+                                             my /= norm;
+                                             mz /= norm;
+                                             norm = (float)Math.Sqrt(mx * mx + my * my + mz * mz);
+
+                                             // cross to create right axis
+                                             float nx;
+                                             float ny;
+                                             float nz;
+                                             Cross(ax, ay, az, mx, my, mz, out nx, out ny, out nz);
+
+                                             norm = (float) Math.Sqrt(nx*nx + ny*ny + nz*nz);
+                                             nx /= norm;
+                                             ny /= norm;
+                                             nz /= norm;
+                                             norm = (float)Math.Sqrt(nx * nx + ny * ny + nz * nz);
+
+                                             // cross to create forward axis
+                                             Cross(nx, ny, nz, ax, ay, az, out mx, out my, out mz);
+                                             norm = (float) Math.Sqrt(mx*mx + my*my + mz*mz);
+
+                                             // recreate up axis
+                                             Cross(mx, my, mz, nx, ny, nz, out ax, out ay, out az);
+                                             norm = (float) Math.Sqrt(ax*ax + ay*ay + az*az);
+
+                                             // create DCM
+                                             var dcm = new Matrix3(
+                                                                 mx, my, mz,
+                                                                 nx, ny, nz,
+                                                                 ax, ay, az
+                                                                 );
+
+                                             hasOrientation = true;
+                                             rotation = Quaternion.FromMatrix(dcm);
                                          }
                                          // check for angle data
                                          else if (mode == 42)
@@ -307,6 +351,13 @@ namespace WindowsFormsApplication1
                 // Run the game at 60 updates per second
                 game.Run(60.0);
             }
+        }
+
+        private static void Cross(float ax, float ay, float az, float bx, float by, float bz, out float cx, out float cy, out float cz)
+        {
+            cx = ay * bz - az * by;
+            cy = az * bx - ax * bz;
+            cz = ax * by - ay * bx;
         }
 
         private static Matrix4 OpenGLToTextbook(Matrix4 lookAt)
