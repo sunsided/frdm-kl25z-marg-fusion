@@ -3,6 +3,8 @@ frdm-kl25z-marg-fusion
 
 Evaluation of a regular Kalman filter based Direction Cosine Matrix estimation through MARG (IMU) sensor fusion, implemented on bare metal Freescale FRDM-KL25Z.
 
+A demonstration video is available [here](https://www.youtube.com/watch?v=tmC5kjQn-uA).
+
 ## Implemented so far ##
 
 ### Inertial Sensing ###
