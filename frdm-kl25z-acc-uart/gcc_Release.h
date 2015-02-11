@@ -12,6 +12,7 @@
 #define __ATOMIC_ACQUIRE 2
 #define __SFRACT_IBIT__ 0
 #define __FLT_MIN__ 1.1754943508222875e-38F
+#define __GCC_IEC_559_COMPLEX 0
 #define __UFRACT_MAX__ 0XFFFFP-16UR
 #define __UINT_LEAST8_TYPE__ unsigned char
 #define __DQ_FBIT__ 63
@@ -29,7 +30,9 @@
 #define __LACCUM_IBIT__ 32
 #define __DBL_DENORM_MIN__ double(4.9406564584124654e-324L)
 #define __GCC_ATOMIC_CHAR_LOCK_FREE 1
+#define __GCC_IEC_559 0
 #define __FLT_EVAL_METHOD__ 0
+#define __cpp_binary_literals 201304
 #define __LLACCUM_MAX__ 0X7FFFFFFFFFFFFFFFP-31LLK
 #define FIXMATH_NO_CACHE 1
 #define __GCC_ATOMIC_CHAR32_T_LOCK_FREE 1
@@ -122,7 +125,10 @@
 #define __LACCUM_MAX__ 0X7FFFFFFFFFFFFFFFP-31LK
 #define __INT_FAST16_TYPE__ int
 #define __LDBL_HAS_DENORM__ 1
+//VS2005-2012 treats all files as C++, while VS2013+ can treat C files correctly.
+#if _MSC_VER < 1800 || defined(__cplusplus)
 #define __cplusplus 199711L
+#endif
 #define __DEC128_MAX__ 9.999999999999999999999999999999999E6144DL
 #define __INT_LEAST32_MAX__ 2147483647L
 #define __ARM_PCS 1
@@ -171,7 +177,7 @@
 #define __SFRACT_MIN__ (-0.5HR-0.5HR)
 #define __UTQ_FBIT__ 128
 #define __FLT_MANT_DIG__ 24
-#define __VERSION__ "4.8.2"
+#define __VERSION__ "4.9.2"
 #define __ULLFRACT_FBIT__ 64
 #define __FRACT_EPSILON__ 0x1P-15R
 #define __ULACCUM_MIN__ 0.0ULK
@@ -241,7 +247,6 @@
 #define __INTPTR_MAX__ 2147483647
 #define __QQ_FBIT__ 7
 #define __UTA_IBIT__ 64
-#define __EXCEPTIONS 1
 #define __LDBL_MANT_DIG__ 53
 #define __SFRACT_FBIT__ 7
 #define __SACCUM_MIN__ (-0X1P7HK-0X1P7HK)
@@ -314,7 +319,7 @@
 #define __INTMAX_TYPE__ long long int
 #define __DEC128_MAX_EXP__ 6145
 #define __ATOMIC_CONSUME 1
-#define __GNUC_MINOR__ 8
+#define __GNUC_MINOR__ 9
 #define __UINTMAX_MAX__ 18446744073709551615ULL
 #define __DEC32_MANT_DIG__ 7
 #define __HA_FBIT__ 7
@@ -352,28 +357,27 @@
 #endif
 
 // --- Include directories begin --- //
-//C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include
-//C:\Users\Markus\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.freescale.kinetis/KL25Z4
-//c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/include/c++/4.8.2
-//c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/include/c++/4.8.2/arm-eabi/thumb/cortex_m0
-//c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/include/c++/4.8.2/backward
-//c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/include
-//c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/include-fixed
-//c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/sys-include
-//c:\dev\toolchain\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/include
-//$(SourceDir)\Project_Headers
-//$(SourceDir)\drivers
-//$(SourceDir)\libraries\libfixmath
-//$(SourceDir)\libraries\libfixmatrix
-//$(SourceDir)\libraries\libfixkalman
-// --- Library directories end --- //
+//c:\dev\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.9.2/../../../../arm-eabi/include/c++/4.9.2
+//c:\dev\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.9.2/../../../../arm-eabi/include/c++/4.9.2/arm-eabi/thumb/cortex_m0plus
+//c:\dev\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.9.2/../../../../arm-eabi/include/c++/4.9.2/backward
+//c:\dev\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.9.2/include
+//c:\dev\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.9.2/include-fixed
+//c:\dev\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.9.2/../../../../arm-eabi/sys-include
+//c:\dev\sysgcc\arm-eabi\bin\../lib/gcc/arm-eabi/4.9.2/../../../../arm-eabi/include
+//Project_Headers
+//drivers
+//libraries\libfixmath
+//libraries\libfixmatrix
+//libraries\libfixkalman
+//BSP/KL25Z4
+// --- Include directories end --- //
 
 
 // --- Library directories begin --- //
-//c:/dev/toolchain/sysgcc/arm-eabi/bin/../lib/gcc/arm-eabi/4.8.2/thumb/cortex_m0/
-//c:/dev/toolchain/sysgcc/arm-eabi/bin/../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/lib/thumb/cortex_m0/
-//c:/dev/toolchain/sysgcc/arm-eabi/bin/../lib/gcc/arm-eabi/4.8.2/
-//c:/dev/toolchain/sysgcc/arm-eabi/bin/../lib/gcc/
-//c:/dev/toolchain/sysgcc/arm-eabi/bin/../lib/gcc/arm-eabi/4.8.2/../../../../arm-eabi/lib/
+//c:/dev/sysgcc/arm-eabi/bin/../lib/gcc/arm-eabi/4.9.2/thumb/cortex_m0plus/
+//c:/dev/sysgcc/arm-eabi/bin/../lib/gcc/arm-eabi/4.9.2/../../../../arm-eabi/lib/thumb/cortex_m0plus/
+//c:/dev/sysgcc/arm-eabi/bin/../lib/gcc/arm-eabi/4.9.2/
+//c:/dev/sysgcc/arm-eabi/bin/../lib/gcc/
+//c:/dev/sysgcc/arm-eabi/bin/../lib/gcc/arm-eabi/4.9.2/../../../../arm-eabi/lib/
 // --- Library directories begin --- //
 

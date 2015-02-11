@@ -6,17 +6,17 @@ BINARYDIR := Release
 
 #Additional flags
 PREPROCESSOR_MACROS := NDEBUG RELEASE FIXMATRIX_MAX_SIZE=6 KALMAN_DISABLE_C FIXMATH_NO_CACHE
-INCLUDE_DIRS :=$(SourceDir)\Project_Headers $(SourceDir)\drivers C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include $(SourceDir)\libraries\libfixmath $(SourceDir)\libraries\libfixmatrix $(SourceDir)\libraries\libfixkalman
-LIBRARY_DIRS :=
-LIBRARY_NAMES :=
-ADDITIONAL_LINKER_INPUTS :=
-MACOS_FRAMEWORKS :=
+INCLUDE_DIRS := Project_Headers drivers libraries\libfixmath libraries\libfixmatrix libraries\libfixkalman
+LIBRARY_DIRS := 
+LIBRARY_NAMES := 
+ADDITIONAL_LINKER_INPUTS := 
+MACOS_FRAMEWORKS := 
 
 CFLAGS := -ggdb -fstack-usage -std=c99 -O3 -frename-registers  -fno-keep-static-consts -funsafe-loop-optimizations -fgcse-sm -fgcse-las -fgcse-after-reload -fipa-pta
 CXXFLAGS := -ggdb -fstack-usage -fno-exceptions -std=c99 -O3 -frename-registers  -fno-keep-static-consts -funsafe-loop-optimizations -fgcse-sm -fgcse-las -fgcse-after-reload -fipa-pta
-ASFLAGS :=
+ASFLAGS := 
 LDFLAGS := -Wl,--gc-sections
-COMMONFLAGS :=
+COMMONFLAGS := 
 
 START_GROUP := -Wl,--start-group
 END_GROUP := -Wl,--end-group

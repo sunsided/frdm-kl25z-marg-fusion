@@ -6,17 +6,17 @@ BINARYDIR := Debug
 
 #Additional flags
 PREPROCESSOR_MACROS := DEBUG FIXMATRIX_MAX_SIZE=6 KALMAN_DISABLE_C FIXMATH_NO_CACHE
-INCLUDE_DIRS :=$(SourceDir)\Project_Headers $(SourceDir)\drivers C:/dev/Libraries/CMSIS-SP-00300-r3p2-00rel1/CMSIS/Include $(SourceDir)\libraries\libfixmath $(SourceDir)\libraries\libfixmatrix $(SourceDir)\libraries\libfixkalman
-LIBRARY_DIRS :=
-LIBRARY_NAMES :=
-ADDITIONAL_LINKER_INPUTS :=
-MACOS_FRAMEWORKS :=
+INCLUDE_DIRS := Project_Headers drivers libraries\libfixmath libraries\libfixmatrix libraries\libfixkalman
+LIBRARY_DIRS := 
+LIBRARY_NAMES := 
+ADDITIONAL_LINKER_INPUTS := 
+MACOS_FRAMEWORKS := 
 
 CFLAGS := -ggdb -ffunction-sections -std=c99 -O0
 CXXFLAGS := -ggdb -ffunction-sections -fno-exceptions -std=c99 -O0
-ASFLAGS :=
+ASFLAGS := 
 LDFLAGS := -Wl,--gc-sections
-COMMONFLAGS :=
+COMMONFLAGS := 
 
 START_GROUP := -Wl,--start-group
 END_GROUP := -Wl,--end-group

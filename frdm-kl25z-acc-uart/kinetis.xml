@@ -1,15 +1,114 @@
 <?xml version="1.0"?>
 <EmbeddedProfile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
-  <BspID>com.sysprogs.arm.freescale.kinetis</BspID>
+  <BspID>com.visualgdb.bsp.in-place</BspID>
   <McuID>MKL25Z128xxx4</McuID>
+  <BSPSubdirectory>BSP</BSPSubdirectory>
   <MCUProperties>
-    <Entries>
-      <KeyValue>
-        <Key>com.sysprogs.bspoptions.primary_memory</Key>
-        <Value>flash</Value>
-      </KeyValue>
-    </Entries>
+    <Entries />
   </MCUProperties>
   <BSPSourceFolderName>Device-specific files</BSPSourceFolderName>
+  <InPlaceMCU>
+    <ID>MKL25Z128xxx4</ID>
+    <UserFriendlyName>MKL25Z128xxx4</UserFriendlyName>
+    <CompilationFlags>
+      <PreprocessorMacros>
+        <string>KL25Z4</string>
+        <string>kinetis_flash_layout</string>
+      </PreprocessorMacros>
+      <IncludeDirectories>
+        <string>BSP/KL25Z4</string>
+      </IncludeDirectories>
+      <AdditionalLibraries>
+        <string>compactcpp</string>
+      </AdditionalLibraries>
+      <CFLAGS />
+      <CXXFLAGS />
+      <LDFLAGS>-TBSP/MKL25Z128xxx4_flash.lds</LDFLAGS>
+      <ASFLAGS />
+      <COMMONFLAGS>-mcpu=cortex-m0plus -mthumb</COMMONFLAGS>
+      <EnableLinkerGroups>true</EnableLinkerGroups>
+    </CompilationFlags>
+    <AdditionalSourceFiles>
+      <string>BSP/Common/startup.c</string>
+      <string>BSP/KL25Z4/hwinit_KL25Z4.c</string>
+      <string>BSP/KL25Z4/vectors_KL25Z4.c</string>
+    </AdditionalSourceFiles>
+    <AdditionalHeaderFiles>
+      <string>$$SYS:BSP_ROOT$$/KL25Z4/mkl25z4.h</string>
+    </AdditionalHeaderFiles>
+    <ConfigurableProperties>
+      <PropertyGroups>
+        <PropertyGroup>
+          <Properties>
+            <PropertyEntry xsi:type="Enumerated">
+              <Name>Execute from</Name>
+              <UniqueID>com.sysprogs.bspoptions.primary_memory</UniqueID>
+              <OmitPrefixIfEmpty>false</OmitPrefixIfEmpty>
+              <SuggestionList>
+                <Suggestion>
+                  <UserFriendlyName>FLASH</UserFriendlyName>
+                  <InternalValue>flash</InternalValue>
+                </Suggestion>
+                <Suggestion>
+                  <UserFriendlyName>SRAM</UserFriendlyName>
+                  <InternalValue>sram</InternalValue>
+                </Suggestion>
+              </SuggestionList>
+              <DefaultEntryIndex>0</DefaultEntryIndex>
+              <AllowFreeEntry>false</AllowFreeEntry>
+            </PropertyEntry>
+            <PropertyEntry xsi:type="Enumerated">
+              <Name>C Library Type</Name>
+              <UniqueID>com.sysprogs.toolchainoptions.arm.libctype</UniqueID>
+              <OmitPrefixIfEmpty>false</OmitPrefixIfEmpty>
+              <SuggestionList>
+                <Suggestion>
+                  <UserFriendlyName>Default</UserFriendlyName>
+                  <InternalValue />
+                </Suggestion>
+                <Suggestion>
+                  <UserFriendlyName>Newlib-nano</UserFriendlyName>
+                  <InternalValue>--specs=nano.specs</InternalValue>
+                </Suggestion>
+                <Suggestion>
+                  <UserFriendlyName>Newlib-nano with floating point support in printf()</UserFriendlyName>
+                  <InternalValue>--specs=nano.specs -u _printf_float</InternalValue>
+                </Suggestion>
+                <Suggestion>
+                  <UserFriendlyName>Newlib-nano with floating point support in printf() and scanf()</UserFriendlyName>
+                  <InternalValue>--specs=nano.specs -u _printf_float -u _scanf_float</InternalValue>
+                </Suggestion>
+              </SuggestionList>
+              <DefaultEntryIndex>0</DefaultEntryIndex>
+              <AllowFreeEntry>false</AllowFreeEntry>
+            </PropertyEntry>
+            <PropertyEntry xsi:type="Boolean">
+              <Name>Reduce the size of C++ binaries</Name>
+              <UniqueID>com.sysprogs.toolchainoptions.arm.compactcpp</UniqueID>
+              <OmitPrefixIfEmpty>false</OmitPrefixIfEmpty>
+              <DefaultValue>true</DefaultValue>
+              <ValueForTrue>compactcpp</ValueForTrue>
+            </PropertyEntry>
+            <PropertyEntry xsi:type="Boolean">
+              <Name>Provide default stubs for system calls</Name>
+              <UniqueID>com.sysprogs.toolchainoptions.arm.libnosys</UniqueID>
+              <OmitPrefixIfEmpty>false</OmitPrefixIfEmpty>
+              <DefaultValue>false</DefaultValue>
+              <ValueForTrue>--specs=nosys.specs</ValueForTrue>
+            </PropertyEntry>
+          </Properties>
+          <CollapsedByDefault>false</CollapsedByDefault>
+        </PropertyGroup>
+      </PropertyGroups>
+    </ConfigurableProperties>
+    <HierarchicalPath>Freescale\Kinetis\KL25Z4</HierarchicalPath>
+    <FamilyID>KL25Z4</FamilyID>
+    <FLASHSize>131072</FLASHSize>
+    <RAMSize>16384</RAMSize>
+    <FLASHBase>0</FLASHBase>
+    <RAMBase>536866816</RAMBase>
+    <MCUDefinitionFile>devices\KL25Z4.xml</MCUDefinitionFile>
+  </InPlaceMCU>
+  <MCUMakFile>kinetis.mak</MCUMakFile>
 </EmbeddedProfile>

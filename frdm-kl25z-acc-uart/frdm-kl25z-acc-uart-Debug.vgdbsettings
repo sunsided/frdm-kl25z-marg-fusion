@@ -12,11 +12,11 @@
   <Build xsi:type="com.visualgdb.build.embedded">
     <MakeFilePathRelativeToSourceDir>Makefile</MakeFilePathRelativeToSourceDir>
     <MakeConfigurationName>Debug</MakeConfigurationName>
-    <AdditionalMakeArguments>SourceDir=$(SourceDir)</AdditionalMakeArguments>
+    <AdditionalMakeArguments />
     <MakeCommandTemplate>
       <SkipWhenRunningCommandList>false</SkipWhenRunningCommandList>
       <Command>cmd.exe</Command>
-      <Arguments>/c "C:\dev\toolchain\SysGCC\arm-eabi\bin\make.exe"</Arguments>
+      <Arguments>/c "C:\dev\SysGCC\arm-eabi\bin\make.exe"</Arguments>
       <WorkingDirectory>$(BuildDir)</WorkingDirectory>
       <Environment>
         <Records>
@@ -31,6 +31,7 @@
         </Records>
       </Environment>
     </MakeCommandTemplate>
+    <ShowMemoryUtilizationSummary>true</ShowMemoryUtilizationSummary>
   </Build>
   <Debug xsi:type="com.visualgdb.debug.embedded">
     <AdditionalStartupCommands />
@@ -59,6 +60,10 @@
       <ExamineMemoryWithXCommand>false</ExamineMemoryWithXCommand>
       <StepIntoNewInstanceEntry>main</StepIntoNewInstanceEntry>
       <ExamineRegistersInRawFormat>true</ExamineRegistersInRawFormat>
+      <EnableSmartStepping>false</EnableSmartStepping>
+      <DisableSignals>false</DisableSignals>
+      <EnableAsyncExecutionMode>false</EnableAsyncExecutionMode>
+      <EnableNonStopMode>false</EnableNonStopMode>
     </AdditionalGDBSettings>
     <DebugMethodID>jlink-jtag</DebugMethodID>
     <DebugMethodProperties>
@@ -93,6 +98,9 @@
         </KeyValue>
       </Entries>
     </DebugMethodProperties>
+    <SemihostingSupport>Auto</SemihostingSupport>
+    <StepIntoEntryPoint>false</StepIntoEntryPoint>
+    <ReloadFirmwareOnReset>false</ReloadFirmwareOnReset>
   </Debug>
   <CustomBuild>
     <PreBuildActions />
